@@ -258,7 +258,7 @@ void Matrix::setSize(unsigned long iNx, unsigned long iNy){
 	isInit = true;
 }
 
-Vector::Vector():Nx(0), Ny(0), N(0), b(nullptr), isInit(false){}
+Vector::Vector() : Nx(0), Ny(0), N(0), b(nullptr), isInit(false){}
 
 Vector::Vector(unsigned long iNx, unsigned long iNy, bool initflag, double initVal): Nx(iNx), Ny(iNy), N(iNx*iNy), isInit(false), b(nullptr)
 {
