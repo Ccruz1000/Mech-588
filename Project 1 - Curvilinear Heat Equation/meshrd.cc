@@ -1,7 +1,8 @@
 #include "meshrd.h"
 
 
-// Taken from Mech 587 base code
+// Taken from Mech 587 base code 
+// Allocate memory for dynamically sized arrays
 void Operations::alloc1D(double **V, const unsigned long &N, bool isInit, double def) const
 {
 	if(*V != nullptr){
@@ -16,6 +17,7 @@ void Operations::alloc1D(double **V, const unsigned long &N, bool isInit, double
 			(*V)[i] = 0.0;
 }
 
+// Deallocate memory for dynamically sized arrays
 void Operations::deAlloc1D(double **V, const unsigned long &N) const
 {
 	if(*V != nullptr){
@@ -29,9 +31,8 @@ void Operations::deAlloc1D(double **V, const unsigned long &N) const
 Solution::Solution() : X(nullptr), Y(nullptr), u(nullptr), v(nullptr), T(nullptr), nx(0), ny(0), N(0) 
 {}
 
-
 // Constructor to initialize solution struct with 0 values
-Solution::Solution(unsigned long iNx, unsigned long iNy) : nx(iNx), ny(iNy)
+Solution::Solution(unsigned long iNx, unsigned long iNy) : X(nullptr), Y(nullptr), u(nullptr), v(nullptr), T(nullptr), nx(iNx), ny(iNy)
 {
 	N = nx * ny; // Total number of grid points
 
@@ -53,7 +54,74 @@ Solution::Solution(unsigned long iNx, unsigned long iNy) : nx(iNx), ny(iNy)
 	}
 }
 
+// Test functions
+void test_void_constructor()
+{
+	// Test to see if void constructor works properly
+	unsigned long nx, ny, N;
+	double *X;
+	Solution test(4, 3);
+	nx = test.nx;
+	ny = test.ny;
+	N = test.N;
+	X = test.X;
+	X[5] = 12.42;
+	int i = 1;
+	std::cout << std::endl << std::endl << nx << " Nx " << ny << " Ny " << N << " N\n";
+	for(int k = 0; k < N; k++)
+	{
+		std::cout << "i: " << i << " X: " << X[k] << std::endl;
+		i += 1;
+	}
+};
 
+void test_mesh_read(std::string meshname)
+{
+	std::ifstream mesh(meshname); // Open mesh file for reading  
+	// Read individual lines without whitespace
+	long unsigned int Nx, Ny, numpoints; // Number of X and Y points in mesh 
+	int ifile, jfile; // i and j to be read from the file
+	//double x, y, u, v;
+	double x_store, y_store, u_store, v_store; // Store values to input into array later
+	//std::ifstream mesh(falsemesh); // Test that catch for improper mesh works
+	if(mesh.is_open()) // Check that file is opened
+	{
+		// Read Nx and Ny values from first line 
+		mesh >> Nx >> Ny;
+		numpoints = Nx * Ny; 
+		std::cout << numpoints << std::endl;
+		std::cout << Nx << " Nx\n" << Ny << " Ny\n";
+		// Create arrays to store x, y, u and v from mesh
+		double x[numpoints], y[numpoints], u[numpoints], v[numpoints];
+		int cntr = 0; // Counter to index position in the array
+		// Read through other lines
+		while(mesh >> ifile >> jfile >> x_store >> y_store >> u_store >> v_store)
+		{
+			// Store read values into mesh
+			x[cntr] = x_store;
+			y[cntr] = y_store;
+			u[cntr] = u_store;
+			v[cntr] = v_store;
+			cntr += 1; 
+		}
+		// Print out values read from mesh to check
+		for(int i = 0; i < numpoints; i++)
+		{	
+			if(i % Ny == 0)
+			{
+				std::cout << std::endl;
+			}
+			std::cout << "X: " << x[i] << " Y: " << y[i] << " u: " << u[i] << " v: " << v[i] << std::endl;
+		}
+	}
+
+	// Let user know if mesh file isn't found 
+	else
+	{
+		std::cout << "Mesh file not found, please check file name\n";
+	}
+
+}
 
 
 int main()
@@ -62,48 +130,19 @@ int main()
 	std::string coursemesh = "mesh-8x32.vel";
 	std::string medmesh = "mesh-16x64.vel";
 	std::string finemesh = "mesh-32x128.vel";
+	std::string falsemesh = "mesh-13x2.vel"; // False mesh name to make sure catch
+
+	test_void_constructor();
+	test_mesh_read(medmesh);
 
 
-	// Read individual lines without whitespace
-	double Nx, Ny; // Number of X and Y points in mesh 
 
-	std::ifstream mesh(coursemesh); // Open mesh file for reading  
 
-	int cntr = 0; // counter to check which line we are on
 
-	int ifile, jfile; // i and j to be read from the file
-	double x, y, u, v; // coordinates and velocities read from the file 
-
-	if(mesh.is_open()) // Check that file is opened
-	{
-		if(cntr == 0) // If reading first line, read for number of points in X and Y
-		{
-			mesh >> Nx >> Ny;
-			cntr += 1;
-			std::cout << Nx << " Nx\n" << Ny << " Ny\n";
-		}
-		mesh >> ifile >> jfile >> x >> y >> u >> v;
-		std::cout << "i: " << ifile << " j: " << jfile << " x: " << x << " y: " << y << " u: " << u << " v: " << v << std::endl;
-
-	}
-
-	// Test to see if void constructor works properly
-	unsigned long nx, ny;
-	Solution test(10, 10);
-	nx = test.nx;
-	ny = test.ny;
-	std::cout << std::endl << std::endl << nx << " Nx " << ny << " Ny\n";
-
-	// TODO Figure out how to read arrays from Solution variable that we currently have
 	// TODO Allow entry of custom arrays into solution class
 	// TODO Learn how to store solution class into VTK file
 	// TODO Literally the rest of the entire project
 
-	// double X[10] = {test.X};
-	// for(int k = 0; k < 10; k++)
-	// {
-	// 	std::cout << X[k] << " X\n";
-	// }
 	return 0;
 }
 
