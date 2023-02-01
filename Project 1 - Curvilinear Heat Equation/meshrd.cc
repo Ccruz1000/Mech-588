@@ -29,7 +29,9 @@ void Operations::deAlloc1D(double **V, const unsigned long &N) const
 
 // Base case - Create empty solution
 Solution::Solution() : X(nullptr), Y(nullptr), u(nullptr), v(nullptr), T(nullptr), nx(0), ny(0), N(0) 
-{}
+{
+
+}
 
 // Constructor to initialize solution struct with 0 values
 Solution::Solution(unsigned long iNx, unsigned long iNy) : X(nullptr), Y(nullptr), u(nullptr), v(nullptr), T(nullptr), nx(iNx), ny(iNy)
@@ -54,6 +56,14 @@ Solution::Solution(unsigned long iNx, unsigned long iNy) : X(nullptr), Y(nullptr
 	}
 }
 
+// Constructor to initialize solution struct using vectors that already exist
+Solution::Solution(unsigned long iNx, unsigned long iNy, double iX, double iY, double iu, double iv, double iT) :
+                   X(*iX), Y(*iY), u(*iu), v(*iv), T(*iT), nx(iNx), ny(iNy)
+{
+	N = nx * ny;
+}
+
+
 // Test functions
 void test_void_constructor()
 {
@@ -73,7 +83,7 @@ void test_void_constructor()
 		std::cout << "i: " << i << " X: " << X[k] << std::endl;
 		i += 1;
 	}
-};
+}
 
 void test_mesh_read(std::string meshname)
 {
@@ -120,7 +130,6 @@ void test_mesh_read(std::string meshname)
 	{
 		std::cout << "Mesh file not found, please check file name\n";
 	}
-
 }
 
 
@@ -130,10 +139,20 @@ int main()
 	std::string coursemesh = "mesh-8x32.vel";
 	std::string medmesh = "mesh-16x64.vel";
 	std::string finemesh = "mesh-32x128.vel";
-	std::string falsemesh = "mesh-13x2.vel"; // False mesh name to make sure catch
+	std::string falsemesh = "mesh-13x2.vel"; // False mesh name to make sure catch works
 
-	test_void_constructor();
-	test_mesh_read(medmesh);
+	//test_void_constructor();
+	//test_mesh_read(medmesh);
+	
+	// unsigned long nx, ny;
+	// nx = 4;
+	// ny = 4;
+	// double *x[4] = {1.0, 2.0, 3.0, 4.0};
+	// double *y[4] = {1.0, 2.0, 3.0, 4.0};
+	// double *u[4] = {1.0, 2.0, 3.0, 4.0};
+	// double *v[4] = {1.0, 2.0, 3.0, 4.0};
+	// double *T[4] = {1.0, 2.0, 3.0, 4.0};
+	// Solution test(nx, ny, x, y, u, v, T);
 
 
 

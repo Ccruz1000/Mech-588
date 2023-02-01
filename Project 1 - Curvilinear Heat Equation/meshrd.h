@@ -26,7 +26,7 @@ public:
 	// Constructors
 	Solution();
 	Solution(unsigned long Nx, unsigned long Ny);
-	//Solution(unsigned long Nx, unsigned long Ny, double *X, double *Y, double *u, double *v, double *T);
+	Solution(unsigned long Nx, unsigned long Ny, double *X, double *Y, double *u, double *v, double *T);
 	// Member Function
 	//void storeVTKSolution;
 };
