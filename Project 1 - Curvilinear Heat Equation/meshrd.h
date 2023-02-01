@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <vector>
 
 #ifndef MESHRD_H
 
@@ -16,19 +17,20 @@ public:
 class Solution
 {
 private:
-	Operations O;
 
 public:
 	// Member Variables
-	double *X, *Y, *u, *v, *T; // Pointers to arrays for coordinates, and solution vectors
-	unsigned long nx, ny; // Value to store number of X and Y
+	std::vector<double> X , Y, u, v, T;  // Vectors to store data
+	unsigned long nx, ny; // Value to store number of X and Y points
 	unsigned long N; // Store total number of points
 	// Constructors
-	Solution();
-	Solution(unsigned long Nx, unsigned long Ny);
-	Solution(unsigned long Nx, unsigned long Ny, double *X, double *Y, double *u, double *v, double *T);
-	// Member Function
-	//void storeVTKSolution;
+	Solution(); // Null constructor, initializes vectors as empty
+	Solution(unsigned long iNx, unsigned long iNy); // Void constructor, initializes with all 0's
+	Solution(unsigned long iNx, unsigned long iNy, std::vector<double> iX, std::vector<double> iY, 
+		     std::vector<double> iu, std::vector<double> iv, std::vector<double> iT); // Constructor, initializes with pre defined vectors
+	// Member Functions
+	void printmesh();
+	//void storeVTKSolution(const Solution &s, const char *fileName);
 };
 
 
