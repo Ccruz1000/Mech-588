@@ -100,7 +100,6 @@ Solution readmesh(std::string meshname)
 	}
 	std::cout << "Mesh gets returned in next line\n";
 	return newmesh;
-	std::cout << "Mesh returned in last line\n";
 }
 
 
@@ -256,11 +255,23 @@ int main()
 	vtkfile << "TITLE = \"Quad data\"\n";
 	vtkfile << "ASCII\n";
 	vtkfile << "DATASET STRUCTURED_GRID\n";
-	vtkfile << "Dimensions " << mesh.nx << " " << mesh.ny << " " << 1 << std::endl;
-	vtkfile << "POINTS " << mesh.nx * mesh.ny << " FLOAT\n";
+	vtkfile << "Dimensions " << mesh.ny << " " << mesh.nx << " " << 1 << std::endl;
+	vtkfile << "POINTS " << mesh.ny * mesh.nx << " FLOAT\n";
 	for(i = 0; i < mesh.nx * mesh.ny; i++)
 	{
 		vtkfile << mesh.X[i] << " " << mesh.Y[i] << " " << 0.0 << std::endl;
+	}
+	vtkfile << "POINT_DATA " << mesh.nx * mesh.ny << std::endl;
+	vtkfile << "SCALARS temperature FLOAT 1\n";
+	vtkfile << " LOOKUP_TABLE default\n";
+	for(i = 0; i < mesh.nx * mesh.ny; i++)
+	{
+		vtkfile << mesh.T[i] << std::endl;
+	}
+	vtkfile << "VECTORS velocity FLOAT" << std::endl;
+	for(int i = 0; i < mesh.nx * mesh.ny; i++)
+	{
+		vtkfile << mesh.u[i] << " " << mesh.v[i] << " " << 0.0 << std::endl; 
 	}
 	vtkfile.close();
 	// unsigned long i, j;
