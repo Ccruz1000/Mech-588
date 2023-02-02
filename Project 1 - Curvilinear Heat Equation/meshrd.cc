@@ -77,11 +77,7 @@ Solution readmesh(std::string meshname)
 			newmesh.Y[cntr] = Y;
 			newmesh.u[cntr] = u;
 			newmesh.v[cntr] = v;
-			// X[cntr] = xtemp;
-			// Y[cntr] = ytemp;
-			// u[cntr] = utemp;
-			// v[cntr] = vtemp;
-			// T[cntr] = Ttemp;
+	
 			cntr += 1;
 			// Leave loop once all lines of mesh have been read
 			if(mesh.eof())
@@ -244,37 +240,38 @@ int main()
 	std::string finemesh = "mesh-32x128.vel";
 	std::string falsemesh = "mesh-13x2.vel"; // False mesh name to make sure catch works
 
-	Solution mesh = readmesh(coursemesh);
-	mesh.printmesh();
+	test_mesh_read(medmesh);
+	//Solution mesh = readmesh(medmesh);
+	//mesh.printmesh();
 
 	// const char vtkname[50] = "file.vtk";
-	std::string vtkname = "file.vtk";
-	std::ofstream vtkfile(vtkname);
-	unsigned long i;
-	vtkfile << "# vtk DataFile Version 2.0\n";
-	vtkfile << "TITLE = \"Quad data\"\n";
-	vtkfile << "ASCII\n";
-	vtkfile << "DATASET STRUCTURED_GRID\n";
-	vtkfile << "Dimensions " << mesh.ny << " " << mesh.nx << " " << 1 << std::endl;
-	vtkfile << "POINTS " << mesh.ny * mesh.nx << " FLOAT\n";
-	for(i = 0; i < mesh.nx * mesh.ny; i++)
-	{
-		vtkfile << mesh.X[i] << " " << mesh.Y[i] << " " << 0.0 << std::endl;
-	}
-	vtkfile << "POINT_DATA " << mesh.nx * mesh.ny << std::endl;
-	vtkfile << "SCALARS temperature FLOAT 1\n";
-	vtkfile << " LOOKUP_TABLE default\n";
-	for(i = 0; i < mesh.nx * mesh.ny; i++)
-	{
-		vtkfile << mesh.T[i] << std::endl;
-	}
-	vtkfile << "VECTORS velocity FLOAT" << std::endl;
-	for(int i = 0; i < mesh.nx * mesh.ny; i++)
-	{
-		vtkfile << mesh.u[i] << " " << mesh.v[i] << " " << 0.0 << std::endl; 
-	}
-	vtkfile.close();
-	// unsigned long i, j;
+	// std::string vtkname = "file.vtk";
+	// std::ofstream vtkfile(vtkname);
+	// unsigned long i;
+	// vtkfile << "# vtk DataFile Version 2.0\n";
+	// vtkfile << "TITLE = \"Quad data\"\n";
+	// vtkfile << "ASCII\n";
+	// vtkfile << "DATASET STRUCTURED_GRID\n";
+	// vtkfile << "Dimensions " << mesh.ny << " " << mesh.nx << " " << 1 << std::endl;
+	// vtkfile << "POINTS " << mesh.ny * mesh.nx << " FLOAT\n";
+	// for(i = 0; i < mesh.nx * mesh.ny; i++)
+	// {
+	// 	vtkfile << mesh.X[i] << " " << mesh.Y[i] << " " << 0.0 << std::endl;
+	// }
+	// vtkfile << "POINT_DATA " << mesh.nx * mesh.ny << std::endl;
+	// vtkfile << "SCALARS temperature FLOAT 1\n";
+	// vtkfile << " LOOKUP_TABLE default\n";
+	// for(i = 0; i < mesh.nx * mesh.ny; i++)
+	// {
+	// 	vtkfile << mesh.T[i] << std::endl;
+	// }
+	// vtkfile << "VECTORS velocity FLOAT" << std::endl;
+	// for(int i = 0; i < mesh.nx * mesh.ny; i++)
+	// {
+	// 	vtkfile << mesh.u[i] << " " << mesh.v[i] << " " << 0.0 << std::endl; 
+	// }
+	// vtkfile.close();
+	// // unsigned long i, j;
 	// fprintf(vtkfile,"# vtk DataFile Version 2.0\n");
 	// fprintf(vtkfile,"TITLE = \"Quad data\"\n");
 	// fprintf(vtkfile,"ASCII\n");
