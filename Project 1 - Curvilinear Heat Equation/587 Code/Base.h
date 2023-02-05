@@ -163,8 +163,6 @@ public:
 	const double GetMin();
 
 	void storeV(char filename[50]);
-
-
 };
 
 #endif
