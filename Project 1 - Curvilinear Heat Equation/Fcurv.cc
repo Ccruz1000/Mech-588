@@ -1,6 +1,13 @@
-#include "fcurv.h"
+#include "Fcurv.h"
+/********************************************************************
+// Curvillinear Mesh Programming Assignment Function File
+// Mech 588 - Advanced CFD UBC Mechanical Engineering Winter 2023
+// Christian Rowsell (40131393)
+********************************************************************/
 
+/********************************************************************
 // Operations from Mech 587 - Used in operator overloading
+********************************************************************/
 //Allocate memory for a 1D array
 void Operations::alloc1D(double **V, const unsigned long &N, bool isInit, double def) const
 {
@@ -97,7 +104,9 @@ void Operations::findMin(double &R, unsigned long &idx, const double *V2, const 
 		}
 }
 
+/********************************************************************
 // Vector class from Mech 587 - Wrapper for 1D array to 2D array
+********************************************************************/
 // Constructors
 Vector::Vector() : Nx(0), Ny(0), N(0), b(nullptr), isInit(false){}
 
@@ -161,7 +170,6 @@ double Vector::operator()(unsigned long i, unsigned long j) const
 	else
 		return 0.0;
 }
-
 
 double& Vector::operator()(unsigned long i)
 {
@@ -340,7 +348,10 @@ void Vector::storeV(char filename[50])
 	}
 }
 
-// Solution class constructors and member classes
+/********************************************************************
+// Solution class constructors and member functions
+// Used to store solution, and perform any operations in solving 
+********************************************************************/
 
 // Null constructor, initializes everything empty
 Solution::Solution() : nx(0), ny(0), N(0), X(), Y(), u(), v(), T()
@@ -370,7 +381,9 @@ void Solution::printmesh()
 }
 
 
-// Useful functions 
+/********************************************************************
+// Useful functions - Various functions to be used in the main file
+********************************************************************/
 Solution readmesh(std::string meshname)
 {
 	std::ifstream mesh(meshname); // Open mesh file for reading  
@@ -459,7 +472,9 @@ void storeVTKSolution(Solution &s, std::string fileName)
 	fclose(vtkFile);
 }
 
-// Test functions
+/********************************************************************
+// Test functions - Used to validate creation of solution class
+********************************************************************/
 
 // Test void constructor to initialize solution with vectors that exist 
 void test_void_constructor()
