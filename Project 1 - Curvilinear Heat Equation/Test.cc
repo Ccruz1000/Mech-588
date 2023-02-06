@@ -7,6 +7,9 @@
 // Christian Rowsell (40131393)
 ********************************************************************/
 
+/********************************************************************
+// Test functions - Used to validate creation of solution class
+********************************************************************/
 
 // Test void constructor to initialize solution with vectors that exist 
 void test_void_constructor()
@@ -159,8 +162,6 @@ int main()
 	// test_void_constructor();
 	/// test_constructor();
 	// test_mesh_read(coursemesh);
-
-	// TODO Literally the rest of the entire project
 
 	return 0;
 }

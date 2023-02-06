@@ -472,7 +472,5 @@ void storeVTKSolution(Solution &s, std::string fileName)
 	fclose(vtkFile);
 }
 
-/********************************************************************
-// Test functions - Used to validate creation of solution class
-********************************************************************/
+
 
