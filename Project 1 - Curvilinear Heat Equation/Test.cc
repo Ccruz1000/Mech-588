@@ -157,8 +157,8 @@ int main()
 	std::string falsemesh = "mesh-13x2.vel"; // False mesh name to make sure catch works
 	std::string fileName = "file.vtk"; // filename to store vtk file
 
-	// Solution test = readmesh(coursemesh);
-	// storeVTKSolution(test, fileName);
+	Solution test = readmesh(coursemesh);
+	storeVTKSolution(test, fileName);
 	// test_void_constructor();
 	/// test_constructor();
 	// test_mesh_read(coursemesh);
