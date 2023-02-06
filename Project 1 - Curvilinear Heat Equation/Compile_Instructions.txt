@@ -1,0 +1,4 @@
+Instructions to compile the code - Make makefile someday
+* Compile and run testing * 
+g++ Test.cc Fcurv.cc -o test
+./test

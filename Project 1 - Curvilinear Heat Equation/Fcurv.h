@@ -5,11 +5,20 @@
 #include <cstdio>
 #include <cstdlib>
 
+/********************************************************************
+// Curvillinear Mesh Programming Assignment Function File Header
+// Mech 588 - Advanced CFD UBC Mechanical Engineering Winter 2023
+// Christian Rowsell (40131393)
+********************************************************************/
+
 #ifndef FCURV_H
 
 #define FCURV_H
 
 // Taken from base code provided in Mech 587
+/********************************************************************
+// Operations from Mech 587 - Used in operator overloading
+********************************************************************/
 class Operations{
 public:
 	void alloc1D(double **V, const unsigned long &N, bool isInit = true, double def = 0.0) const;
@@ -24,6 +33,9 @@ public:
 	void findMin(double &R, unsigned long &idx, const double *V2, const unsigned long &N) const;
 };
 
+/********************************************************************
+// Vector class from Mech 587 - Wrapper for 1D array to 2D array
+********************************************************************/
 class Vector{
 	unsigned long N, Nx, Ny;
 	double *b;
@@ -65,7 +77,10 @@ public:
 	void storeV(char filename[50]);
 };
 
-
+/********************************************************************
+// Solution class constructors and member functions
+// Used to store solution, and perform any operations in solving 
+********************************************************************/
 class Solution
 {
 private:
@@ -88,7 +103,12 @@ public:
 	void printmesh();
 };
 
-Solution readmesh(std::string meshname);
-void storeVTKSolution(Solution &s, std::string fileName);
+/********************************************************************
+// Useful functions - Various functions to be used in the main file
+********************************************************************/
+Solution readmesh(std::string meshname);  // Read mesh and create a solution object
+void storeVTKSolution(Solution &s, std::string fileName); // Save VTK file from solution object
+
+
 
 #endif
