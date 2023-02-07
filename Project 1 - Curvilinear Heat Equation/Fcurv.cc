@@ -454,21 +454,28 @@ void storeVTKSolution(Solution &s, std::string fileName)
 		{
 			fprintf(vtkFile, "%f %f %f\n", s.X(i, j), s.Y(i, j), 0.0);
 		}
-
-	fprintf(vtkFile,"POINT_DATA %lu\n", s.nx * s.ny);
+		// Change below to CELL_DATA
+	fprintf(vtkFile,"CELL_DATA %lu\n", (s.nx - 1) * (s.ny - 1));
 	fprintf(vtkFile,"SCALARS temperature FLOAT 1\n");
 	fprintf(vtkFile,"LOOKUP_TABLE default\n");
-	for(int i = 0; i < s.nx; i++)
-		for(int j = 0; j < s.ny; j++)
+	for(int i = 0; i < s.nx - 1; i++)
+		for(int j = 0; j < s.ny - 1; j++)
 		{
-			fprintf(vtkFile, "%lf\n", s.T(i, j));
+			double PI = 4.0*atan(1.0);
+			s.T(i+1,j+1) = sin(PI*s.X(i+1,j+1))*sin(PI*s.Y(i+1,j+1));
+			s.T(i,j+1) = sin(PI*s.X(i,j+1))*sin(PI*s.Y(i,j+1));
+			s.T(i,j) = sin(PI*s.X(i,j))*sin(PI*s.Y(i,j));
+			s.T(i+1,j) = sin(PI*s.X(i+1,j))*sin(PI*s.Y(i+1,j));
+
+			double Tavg = 0.25*(s.T(i+1,j+1) + s.T(i,j) + s.T(i,j+1)+ s.T(i+1,j));
+			fprintf(vtkFile, "%lf\n", Tavg);
 		}
-	fprintf(vtkFile,"VECTORS velocity FLOAT\n");
-	for(int i = 0; i < s.nx; i++)
-		for(int j = 0; j < s.ny; j++)
-		{
-			fprintf(vtkFile, "%lf %lf %lf\n", s.u(i, j), s.v(i, j), 0.0);
-		}
+	// fprintf(vtkFile,"VECTORS velocity FLOAT\n");
+	// for(int i = 0; i < s.nx; i++)
+	// 	for(int j = 0; j < s.ny; j++)
+	// 	{
+	// 		fprintf(vtkFile, "%lf %lf %lf\n", s.u(i, j), s.v(i, j), 0.0);
+	// 	}
 	fclose(vtkFile);
 }
 
