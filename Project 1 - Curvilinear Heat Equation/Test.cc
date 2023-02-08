@@ -157,11 +157,24 @@ int main()
 	std::string falsemesh = "mesh-13x2.vel"; // False mesh name to make sure catch works
 	std::string fileName = "file.vtk"; // filename to store vtk file
 
-	Solution test = readmesh(coursemesh);
-	storeVTKSolution(test, fileName);
+	// Solution test = readmesh(coursemesh);
+	// storeVTKSolution(test, fileName);
 	// test_void_constructor();
 	/// test_constructor();
 	// test_mesh_read(coursemesh);
+
+	// Testing mesh metric generator
+	std::string testmeshcourse = "testmesh-10x10.vel";
+	std::string testmeshmed = "testmesh-20x20.vel";
+	std::string testmeshfine = "testmesh-40x40.vel";
+
+	Solution testcourse = readmesh(testmeshcourse);
+	Solution testmed = readmesh(testmeshmed);
+	Solution testfine = readmesh(testmeshfine);
+
+	storeVTKSolution(testcourse, "testcourse.vtk");
+	storeVTKSolution(testmed, "testmed.vtk");
+	storeVTKSolution(testfine, "testfine.vtk");
 
 	return 0;
 }
