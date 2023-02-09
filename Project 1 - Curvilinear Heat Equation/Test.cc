@@ -147,6 +147,50 @@ void test_mesh_read(std::string meshname)
 	mesh.close();
 }
 
+// Test VTK output
+void test_VTK_output(Solution &s)
+{
+	std::string fileName = "Test.vtk";
+	const char * fileChar = fileName.c_str();
+	FILE *vtkFile;
+	vtkFile = fopen(fileChar, "w");
+	unsigned long i, j;
+	fprintf(vtkFile, "# vtk DataFile Version 2.0\n");
+	fprintf(vtkFile,"TITLE = \"Quad data\"\n");
+	fprintf(vtkFile,"ASCII\n");
+	fprintf(vtkFile,"DATASET STRUCTURED_GRID\n");
+	fprintf(vtkFile,"DIMENSIONS %lu %lu %d\n", s.ny, s.nx, 1);
+	fprintf(vtkFile,"POINTS %lu FLOAT\n",s.N);
+	for(int i = 0; i < s.nx; i++)
+		for(int j = 0; j < s.ny; j++)
+		{
+			fprintf(vtkFile, "%f %f %f\n", s.X(i, j), s.Y(i, j), 0.0);
+		}
+		// Change below to CELL_DATA
+	fprintf(vtkFile,"CELL_DATA %lu\n", (s.nx - 1) * (s.ny - 1));
+	fprintf(vtkFile,"SCALARS temperature FLOAT 1\n");
+	fprintf(vtkFile,"LOOKUP_TABLE default\n");
+	for(int i = 0; i < s.nx - 1; i++)
+		for(int j = 0; j < s.ny - 1; j++)
+		{
+			double PI = 4.0*atan(1.0);
+			s.T(i+1,j+1) = sin(PI*s.X(i+1,j+1))*sin(PI*s.Y(i+1,j+1));
+			s.T(i,j+1) = sin(PI*s.X(i,j+1))*sin(PI*s.Y(i,j+1));
+			s.T(i,j) = sin(PI*s.X(i,j))*sin(PI*s.Y(i,j));
+			s.T(i+1,j) = sin(PI*s.X(i+1,j))*sin(PI*s.Y(i+1,j));
+
+			double Tavg = 0.25*(s.T(i+1,j+1) + s.T(i,j) + s.T(i,j+1)+ s.T(i+1,j));
+			fprintf(vtkFile, "%lf\n", Tavg);
+		}
+	// fprintf(vtkFile,"VECTORS velocity FLOAT\n");
+	// for(int i = 0; i < s.nx; i++)
+	// 	for(int j = 0; j < s.ny; j++)
+	// 	{
+	// 		fprintf(vtkFile, "%lf %lf %lf\n", s.u(i, j), s.v(i, j), 0.0);
+	// 	}
+	fclose(vtkFile);
+}
+
 /********************************************************************
 // Test functions - Used to validate mesh metric calculations
 ********************************************************************/
@@ -154,46 +198,47 @@ void test_mesh_read(std::string meshname)
 void itest_rectil_mesh_metric()
 {
 	double PI = 3.14159265;
-// Interior points for i + 1/2 face
+	// Interior points for i + 1/2 face
 	Solution testcourse = readmesh("rectil_testmesh-10x10.vel");
-	Vector d_etaix_course(testcourse.nx, testcourse.ny);
-	Vector d_etaiy(testcourse.nx, testcourse.ny);
-	Vector d_xiix(testcourse.nx, testcourse.ny);
-	Vector d_xiiy(testcourse.nx, testcourse.ny);
+	Vector dx_deta(testcourse.nx, testcourse.ny);
+	Vector dy_deta(testcourse.nx, testcourse.ny);
+	Vector dx_dxi(testcourse.nx, testcourse.ny);
+	Vector dy_dxi(testcourse.nx, testcourse.ny);
 
 	// Testing along uniform, rectilinear grid. Expect a deta_dx of 0, deta_dy of 1, dxi_dx of 1 and dxi_dy of 0
 			
 	for(int i = 1; i < testcourse.nx - 1; i++)
 		for(int j = 1; j < testcourse.ny - 1; j++)
 		{
-			d_etaix_course(i, j) = testcourse.X(i, j) - testcourse.X(i, j - 1);
-			d_etaiy(i, j) = testcourse.Y(i, j) - testcourse.Y(i, j - 1);
-			d_xiix(i, j) = (testcourse.X(i + 1, j) + testcourse.X(i + 1, j - 1) - testcourse.X(i - 1, j) - testcourse.X(i - 1, j - 1)) / 4;
-			d_xiiy(i, j) = (testcourse.Y(i + 1, j) + testcourse.Y(i + 1, j - 1) - testcourse.Y(i - 1, j) - testcourse.Y(i - 1, j - 1)) / 4;
-			printf("d_etaix: %f d_etaiy: %f d_xiix %f d_xiiy %f\n", d_etaix_course(i,j), d_etaiy(i,j), d_xiix(i,j), d_xiiy(i,j));
+			dx_deta(i, j) = testcourse.X(i, j) - testcourse.X(i, j - 1);
+			dy_deta(i, j) = testcourse.Y(i, j) - testcourse.Y(i, j - 1);
+			dx_dxi(i, j) = (testcourse.X(i + 1, j) + testcourse.X(i + 1, j - 1) - testcourse.X(i - 1, j) - testcourse.X(i - 1, j - 1)) / 4;
+			dy_dxi(i, j) = (testcourse.Y(i + 1, j) + testcourse.Y(i + 1, j - 1) - testcourse.Y(i - 1, j) - testcourse.Y(i - 1, j - 1)) / 4;
+			printf("dx_deta: %f dy_deta: %f dx_dxi %f dy_dxi %f\n", dx_deta(i,j), dy_deta(i,j), dx_dxi(i,j), dy_dxi(i,j));
 		}
 }
+
 
 void itest_simple_mesh_metric()
 {
 	double PI = 3.14159265;
-// Interior points for i + 1/2 face
+	// Interior points for i + 1/2 face
 	Solution testcourse = readmesh("simple_testmesh-10x10.vel");
-	Vector d_etaix_course(testcourse.nx, testcourse.ny);
-	Vector d_etaiy(testcourse.nx, testcourse.ny);
+	Vector dx_deta(testcourse.nx, testcourse.ny);
+	Vector dy_deta(testcourse.nx, testcourse.ny);
 	Vector d_xiix(testcourse.nx, testcourse.ny);
-	Vector d_xiiy(testcourse.nx, testcourse.ny);
+	Vector dy_dxi(testcourse.nx, testcourse.ny);
 
 	// Testing along uniform, rectilinear grid. Expect a deta_dx of 1/2, deta_dy of 2, dxi_dx of 1/2 and dxi_dy of -2
 			
 	for(int i = 1; i < testcourse.nx - 1; i++)
 		for(int j = 1; j < testcourse.ny - 1; j++)
 		{
-			d_etaix_course(i, j) = testcourse.X(i, j) - testcourse.X(i, j - 1);
-			d_etaiy(i, j) = testcourse.Y(i, j) - testcourse.Y(i, j - 1);
+			dx_deta(i, j) = testcourse.X(i, j) - testcourse.X(i, j - 1);
+			dy_deta(i, j) = testcourse.Y(i, j) - testcourse.Y(i, j - 1);
 			d_xiix(i, j) = (testcourse.X(i + 1, j) + testcourse.X(i + 1, j - 1) - testcourse.X(i - 1, j) - testcourse.X(i - 1, j - 1)) / 4;
-			d_xiiy(i, j) = (testcourse.Y(i + 1, j) + testcourse.Y(i + 1, j - 1) - testcourse.Y(i - 1, j) - testcourse.Y(i - 1, j - 1)) / 4;
-			printf("d_etaix: %f d_etaiy: %f d_xiix %f d_xiiy %f\n", d_etaix_course(i,j), d_etaiy(i,j), d_xiix(i,j), d_xiiy(i,j));
+			dy_dxi(i, j) = (testcourse.Y(i + 1, j) + testcourse.Y(i + 1, j - 1) - testcourse.Y(i - 1, j) - testcourse.Y(i - 1, j - 1)) / 4;
+			printf("dx_deta: %f dy_deta: %f d_xiix %f dy_dxi %f\n", dx_deta(i,j), dy_deta(i,j), d_xiix(i,j), dy_dxi(i,j));
 		}
 }
 
@@ -277,18 +322,18 @@ int main()
 	std::string falsemesh = "mesh-13x2.vel"; // False mesh name to make sure catch works
 	std::string fileName = "file.vtk"; // filename to store vtk file
 
-	// Solution test = readmesh(coursemesh);
-	// storeVTKSolution(test, fileName);
+	Solution test = readmesh(coursemesh);
 	// test_void_constructor();
 	/// test_constructor();
 	// test_mesh_read(coursemesh);
+	// test_VTK_output(test);
 
 	// Test Mesh Files
 	std::string coursequadmesh = "Quad_testmesh-10x10.vel";
 	std::string medquadmesh = "Quad_testmesh-20x20.vel";
 	std::string finequadmesh = "Quad_testmesh-40x40.vel";
 	// Testing mesh metric generator
-	// itest_rectil_mesh_metric();
+	itest_rectil_mesh_metric();
 	// itest_simple_mesh_metric();
 
 	// itest_quad_mesh_metric(coursequadmesh);
