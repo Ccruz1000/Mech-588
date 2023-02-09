@@ -1,17 +1,17 @@
 run: main.o Fcurv.o
-	g++ main.o Fcurv.o -o run
+	g++ -g main.o Fcurv.o -o run
 
 test: test.o Fcurv.o
-	g++ test.o Fcurv.o -o test
+	g++ -g test.o Fcurv.o -o test
 
 main.o: main.cc
-	g++ -c main.cc
+	g++ -g -c main.cc
 
 Fcurv.o: Fcurv.cc
-	g++ -c Fcurv.cc
+	g++ -g -c Fcurv.cc
 
 test.o: test.cc
-	g++ -c test.cc
+	g++ -g -c test.cc
 
 clean:
 	rm *.o test run

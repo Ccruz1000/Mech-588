@@ -147,6 +147,126 @@ void test_mesh_read(std::string meshname)
 	mesh.close();
 }
 
+/********************************************************************
+// Test functions - Used to validate mesh metric calculations
+********************************************************************/
+// i+1/2, j faces
+void itest_rectil_mesh_metric()
+{
+	double PI = 3.14159265;
+// Interior points for i + 1/2 face
+	Solution testcourse = readmesh("rectil_testmesh-10x10.vel");
+	Vector d_etaix_course(testcourse.nx, testcourse.ny);
+	Vector d_etaiy(testcourse.nx, testcourse.ny);
+	Vector d_xiix(testcourse.nx, testcourse.ny);
+	Vector d_xiiy(testcourse.nx, testcourse.ny);
+
+	// Testing along uniform, rectilinear grid. Expect a deta_dx of 0, deta_dy of 1, dxi_dx of 1 and dxi_dy of 0
+			
+	for(int i = 1; i < testcourse.nx - 1; i++)
+		for(int j = 1; j < testcourse.ny - 1; j++)
+		{
+			d_etaix_course(i, j) = testcourse.X(i, j) - testcourse.X(i, j - 1);
+			d_etaiy(i, j) = testcourse.Y(i, j) - testcourse.Y(i, j - 1);
+			d_xiix(i, j) = (testcourse.X(i + 1, j) + testcourse.X(i + 1, j - 1) - testcourse.X(i - 1, j) - testcourse.X(i - 1, j - 1)) / 4;
+			d_xiiy(i, j) = (testcourse.Y(i + 1, j) + testcourse.Y(i + 1, j - 1) - testcourse.Y(i - 1, j) - testcourse.Y(i - 1, j - 1)) / 4;
+			printf("d_etaix: %f d_etaiy: %f d_xiix %f d_xiiy %f\n", d_etaix_course(i,j), d_etaiy(i,j), d_xiix(i,j), d_xiiy(i,j));
+		}
+}
+
+void itest_simple_mesh_metric()
+{
+	double PI = 3.14159265;
+// Interior points for i + 1/2 face
+	Solution testcourse = readmesh("simple_testmesh-10x10.vel");
+	Vector d_etaix_course(testcourse.nx, testcourse.ny);
+	Vector d_etaiy(testcourse.nx, testcourse.ny);
+	Vector d_xiix(testcourse.nx, testcourse.ny);
+	Vector d_xiiy(testcourse.nx, testcourse.ny);
+
+	// Testing along uniform, rectilinear grid. Expect a deta_dx of 1/2, deta_dy of 2, dxi_dx of 1/2 and dxi_dy of -2
+			
+	for(int i = 1; i < testcourse.nx - 1; i++)
+		for(int j = 1; j < testcourse.ny - 1; j++)
+		{
+			d_etaix_course(i, j) = testcourse.X(i, j) - testcourse.X(i, j - 1);
+			d_etaiy(i, j) = testcourse.Y(i, j) - testcourse.Y(i, j - 1);
+			d_xiix(i, j) = (testcourse.X(i + 1, j) + testcourse.X(i + 1, j - 1) - testcourse.X(i - 1, j) - testcourse.X(i - 1, j - 1)) / 4;
+			d_xiiy(i, j) = (testcourse.Y(i + 1, j) + testcourse.Y(i + 1, j - 1) - testcourse.Y(i - 1, j) - testcourse.Y(i - 1, j - 1)) / 4;
+			printf("d_etaix: %f d_etaiy: %f d_xiix %f d_xiiy %f\n", d_etaix_course(i,j), d_etaiy(i,j), d_xiix(i,j), d_xiiy(i,j));
+		}
+}
+
+void itest_quad_mesh_metric(std::string(meshname))
+{
+	std::cout << meshname << std::endl;
+	double PI = 3.14159265;
+	// Interior points for i + 1/2 face
+	Solution testcourse = readmesh(meshname);
+	Vector dx_deta(testcourse.nx, testcourse.ny);
+	Vector dy_deta(testcourse.nx, testcourse.ny);
+	Vector dx_dxi(testcourse.nx, testcourse.ny);
+	Vector dy_dxi(testcourse.nx, testcourse.ny);
+	Vector dx_dxi_exact(testcourse.nx, testcourse.ny);
+	Vector dy_dxi_exact(testcourse.nx, testcourse.ny);
+	Vector dx_deta_exact(testcourse.nx, testcourse.ny);
+	Vector dy_deta_exact(testcourse.nx, testcourse.ny);
+
+	double xi, eta;
+	double dx = 1.0/(testcourse.nx-1);
+	// Testing along uniform, rectilinear grid. Expect a deta_dx of -eta, deta_dy of xi, dxi_dx of xi and dxi_dy of eta
+			
+	for(int i = 1; i < testcourse.nx - 1; i++)
+		for(int j = 1; j < testcourse.ny - 1; j++)
+		{
+			xi = 0.5 + (i+0.5)*dx;
+			eta = 0.5 + j*dx;
+			// Calculate exact derivatives
+			dx_dxi_exact(i, j) = xi*dx; dy_dxi_exact(i,j) = eta*dx;
+			dx_deta_exact(i,j) = -eta*dx; dy_deta_exact(i,j) = xi*dx;
+			// Calculate derivatives with second order central differencing
+			dx_deta(i, j) = testcourse.X(i, j) - testcourse.X(i, j - 1);
+			dy_deta(i, j) = testcourse.Y(i, j) - testcourse.Y(i, j - 1);
+			dx_dxi(i, j) = (testcourse.X(i + 1, j) + testcourse.X(i + 1, j - 1) - testcourse.X(i - 1, j) - testcourse.X(i - 1, j - 1)) / 4;
+			dy_dxi(i, j) = (testcourse.Y(i + 1, j) + testcourse.Y(i + 1, j - 1) - testcourse.Y(i - 1, j) - testcourse.Y(i - 1, j - 1)) / 4;
+			if(i == 8 && j == 3)
+			{
+			printf("X: %f Y: %f\n Xi:%f\n", testcourse.X(i, j), testcourse.Y(i, j), dx_dxi(0,0));
+			printf("Approx: d_etaix: %f dy_deta: %f dx_dxi %f dy_dxi %f\n", dx_deta(i,j), dy_deta(i,j), dx_dxi(i,j), dy_dxi(i,j));	
+			printf("Exact: d_etaix: %f dy_deta: %f dx_dxi %f dy_dxi %f\n", dx_deta_exact(i,j), dy_deta_exact(i,j), dx_dxi_exact(i,j), dy_dxi_exact(i,j));
+			}
+		}
+	double dx_deta_error = (dx_deta_exact - dx_deta).L2Norm(); 
+	double dx_dxi_error = (dx_dxi_exact - dx_dxi).L2Norm();
+	double dy_deta_error = (dy_deta_exact - dy_deta).L2Norm();
+	double dy_dxi_error = (dy_dxi_exact - dy_dxi).L2Norm();
+
+	printf("L2Norm of dx/deta: %14.12e\nL2Norm of dx/dxi: %14.12e\nL2Norm of dy/deta: %14.12e\nL2Norm of dy/dxi: %14.12e\n", dx_deta_error, dx_dxi_error, dy_deta_error, dy_dxi_error);
+}
+
+// i, j+1/2 faces
+void jtest_rectil_mesh_metric()
+{
+	double PI = 3.14159265;
+	// Interior points for i + 1/2 face
+	Solution testcourse = readmesh("rectil_testmesh-10x10.vel");
+	Vector d_etaix_course(testcourse.nx, testcourse.ny);
+	Vector d_etaiy(testcourse.nx, testcourse.ny);
+	Vector d_xiix(testcourse.nx, testcourse.ny);
+	Vector d_xiiy(testcourse.nx, testcourse.ny);
+
+	// Testing along uniform, rectilinear grid. Expect a deta_dx of 0, deta_dy of 1, dxi_dx of 1 and dxi_dy of 0
+			
+	for(int i = 1; i < testcourse.nx - 1; i++)
+		for(int j = 1; j < testcourse.ny - 1; j++)
+		{
+			d_etaix_course(i, j) = testcourse.X(i, j) - testcourse.X(i, j - 1);
+			d_etaiy(i, j) = testcourse.Y(i, j) - testcourse.Y(i, j - 1);
+			d_xiix(i, j) = (testcourse.X(i + 1, j) + testcourse.X(i + 1, j - 1) - testcourse.X(i - 1, j) - testcourse.X(i - 1, j - 1)) / 4;
+			d_xiiy(i, j) = (testcourse.Y(i + 1, j) + testcourse.Y(i + 1, j - 1) - testcourse.Y(i - 1, j) - testcourse.Y(i - 1, j - 1)) / 4;
+			printf("d_etaix: %f d_etaiy: %f d_xiix %f d_xiiy %f\n", d_etaix_course(i,j), d_etaiy(i,j), d_xiix(i,j), d_xiiy(i,j));
+		}
+}
 
 int main()
 {
@@ -163,18 +283,18 @@ int main()
 	/// test_constructor();
 	// test_mesh_read(coursemesh);
 
+	// Test Mesh Files
+	std::string coursequadmesh = "Quad_testmesh-10x10.vel";
+	std::string medquadmesh = "Quad_testmesh-20x20.vel";
+	std::string finequadmesh = "Quad_testmesh-40x40.vel";
 	// Testing mesh metric generator
-	std::string testmeshcourse = "testmesh-10x10.vel";
-	std::string testmeshmed = "testmesh-20x20.vel";
-	std::string testmeshfine = "testmesh-40x40.vel";
+	// itest_rectil_mesh_metric();
+	// itest_simple_mesh_metric();
 
-	Solution testcourse = readmesh(testmeshcourse);
-	Solution testmed = readmesh(testmeshmed);
-	Solution testfine = readmesh(testmeshfine);
+	// itest_quad_mesh_metric(coursequadmesh);
+	// itest_quad_mesh_metric(medquadmesh);
+	// itest_quad_mesh_metric(finequadmesh);
 
-	storeVTKSolution(testcourse, "testcourse.vtk");
-	storeVTKSolution(testmed, "testmed.vtk");
-	storeVTKSolution(testfine, "testfine.vtk");
 
 	return 0;
-}
+} 
