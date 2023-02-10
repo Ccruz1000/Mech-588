@@ -9,12 +9,12 @@ function plot = plot_meshmetric(neta, nxi, maxlim, minlim)
   
 # Calculate y in terms of xi and eta
 function y_calc = y_calc(eta, xi, neta, nxi)
-y_calc = cos(eta*pi)*sin(xi*pi);
+y_calc = eta;
 endfunction
 
 # Calculate x in terms of xi and eta
 function x_calc = x_calc(eta, xi, neta, nxi)
-x_calc = cos(xi*pi)*sin(eta*pi);
+x_calc = xi;
 endfunction
 
 # Create vectors for xi and eta
@@ -45,7 +45,7 @@ plot(x(j,:), y(j,:))
 endfor
 
 # Write values to file
-fileName = sprintf('Quad_testmesh-%dx%d.vel', neta, nxi);
+fileName = sprintf('Flux_testmesh-%dx%d.vel', neta, nxi);
 fileID = fopen(fileName, 'w');
 fprintf(fileID, "%d %d\n", neta, nxi);
 for i = 1:(neta)
