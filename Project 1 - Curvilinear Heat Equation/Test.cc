@@ -1,5 +1,6 @@
 #include "Fcurv.h"
 #include "Test.h"
+#include "Flux.h"
 
 /********************************************************************
 // Curvillinear Mesh Programming Assignment Test File
@@ -174,7 +175,7 @@ void test_VTK_output(Solution &s)
 		for(int j = 0; j < s.ny - 1; j++)
 		{
 			double PI = 4.0*atan(1.0);
-			s.T(i+1,j+1) = sin(PI*s.X(i+1,j+1))*sin(PI*s.Y(i+1,j+1));
+			s.T(i+1,j+1) = cos(PI*s.X(i+1,j+1))*sin(PI*s.Y(i+1,j+1));
 			s.T(i,j+1) = sin(PI*s.X(i,j+1))*sin(PI*s.Y(i,j+1));
 			s.T(i,j) = sin(PI*s.X(i,j))*sin(PI*s.Y(i,j));
 			s.T(i+1,j) = sin(PI*s.X(i+1,j))*sin(PI*s.Y(i+1,j));
@@ -205,7 +206,7 @@ void itest_rectil_mesh_metric()
 	Vector dx_dxi(testcourse.nx, testcourse.ny);
 	Vector dy_dxi(testcourse.nx, testcourse.ny);
 
-	// Testing along uniform, rectilinear grid. Expect a deta_dx of 0, deta_dy of 1, dxi_dx of 1 and dxi_dy of 0
+	// Testing along uniform, rectilinear grid. Expect a dx_deta of 0, dy_deta of 1, dx_dxi of 1 and dy_dxi of 0
 			
 	for(int i = 1; i < testcourse.nx - 1; i++)
 		for(int j = 1; j < testcourse.ny - 1; j++)
@@ -221,12 +222,11 @@ void itest_rectil_mesh_metric()
 
 void itest_simple_mesh_metric()
 {
-	double PI = 3.14159265;
 	// Interior points for i + 1/2 face
 	Solution testcourse = readmesh("simple_testmesh-10x10.vel");
 	Vector dx_deta(testcourse.nx, testcourse.ny);
 	Vector dy_deta(testcourse.nx, testcourse.ny);
-	Vector d_xiix(testcourse.nx, testcourse.ny);
+	Vector dx_dxi(testcourse.nx, testcourse.ny);
 	Vector dy_dxi(testcourse.nx, testcourse.ny);
 
 	// Testing along uniform, rectilinear grid. Expect a deta_dx of 1/2, deta_dy of 2, dxi_dx of 1/2 and dxi_dy of -2
@@ -236,57 +236,136 @@ void itest_simple_mesh_metric()
 		{
 			dx_deta(i, j) = testcourse.X(i, j) - testcourse.X(i, j - 1);
 			dy_deta(i, j) = testcourse.Y(i, j) - testcourse.Y(i, j - 1);
-			d_xiix(i, j) = (testcourse.X(i + 1, j) + testcourse.X(i + 1, j - 1) - testcourse.X(i - 1, j) - testcourse.X(i - 1, j - 1)) / 4;
+			dx_dxi(i, j) = (testcourse.X(i + 1, j) + testcourse.X(i + 1, j - 1) - testcourse.X(i - 1, j) - testcourse.X(i - 1, j - 1)) / 4;
 			dy_dxi(i, j) = (testcourse.Y(i + 1, j) + testcourse.Y(i + 1, j - 1) - testcourse.Y(i - 1, j) - testcourse.Y(i - 1, j - 1)) / 4;
-			printf("dx_deta: %f dy_deta: %f d_xiix %f dy_dxi %f\n", dx_deta(i,j), dy_deta(i,j), d_xiix(i,j), dy_dxi(i,j));
+			printf("dx_deta: %f dy_deta: %f d_xiix %f dy_dxi %f\n", dx_deta(i,j), dy_deta(i,j), dx_dxi(i,j), dy_dxi(i,j));
 		}
 }
 
-void itest_quad_mesh_metric(std::string(meshname))
+void iquad_mesh_loop(std::string meshname, double &dx_deta_curr, double &dx_dxi_curr, double &dy_deta_curr, double &dy_dxi_curr)
 {
-	std::cout << meshname << std::endl;
-	double PI = 3.14159265;
-	// Interior points for i + 1/2 face
-	Solution testcourse = readmesh(meshname);
-	Vector dx_deta(testcourse.nx, testcourse.ny);
-	Vector dy_deta(testcourse.nx, testcourse.ny);
-	Vector dx_dxi(testcourse.nx, testcourse.ny);
-	Vector dy_dxi(testcourse.nx, testcourse.ny);
-	Vector dx_dxi_exact(testcourse.nx, testcourse.ny);
-	Vector dy_dxi_exact(testcourse.nx, testcourse.ny);
-	Vector dx_deta_exact(testcourse.nx, testcourse.ny);
-	Vector dy_deta_exact(testcourse.nx, testcourse.ny);
+			// meshname = coursemesh; // Open coursemesh
+			std::cout << meshname << std::endl;
+			Solution test = readmesh(meshname);
+			double xi, eta;
+			double dx = 1.0/(test.nx-1); // Number of divisions in xi and eta
+			Vector dx_deta(test.nx, test.ny);
+			Vector dy_deta(test.nx, test.ny);
+			Vector dx_dxi(test.nx, test.ny);
+			Vector dy_dxi(test.nx, test.ny);
+			Vector dx_dxi_exact(test.nx, test.ny);
+			Vector dy_dxi_exact(test.nx, test.ny);
+			Vector dx_deta_exact(test.nx, test.ny);
+			Vector dy_deta_exact(test.nx, test.ny);
+			// Testing along uniform, rectilinear grid. Expect a deta_dx of -eta, deta_dy of xi, dxi_dx of xi and dxi_dy of eta
+			for(int i = 1; i < test.nx - 1; i++)
+				for(int j = 1; j < test.ny - 1; j++)
+				{
+					xi = 0.5 + (i+0.5)*dx;
+					eta = 0.5 + j*dx;
+					// Below should give the correct answer, but it doesnt. Above gives better. Check later
+					// eta = test.u(i, j);
+					// xi = test.v(i, j);
+					// printf("%d %d %f %f\n", i, j, eta, xi);
+					// Calculate exact derivatives
+					dx_dxi_exact(i, j) = xi*dx; dy_dxi_exact(i,j) = eta*dx;
+					dx_deta_exact(i,j) = -eta*dx; dy_deta_exact(i,j) = xi*dx;
+					// // Calculate exact derivatives
+					// dx_dxi_exact(i, j) = xi; dy_dxi_exact(i,j) = eta;
+					// dx_deta_exact(i,j) = -eta; dy_deta_exact(i,j) = xi;
+					// Calculate derivatives with second order central differencing
+					dx_deta(i, j) = test.X(i, j) - test.X(i, j - 1);
+					dy_deta(i, j) = test.Y(i, j) - test.Y(i, j - 1);
+					dx_dxi(i, j) = (test.X(i + 1, j) + test.X(i + 1, j - 1) - test.X(i - 1, j) - test.X(i - 1, j - 1)) / 4;
+					dy_dxi(i, j) = (test.Y(i + 1, j) + test.Y(i + 1, j - 1) - test.Y(i - 1, j) - test.Y(i - 1, j - 1)) / 4;
+				}
+			// Store L2Norm of error in double to append to error array later
+			dx_deta_curr = (dx_deta_exact - dx_deta).L2Norm();
+			dx_dxi_curr = (dx_dxi_exact - dx_dxi).L2Norm();
+			dy_deta_curr = (dy_deta_exact - dy_deta).L2Norm();
+			dy_dxi_curr = (dy_dxi_exact - dy_dxi).L2Norm();
+}
 
-	double xi, eta;
-	double dx = 1.0/(testcourse.nx-1);
-	// Testing along uniform, rectilinear grid. Expect a deta_dx of -eta, deta_dy of xi, dxi_dx of xi and dxi_dy of eta
-			
-	for(int i = 1; i < testcourse.nx - 1; i++)
-		for(int j = 1; j < testcourse.ny - 1; j++)
+void itest_quad_mesh_metric()
+{
+	std::string coursemesh = "Quad_testmesh-10x10.vel";
+	std::string medmesh = "Quad_testmesh-20x20.vel";
+	std::string finemesh = "Quad_testmesh-40x40.vel";
+	std::string meshname; // Placeholder to open appropriate file
+	// Arrays to store error values 
+	double dx_dxi_error[3];
+	double dx_deta_error[3];
+	double dy_dxi_error[3];
+	double dy_deta_error[3];
+
+	// Read each file and fill vectors 
+	for(int filenum = 0; filenum < 3; filenum++)
+	{
+		if(filenum == 0)
 		{
-			xi = 0.5 + (i+0.5)*dx;
-			eta = 0.5 + j*dx;
-			// Calculate exact derivatives
-			dx_dxi_exact(i, j) = xi*dx; dy_dxi_exact(i,j) = eta*dx;
-			dx_deta_exact(i,j) = -eta*dx; dy_deta_exact(i,j) = xi*dx;
-			// Calculate derivatives with second order central differencing
-			dx_deta(i, j) = testcourse.X(i, j) - testcourse.X(i, j - 1);
-			dy_deta(i, j) = testcourse.Y(i, j) - testcourse.Y(i, j - 1);
-			dx_dxi(i, j) = (testcourse.X(i + 1, j) + testcourse.X(i + 1, j - 1) - testcourse.X(i - 1, j) - testcourse.X(i - 1, j - 1)) / 4;
-			dy_dxi(i, j) = (testcourse.Y(i + 1, j) + testcourse.Y(i + 1, j - 1) - testcourse.Y(i - 1, j) - testcourse.Y(i - 1, j - 1)) / 4;
-			if(i == 8 && j == 3)
-			{
-			printf("X: %f Y: %f\n Xi:%f\n", testcourse.X(i, j), testcourse.Y(i, j), dx_dxi(0,0));
-			printf("Approx: d_etaix: %f dy_deta: %f dx_dxi %f dy_dxi %f\n", dx_deta(i,j), dy_deta(i,j), dx_dxi(i,j), dy_dxi(i,j));	
-			printf("Exact: d_etaix: %f dy_deta: %f dx_dxi %f dy_dxi %f\n", dx_deta_exact(i,j), dy_deta_exact(i,j), dx_dxi_exact(i,j), dy_dxi_exact(i,j));
-			}
-		}
-	double dx_deta_error = (dx_deta_exact - dx_deta).L2Norm(); 
-	double dx_dxi_error = (dx_dxi_exact - dx_dxi).L2Norm();
-	double dy_deta_error = (dy_deta_exact - dy_deta).L2Norm();
-	double dy_dxi_error = (dy_dxi_exact - dy_dxi).L2Norm();
+			meshname = coursemesh; // Open coursemesh
 
-	printf("L2Norm of dx/deta: %14.12e\nL2Norm of dx/dxi: %14.12e\nL2Norm of dy/deta: %14.12e\nL2Norm of dy/dxi: %14.12e\n", dx_deta_error, dx_dxi_error, dy_deta_error, dy_dxi_error);
+			// Initialize and calculate values for current file error
+			double dx_deta_curr;
+			double dx_dxi_curr;
+			double dy_deta_curr;
+			double dy_dxi_curr;
+			iquad_mesh_loop(meshname, dx_deta_curr, dx_dxi_curr, dy_deta_curr, dy_dxi_curr);
+
+			// Add error values to error arrays
+			dx_deta_error[filenum] = dx_deta_curr; 
+			dx_dxi_error[filenum] = dx_dxi_curr;
+			dy_deta_error[filenum] = dy_deta_curr;
+			dy_dxi_error[filenum] = dy_dxi_curr;
+		}
+
+		if(filenum == 1)
+		{
+			meshname = medmesh; // Open medmesh
+
+			// Initialize and calculate values for current file error
+			double dx_deta_curr;
+			double dx_dxi_curr;
+			double dy_deta_curr;
+			double dy_dxi_curr;
+			iquad_mesh_loop(meshname, dx_deta_curr, dx_dxi_curr, dy_deta_curr, dy_dxi_curr);
+
+			// Add error values to error arrays
+			dx_deta_error[filenum] = dx_deta_curr; 
+			dx_dxi_error[filenum] = dx_dxi_curr;
+			dy_deta_error[filenum] = dy_deta_curr;
+			dy_dxi_error[filenum] = dy_dxi_curr;
+		}
+
+		if(filenum == 2)
+		{
+			meshname = finemesh; // Open coursemesh
+
+			// Initialize and calculate values for current file error
+			double dx_deta_curr;
+			double dx_dxi_curr;
+			double dy_deta_curr;
+			double dy_dxi_curr;
+			iquad_mesh_loop(meshname, dx_deta_curr, dx_dxi_curr, dy_deta_curr, dy_dxi_curr);
+
+			// Add error values to error arrays
+			dx_deta_error[filenum] = dx_deta_curr; 
+			dx_dxi_error[filenum] = dx_dxi_curr;
+			dy_deta_error[filenum] = dy_deta_curr;
+			dy_dxi_error[filenum] = dy_dxi_curr;
+		}
+	}
+	// Print Errors
+	double fine_grid = 1.0 / 40.0; double course_grid = 1.0 / 10.0;  // Store grid sizings 
+	double dx_deta_slope = (log(dx_deta_error[2]) - log(dx_deta_error[0])) / (log(fine_grid) - log(course_grid));
+	double dx_dxi_slope = (log(dx_dxi_error[2]) - log(dx_dxi_error[0])) / (log(fine_grid) - log(course_grid));
+	double dy_deta_slope = (log(dy_deta_error[2]) - log(dy_deta_error[0])) / (log(fine_grid) - log(course_grid));
+	double dy_dxi_slope = (log(dy_dxi_error[2]) - log(dy_dxi_error[0])) / (log(fine_grid) - log(course_grid));
+	printf("Slope of dx_deta: %f Slope of dy_deta: %f\nSlope of dx_dxi: %f Slope of dy_dxi: %f\n", dx_deta_slope, dy_deta_slope, dx_dxi_slope, dy_dxi_slope);
+	printf("dx_dxi error:\n%14.12e, %14.12e, %14.12e\n", dx_dxi_error[0], dx_dxi_error[1], dx_dxi_error[2]);
+	printf("dx_deta error:\n%14.12e, %14.12e, %14.12e\n", dx_deta_error[0], dx_deta_error[1], dx_deta_error[2]);
+	printf("dy_dxi error:\n%14.12e, %14.12e, %14.12e\n", dy_dxi_error[0], dy_dxi_error[1], dy_dxi_error[2]);
+	printf("dy_deta error:\n%14.12e, %14.12e, %14.12e\n", dy_deta_error[0], dy_deta_error[1], dy_deta_error[2]);
 }
 
 // i, j+1/2 faces
@@ -295,22 +374,361 @@ void jtest_rectil_mesh_metric()
 	double PI = 3.14159265;
 	// Interior points for i + 1/2 face
 	Solution testcourse = readmesh("rectil_testmesh-10x10.vel");
-	Vector d_etaix_course(testcourse.nx, testcourse.ny);
-	Vector d_etaiy(testcourse.nx, testcourse.ny);
-	Vector d_xiix(testcourse.nx, testcourse.ny);
-	Vector d_xiiy(testcourse.nx, testcourse.ny);
+	Vector dx_deta(testcourse.nx, testcourse.ny);
+	Vector dy_deta(testcourse.nx, testcourse.ny);
+	Vector dx_dxi(testcourse.nx, testcourse.ny);
+	Vector dy_dxi(testcourse.nx, testcourse.ny);
 
-	// Testing along uniform, rectilinear grid. Expect a deta_dx of 0, deta_dy of 1, dxi_dx of 1 and dxi_dy of 0
+	// Testing along uniform, rectilinear grid. Expect a dx_deta of 1, dy_deta of 0, dx_dxi of 0 and dy_dxi of 1
 			
 	for(int i = 1; i < testcourse.nx - 1; i++)
 		for(int j = 1; j < testcourse.ny - 1; j++)
 		{
-			d_etaix_course(i, j) = testcourse.X(i, j) - testcourse.X(i, j - 1);
-			d_etaiy(i, j) = testcourse.Y(i, j) - testcourse.Y(i, j - 1);
-			d_xiix(i, j) = (testcourse.X(i + 1, j) + testcourse.X(i + 1, j - 1) - testcourse.X(i - 1, j) - testcourse.X(i - 1, j - 1)) / 4;
-			d_xiiy(i, j) = (testcourse.Y(i + 1, j) + testcourse.Y(i + 1, j - 1) - testcourse.Y(i - 1, j) - testcourse.Y(i - 1, j - 1)) / 4;
-			printf("d_etaix: %f d_etaiy: %f d_xiix %f d_xiiy %f\n", d_etaix_course(i,j), d_etaiy(i,j), d_xiix(i,j), d_xiiy(i,j));
+			dx_deta(i, j) = (testcourse.X(i + 1, j) + testcourse.X(i + 1, j - 1) - testcourse.X(i - 1, j) - testcourse.X(i - 1, j - 1)) / 4;
+			dy_deta(i, j) = (testcourse.Y(i + 1, j) + testcourse.Y(i + 1, j - 1) - testcourse.Y(i - 1, j) - testcourse.Y(i - 1, j - 1)) / 4;
+			dx_dxi(i, j) = testcourse.X(i, j) - testcourse.X(i, j - 1);
+			dy_dxi(i, j) = testcourse.Y(i, j) - testcourse.Y(i, j - 1);
+			printf("dx_deta: %f dy_deta: %f dx_dxi %f dy_dxi %f\n", dx_deta(i,j), dy_deta(i,j), dx_dxi(i,j), dy_dxi(i,j));
 		}
+}
+
+void jtest_simple_mesh_metric()
+{
+	// Interior points for i + 1/2 face
+	Solution testcourse = readmesh("simple_testmesh-10x10.vel");
+	Vector dx_deta(testcourse.nx, testcourse.ny);
+	Vector dy_deta(testcourse.nx, testcourse.ny);
+	Vector dx_dxi(testcourse.nx, testcourse.ny);
+	Vector dy_dxi(testcourse.nx, testcourse.ny);
+
+	// Testing along uniform, rectilinear grid. Expect a dx_deta of 1/2, dy_deta of -2, dx_dxi of 1/2 and dy_dxi of 2
+			
+	for(int i = 1; i < testcourse.nx - 1; i++)
+		for(int j = 1; j < testcourse.ny - 1; j++)
+		{
+			dx_deta(i, j) = (testcourse.X(i + 1, j) + testcourse.X(i + 1, j - 1) - testcourse.X(i - 1, j) - testcourse.X(i - 1, j - 1)) / 4;
+			dy_deta(i, j) = (testcourse.Y(i + 1, j) + testcourse.Y(i + 1, j - 1) - testcourse.Y(i - 1, j) - testcourse.Y(i - 1, j - 1)) / 4;
+			dx_dxi(i, j) = testcourse.X(i, j) - testcourse.X(i, j - 1);
+			dy_dxi(i, j) = testcourse.Y(i, j) - testcourse.Y(i, j - 1);
+			printf("dx_deta: %f dy_deta: %f d_xiix %f dy_dxi %f\n", dx_deta(i,j), dy_deta(i,j), dx_dxi(i,j), dy_dxi(i,j));
+		}
+}
+
+void jquad_mesh_loop(std::string meshname, double &dx_deta_curr, double &dx_dxi_curr, double &dy_deta_curr, double &dy_dxi_curr)
+{
+			// meshname = coursemesh; // Open coursemesh
+			std::cout << meshname << std::endl;
+			Solution test = readmesh(meshname);
+			double xi, eta;
+			double dx = 1.0/(test.nx-1); // Number of divisions in xi and eta
+			Vector dx_deta(test.nx, test.ny);
+			Vector dy_deta(test.nx, test.ny);
+			Vector dx_dxi(test.nx, test.ny);
+			Vector dy_dxi(test.nx, test.ny);
+			Vector dx_dxi_exact(test.nx, test.ny);
+			Vector dy_dxi_exact(test.nx, test.ny);
+			Vector dx_deta_exact(test.nx, test.ny);
+			Vector dy_deta_exact(test.nx, test.ny);
+			// Testing along uniform, rectilinear grid. Expect a deta_dx of -eta, deta_dy of xi, dxi_dx of xi and dxi_dy of eta
+			for(int i = 1; i < test.nx - 1; i++)
+				for(int j = 1; j < test.ny - 1; j++)
+				{
+					xi = 0.5 + (i+0.5)*dx;
+					eta = 0.5 + j*dx;
+					// Below should give the correct answer, but it doesnt. Above gives better. Check later
+					// eta = test.u(i, j);
+					// xi = test.v(i, j);
+					// printf("%d %d %f %f\n", i, j, eta, xi);
+					// Calculate exact derivatives
+					dx_dxi_exact(i, j) = xi*dx; dy_dxi_exact(i,j) = eta*dx;
+					dx_deta_exact(i,j) = -eta*dx; dy_deta_exact(i,j) = xi*dx;
+					// // Calculate exact derivatives
+					// dx_dxi_exact(i, j) = xi; dy_dxi_exact(i,j) = eta;
+					// dx_deta_exact(i,j) = -eta; dy_deta_exact(i,j) = xi;
+					// Calculate derivatives with second order central differencing
+					dx_deta(i, j) = (test.X(i + 1, j) + test.X(i + 1, j - 1) - test.X(i - 1, j) - test.X(i - 1, j - 1)) / 4;
+					dy_deta(i, j) = (test.Y(i + 1, j) + test.Y(i + 1, j - 1) - test.Y(i - 1, j) - test.Y(i - 1, j - 1)) / 4;
+					dx_dxi(i, j) = test.X(i, j) - test.X(i, j - 1);
+					dy_dxi(i, j) = test.Y(i, j) - test.Y(i, j - 1);
+				}
+			// Store L2Norm of error in double to append to error array later
+			dx_deta_curr = (dx_deta_exact - dx_deta).L2Norm();
+			dx_dxi_curr = (dx_dxi_exact - dx_dxi).L2Norm();
+			dy_deta_curr = (dy_deta_exact - dy_deta).L2Norm();
+			dy_dxi_curr = (dy_dxi_exact - dy_dxi).L2Norm();
+}
+
+void jtest_quad_mesh_metric()
+{
+	std::string coursemesh = "Quad_testmesh-10x10.vel";
+	std::string medmesh = "Quad_testmesh-20x20.vel";
+	std::string finemesh = "Quad_testmesh-40x40.vel";
+	std::string meshname; // Placeholder to open appropriate file
+	// Arrays to store error values 
+	double dx_dxi_error[3];
+	double dx_deta_error[3];
+	double dy_dxi_error[3];
+	double dy_deta_error[3];
+
+	// Read each file and fill vectors 
+	for(int filenum = 0; filenum < 3; filenum++)
+	{
+		if(filenum == 0)
+		{
+			meshname = coursemesh; // Open coursemesh
+
+			// Initialize and calculate values for current file error
+			double dx_deta_curr;
+			double dx_dxi_curr;
+			double dy_deta_curr;
+			double dy_dxi_curr;
+			jquad_mesh_loop(meshname, dx_deta_curr, dx_dxi_curr, dy_deta_curr, dy_dxi_curr);
+
+			// Add error values to error arrays
+			dx_deta_error[filenum] = dx_deta_curr; 
+			dx_dxi_error[filenum] = dx_dxi_curr;
+			dy_deta_error[filenum] = dy_deta_curr;
+			dy_dxi_error[filenum] = dy_dxi_curr;
+		}
+
+		if(filenum == 1)
+		{
+			meshname = medmesh; // Open medmesh
+
+			// Initialize and calculate values for current file error
+			double dx_deta_curr;
+			double dx_dxi_curr;
+			double dy_deta_curr;
+			double dy_dxi_curr;
+			jquad_mesh_loop(meshname, dx_deta_curr, dx_dxi_curr, dy_deta_curr, dy_dxi_curr);
+
+			// Add error values to error arrays
+			dx_deta_error[filenum] = dx_deta_curr; 
+			dx_dxi_error[filenum] = dx_dxi_curr;
+			dy_deta_error[filenum] = dy_deta_curr;
+			dy_dxi_error[filenum] = dy_dxi_curr;
+		}
+
+		if(filenum == 2)
+		{
+			meshname = finemesh; // Open coursemesh
+
+			// Initialize and calculate values for current file error
+			double dx_deta_curr;
+			double dx_dxi_curr;
+			double dy_deta_curr;
+			double dy_dxi_curr;
+			jquad_mesh_loop(meshname, dx_deta_curr, dx_dxi_curr, dy_deta_curr, dy_dxi_curr);
+
+			// Add error values to error arrays
+			dx_deta_error[filenum] = dx_deta_curr; 
+			dx_dxi_error[filenum] = dx_dxi_curr;
+			dy_deta_error[filenum] = dy_deta_curr;
+			dy_dxi_error[filenum] = dy_dxi_curr;
+		}
+	}
+	// Print Errors
+	double fine_grid = 1.0 / 40.0; double course_grid = 1.0 / 10.0;  // Store grid sizings 
+	double dx_deta_slope = (log(dx_deta_error[2]) - log(dx_deta_error[0])) / (log(fine_grid) - log(course_grid));
+	double dx_dxi_slope = (log(dx_dxi_error[2]) - log(dx_dxi_error[0])) / (log(fine_grid) - log(course_grid));
+	double dy_deta_slope = (log(dy_deta_error[2]) - log(dy_deta_error[0])) / (log(fine_grid) - log(course_grid));
+	double dy_dxi_slope = (log(dy_dxi_error[2]) - log(dy_dxi_error[0])) / (log(fine_grid) - log(course_grid));
+	printf("Slope of dx_deta: %f Slope of dy_deta: %f\nSlope of dx_dxi: %f Slope of dy_dxi: %f\n", dx_deta_slope, dy_deta_slope, dx_dxi_slope, dy_dxi_slope);
+	printf("dx_dxi error:\n%14.12e, %14.12e, %14.12e\n", dx_dxi_error[0], dx_dxi_error[1], dx_dxi_error[2]);
+	printf("dx_deta error:\n%14.12e, %14.12e, %14.12e\n", dx_deta_error[0], dx_deta_error[1], dx_deta_error[2]);
+	printf("dy_dxi error:\n%14.12e, %14.12e, %14.12e\n", dy_dxi_error[0], dy_dxi_error[1], dy_dxi_error[2]);
+	printf("dy_deta error:\n%14.12e, %14.12e, %14.12e\n", dy_deta_error[0], dy_deta_error[1], dy_deta_error[2]);
+}
+
+void test_all_metrics(std::string meshname)
+{
+	Solution test = readmesh(meshname);
+	std::cout << "Mesh\n";
+	test.printmesh();
+	test.calc_mesh_metric();
+	std::cout << "i + 1/2, j faces\n";
+	test.iprintmetrics();
+	std::cout << "i, j + 1/2 faces\n";
+	test.jprintmetrics();
+}
+
+/********************************************************************
+// Test functions - Used to validate flux integral calculation
+********************************************************************/
+// Exact solution for test problem
+double f(double x, double y)
+{
+	return pow(x,4) + pow(y,4)- 6*pow(x,2)*pow(y,2);
+}
+
+// Initialize interior points 
+double f2(double x, double y)
+{
+	return exp(-100*(pow(x,2) + pow(y,2)));
+}
+
+// Initialize exact solution
+void initializeUe(Vector ue, Solution &s)
+{
+	unsigned long i,j;
+	double x, y;
+
+	const unsigned long Nx = s.nx;
+	const unsigned long Ny = s.ny;
+	const double dx = 1.0 / (s.nx - 1.0);
+	const double dy = 1.0 / (s.ny - 1.0);
+
+	for(i = 0; i < Nx; i++)
+		for(j = 0; j < Ny; j++){
+			x = s.X(i, j); y = s.Y(i, j);
+			ue(i,j) = f(x,y);
+		}
+}
+
+// Initialize test case
+void initializeU(Solution &s)
+{
+	unsigned long i,j;
+	double x,y;
+
+	const unsigned long Nx = s.nx;
+	const unsigned long Ny = s.ny;
+	const double dx = 1.0 / (s.nx - 1);
+	const double dy = 1.0 / (s.ny - 1);;
+	for(i = 0; i < Nx; i++){
+		j = 0; y = s.Y(i, j);
+		x = s.X(i, j);
+		s.u(i,j) = f(x,y);
+		j = Ny-1; y = s.Y(i, j);
+		x = s.X(i, j);
+		s.u(i,j) = f(x,y);
+	}
+
+	for(j = 0; j < Ny; j++){
+
+		i = 0; x = s.X(i, j);
+		y = s.Y(i, j);
+		s.u(i,j) = f(x,y);
+
+		i = Nx-1; x = s.X(i, j);
+		y = s.Y(i, j);
+		s.u(i,j) = f(x,y);
+	}
+
+	for(i = 1; i < Nx-1; i++)
+		for(j = 1; j < Ny-1; j++){
+			x = s.X(i, j), y = s.Y(i, j);
+			s.u(i,j) = f2(x,y);
+		}
+}
+
+// Compute matrix to solve system of equations for test case
+void computeMatrix(Matrix &M, const Solution &s)
+{
+	unsigned long i,j;
+	const double dx = 1.0 / (s.nx - 1.0);
+	const double dy = 1.0 - (s.ny - 1.0);
+	
+	for(i = 1; i < s.nx-1; i++)
+		for(j = 1; j < s.ny-1; j++){
+			M(i,j,0) = 1.0/(dx*dx);
+			M(i,j,1) = 1.0/(dy*dy);
+			M(i,j,3) = 1.0/(dy*dy);
+			M(i,j,4) = 1.0/(dx*dx);
+			M(i,j,2) = -(M(i,j,0) + M(i,j,1) + M(i,j,3) + M(i,j,4));
+		}
+		
+	for(i = 0; i < s.nx; i++)
+		for(int t = 0; t < 5; t++){
+			M(i,0,t) = (t == 2 ? 1.0 : 0.0);
+			M(i,s.ny-1, t) = (t == 2 ? 1.0 : 0.0);
+		}
+
+	for(j = 0; j < s.ny; j++)
+		for(int t = 0; t < 5; t++){
+			M(0,j,t) = (t == 2 ? 1.0 : 0.0);
+			M(s.nx-1,j,t) = (t == 2 ? 1.0 : 0.0);
+		}
+}
+
+void calc_flux(Vector R, Solution &s)
+{
+	unsigned long i,j;
+	unsigned long Nx = s.nx;
+	unsigned long Ny = s.ny;
+	double dx = 1.0 / (s.nx - 1);
+	double dy = 1.0 / (s.ny - 1);
+
+	for(i = 1; i < Nx-1; i++)
+		for(j = 1; j < Ny-1; j++)
+			R(i,j) = ((s.u(i+1,j) - 2*s.u(i,j) + s.u(i-1,j))/(dx*dx) + (s.u(i,j+1) - 2*s.u(i,j) + s.u(i,j-1))/(dy*dy));
+}
+
+// Compute boundary conditions for test case
+void applyBC(Vector &R, Vector &du, Solution &s)
+{
+	unsigned long i,j;
+	unsigned long Nx = s.nx;
+	unsigned long Ny = s.ny;
+
+	for(i = 0; i < Nx; i++){
+		j = 0;
+		R(i,j) = du(i,j) = 0.0;
+
+		j = Ny-1;
+		R(i,j) = du(i,j) = 0.0;
+	}
+
+	for(j = 0; j < Ny; j++){
+		i = 0;
+		R(i,j) = du(i,j) = 0.0;
+
+		i = Nx-1;
+		R(i,j) = du(i,j) = 0.0;
+	}
+}
+
+void solveSteadyLaplace(Solution &s)
+{
+	// Calculate exact solution
+	Vector ue(s.nx, s.ny);
+	initializeUe(ue, s);
+
+	Matrix A(s.nx, s.ny);
+	Vector R(s.nx, s.ny);
+	Vector du(s.nx, s.ny);
+
+	initializeU(s);
+	computeMatrix(A, s);
+	calc_flux(R, s);
+	applyBC(R, du, s);
+	R = -R;
+	double R0 = R.L2Norm();
+
+	// Start outer loop
+	int m = 0;
+	while(m < 10)
+	{
+		// Solve linear system
+		solveGS(du, A, R);
+
+		// Update solution
+		s.u = s.u + du;
+
+		// Compute residual
+		calc_flux(R, s);
+		applyBC(R, du, s);
+		R = -R;
+		double R1 = R.L2Norm();
+
+		//Check convergence
+		if(R1/R0 < 1e-5)
+			break;
+	}
+	// Calculate error
+	Vector e(s.nx, s.ny);
+	e = ue - s.u;
+	printf("%ldx%ld has error of %14.12e\n", s.nx, s.ny, e.L2Norm());
 }
 
 int main()
@@ -322,24 +740,34 @@ int main()
 	std::string falsemesh = "mesh-13x2.vel"; // False mesh name to make sure catch works
 	std::string fileName = "file.vtk"; // filename to store vtk file
 
-	Solution test = readmesh(coursemesh);
+	// Solution test = readmesh(coursemesh);
 	// test_void_constructor();
-	/// test_constructor();
+	// test_constructor();
 	// test_mesh_read(coursemesh);
 	// test_VTK_output(test);
+	// test.printmesh();
 
 	// Test Mesh Files
 	std::string coursequadmesh = "Quad_testmesh-10x10.vel";
 	std::string medquadmesh = "Quad_testmesh-20x20.vel";
 	std::string finequadmesh = "Quad_testmesh-40x40.vel";
 	// Testing mesh metric generator
-	itest_rectil_mesh_metric();
+	// Test over (i + 1/2, j) faces
+	// itest_rectil_mesh_metric();
 	// itest_simple_mesh_metric();
+	// itest_quad_mesh_metric();
+	// Test over (i, j + 1/2) faces
+	// jtest_rectil_mesh_metric();
+	// jtest_simple_mesh_metric();
+	// jtest_quad_mesh_metric();
+	// Test all metrics
+	// std::string rectil_mesh = "rectil_testmesh-10x10.vel";
+	// test_all_metrics(rectil_mesh);
 
-	// itest_quad_mesh_metric(coursequadmesh);
-	// itest_quad_mesh_metric(medquadmesh);
-	// itest_quad_mesh_metric(finequadmesh);
-
+	// Test flux integral
+	std::string fluxmesh = "Flux_testmesh-17x17.vel";
+	Solution test = readmesh(fluxmesh);
+	solveSteadyLaplace(test);
 
 	return 0;
 } 

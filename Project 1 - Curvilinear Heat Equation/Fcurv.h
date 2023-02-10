@@ -79,6 +79,36 @@ public:
 };
 
 /********************************************************************
+// Matrix class from Mech 587 
+********************************************************************/
+class Matrix
+{
+	unsigned long N, Nx, Ny;
+	double *A[5];
+	bool isInit;
+	Operations O;
+
+	bool isValid(unsigned short pos, unsigned long idxNode) const;
+public:
+	Matrix();
+	Matrix(unsigned long iNx, unsigned long iNy);
+	~Matrix();
+	inline size_t size() const {return N;}
+	inline size_t sizeNx() const {return Nx;}
+	inline size_t sizeNy() const {return Ny;}
+	void setSize(unsigned long iNx, unsigned long iNy);
+	double& operator()(unsigned long i, unsigned long j, unsigned short pos);
+	double operator()(unsigned long i, unsigned long j, unsigned short pos) const;
+
+	double& operator()(unsigned long i, unsigned short pos);
+	double operator()(unsigned long i, unsigned short pos) const;
+
+	void storeA(char filename[50]);
+};
+// Gauss-Seidel Solver from mech 587
+void solveGS(Vector &u, const Matrix &A, const Vector &b);
+
+/********************************************************************
 // Solution class constructors and member functions
 // Used to store solution, and perform any operations in solving 
 ********************************************************************/
@@ -91,6 +121,14 @@ public:
 	Vector X, Y, u, v, T; // Variables to store solution vectors
 	unsigned long nx, ny; // Value to store number of X and Y points
 	unsigned long N; // Store total number of points
+	Vector idx_deta, idy_deta, idx_dxi, idy_dxi; // Vectors for mesh metrics on i + 1/2, j faces
+	Vector jdx_deta, jdy_deta, jdx_dxi, jdy_dxi; // Vectors for mesh metrics on i, j + 1/2 faces
+	Vector Ji; // J component on i + 1/2, j faces
+	Vector Jj; // J component on i, j + 1/2 faces
+	Vector Si; // S component on i + 1/2, j faces
+	Vector Sj; // S component on i, j + 1/2 faces
+	Vector Di; // D component onn i + 1/2, j faces
+	Vector Dj; // D component on i, j + 1/2 faces
 
 	// Constructors
 	// Null constructor, initializes vectors as empty
@@ -102,6 +140,9 @@ public:
 	
 	// Member Functions
 	void printmesh();
+	void iprintmetrics(); // Print metrics for i + 1/2 faces
+	void jprintmetrics(); // Print metrics for j + 1/2 faces
+	void calc_mesh_metric(); // Calculate mesh metrics
 };
 
 /********************************************************************

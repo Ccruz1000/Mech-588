@@ -349,6 +349,147 @@ void Vector::storeV(char filename[50])
 }
 
 /********************************************************************
+// Matrix class from Mech 587 
+********************************************************************/
+Matrix::Matrix(): isInit(false)
+{
+	N = 0, Nx = 0, Ny = 0;
+	for(int i = 0; i < 5; i++)
+		A[i] = nullptr;
+}
+
+Matrix::Matrix(unsigned long iNx, unsigned long iNy) : Nx(iNx), Ny(iNy), N(iNx*iNy), isInit(false)
+{
+	for(int i = 0; i < 5; i++){
+		A[i] = nullptr;
+		O.alloc1D(&A[i], N);
+	}
+	isInit = true;
+
+}
+
+Matrix::~Matrix()
+{
+	for(int i = 0; i < 5; i++)
+		O.deAlloc1D(&A[i], N);
+	Nx = 0, Ny = 0, N = 0;
+}
+
+bool Matrix::isValid(unsigned short pos, unsigned long idxNode) const
+{
+	if(idxNode < N && (pos >= 0 && pos <= 4))
+		return true;
+	return false;
+}
+
+double& Matrix::operator()(unsigned long i, unsigned long j, unsigned short pos)
+{
+	if(!isInit){
+		printf("Matrix has not been dimensioned. Please check. Exiting\n");
+		exit(0);
+	}
+
+	unsigned long idxNode = i*Ny+j;
+	if(isValid(pos, idxNode))
+		return A[pos][idxNode];
+	else
+	{
+		printf("Attempt to access invalid memory. Please check. Exiting \n");
+		exit(0);
+		//Trigger exit code
+	}
+}
+
+double Matrix::operator()(unsigned long i, unsigned long j, unsigned short pos) const
+{
+	if(!isInit){
+		printf("Matrix has not been dimensioned. Please check. Exiting\n");
+		exit(0);
+	}
+
+	unsigned long idxNode = i*Ny+j;
+	if(isValid(pos, idxNode))
+		return A[pos][idxNode];
+	else
+		return 0.0;
+}
+
+double& Matrix::operator()(unsigned long i, unsigned short pos)
+{
+	if(!isInit){
+		printf("Matrix has not been dimensioned. Please check. Exiting\n");
+		exit(0);
+	}
+
+	if(isValid(pos, i))
+		return A[pos][i];
+	else
+	{
+		printf("Attempt to access invalid memory. Please check. Exiting \n");
+		exit(0);
+		//Trigger exit code
+	}
+}
+
+double Matrix::operator()(unsigned long i, unsigned short pos) const
+{
+	if(!isInit){
+		printf("Matrix has not been dimensioned. Please check. Exiting\n");
+		exit(0);
+	}
+
+	if(isValid(pos, i))
+		return A[pos][i];
+	else
+		return 0.0;
+}
+
+void Matrix::setSize(unsigned long iNx, unsigned long iNy){
+	Nx = iNx, Ny = iNy;
+	N = Nx*Ny;
+	for(int i = 0; i < 5; i++){
+		A[i] = nullptr;
+		O.alloc1D(&A[i], N);
+	}
+	isInit = true;
+}
+
+// Gauss-Seidel Solver from Mech 587 
+void solveGS(Vector &u, const Matrix &A, const Vector &b)
+{
+	size_t Ny = b.sizeNy();
+	unsigned long i;
+	const Vector* const u0 = &u;
+
+	int iter = 0;
+	while(1){
+		double L2Norm = 0.0;
+		for(i = 0; i < A.size(); i++){
+			double Res = 0.0;
+			Res = Res + A(i,0) * (*u0)(i-Ny);
+			Res = Res + A(i,1) * (*u0)(i-1);
+			Res = Res + A(i,2) * (*u0)(i);
+			Res = Res + A(i,3) * (*u0)(i+1);
+			Res = Res + A(i,4) * (*u0)(i+Ny);
+
+			Res = b(i) - Res;
+
+			L2Norm += (Res*Res);
+			u(i) = u(i) + 1.8*(1.0/A(i,2))*Res;
+		}
+		L2Norm = sqrt(L2Norm/b.size());
+		++iter;
+		// printf("%d %14.12e\n",iter,L2Norm);
+		if(L2Norm < 1e-8 || iter > 50000)
+		{
+			printf("Gauss Seidel Iterations converged\n");
+			printf("iterations = %d, Error Residuals = %14.12e\n",iter,L2Norm);
+			break;
+		}
+	}
+}
+
+/********************************************************************
 // Solution class constructors and member functions
 // Used to store solution, and perform any operations in solving 
 ********************************************************************/
@@ -358,12 +499,18 @@ Solution::Solution() : nx(0), ny(0), N(0), X(), Y(), u(), v(), T()
 {}
 
 // Void constructor, initializes vectors with all 0's
-Solution::Solution(unsigned long iNx, unsigned long iNy) : nx(iNx), ny(iNy), N(iNx * iNy), X(iNx, iNy), Y(iNx, iNy), u(iNx, iNy), v(iNx, iNy), T(iNx, iNy)
+Solution::Solution(unsigned long iNx, unsigned long iNy) : nx(iNx), ny(iNy), N(iNx * iNy), X(iNx, iNy), Y(iNx, iNy), u(iNx, iNy), v(iNx, iNy), T(iNx + 2, iNy + 2),
+														   idx_deta(nx, ny), idy_deta(nx, ny), idx_dxi(nx, ny), idy_dxi(nx, ny),
+														   jdx_deta(nx, ny), jdy_deta(nx, ny), jdx_dxi(nx, ny), jdy_dxi(nx, ny),
+														   Ji(nx, ny), Jj(nx, ny), Si(nx, ny), Sj(nx, ny), Di(nx, ny), Dj(nx, ny)
 {}
 
 // Constructor, create solution object with pre defined vectors
 Solution::Solution(unsigned long iNx, unsigned long iNy, Vector iX, Vector iY, Vector iu, Vector iv, Vector iT)
-: nx(iNx) , ny(iNy), N(nx * ny), X(iX), Y(iY), u(iu), v(iv), T(iT)
+: nx(iNx) , ny(iNy), N(nx * ny), X(iX), Y(iY), u(iu), v(iv), T(iT),
+  idx_deta(nx, ny), idy_deta(nx, ny), idx_dxi(nx, ny), idy_dxi(nx, ny),
+  jdx_deta(nx, ny), jdy_deta(nx, ny), jdx_dxi(nx, ny), jdy_dxi(nx, ny),
+  Ji(nx, ny), Jj(nx, ny), Si(nx, ny), Sj(nx, ny), Di(nx, ny), Dj(nx, ny) 
 {}
 
 // Member functions
@@ -378,6 +525,65 @@ void Solution::printmesh()
 					printf("\n");
 				}
 			}
+}
+
+void Solution::iprintmetrics()
+{
+		for(int i = 0; i < nx; i++)
+			for(int j = 0; j < ny; j++)
+			{
+				printf("idx_deta: %f, idy_deta: %f, idx_dxi: %f, idy_dxi: %f, Ji: %f, Si: %f, Di: %f\n", idx_deta(i, j), idy_deta(i, j), idx_dxi(i, j), idy_dxi(i, j), Ji(i, j), Si(i, j), Di(i, j));
+				if(j == ny - 1)
+				{
+					printf("\n");
+				}
+			}
+}
+
+void Solution::jprintmetrics()
+{
+		for(int i = 0; i < nx; i++)
+			for(int j = 0; j < ny; j++)
+			{
+				printf("jdx_deta: %f, jdy_deta: %f, jdx_dxi: %f, jdy_dxi: %f, Jj: %f, Sj: %f, Dj: %f\n", jdx_deta(i, j), jdy_deta(i, j), jdx_dxi(i, j), jdy_dxi(i, j), Jj(i, j), Sj(i, j), Dj(i, j));
+				if(j == ny - 1)
+				{
+					printf("\n");
+				}
+			}
+}
+
+void Solution::calc_mesh_metric()
+{
+	std::cout << "initializing vectors\n";
+	// Initialize mesh metric vectors
+	// idx_deta(nx, ny); idy_deta(nx, ny); idx_dxi(nx, ny); idy_dxi(nx, ny);
+	// jdx_deta(nx, ny); jdy_deta(nx, ny); jdx_dxi(nx, ny); jdy_dxi(nx, ny);
+	// Ji(nx, ny); Jj(nx, ny); Si(nx, ny); Sj(nx, ny); Di(nx, ny); Dj(nx, ny);
+	std::cout << "Vectors initialized\n";
+	// Calculate mesh metrics
+	for(int i = 1; i < nx - 1; i++)
+		for(int j = 1; j < nx - 1; j++)
+		{
+			// i + 1/2, j faces
+			idx_deta(i, j) = X(i, j) - X(i, j - 1);
+			idy_deta(i, j) = Y(i, j) - Y(i, j - 1);
+			idx_dxi(i, j) = (X(i + 1, j) + X(i + 1, j - 1) - X(i - 1, j) - X(i - 1, j - 1)) / 4;
+			idy_dxi(i, j) = (Y(i + 1, j) + Y(i + 1, j - 1) - Y(i - 1, j) - Y(i - 1, j - 1)) / 4;
+			Ji(i, j) = idx_dxi(i, j) * idy_deta(i, j) - idx_deta(i, j) * idy_dxi(i, j);
+			Si(i, j) = (idx_deta(i, j) * idx_dxi(i, j) + idy_deta(i, j) * idy_dxi(i, j)) / Ji(i, j);
+			Di(i, j) = (idx_deta(i, j) * idx_deta(i, j) + idy_deta(i, j) * idy_deta(i, j)) / Ji(i, j);
+			// i, j + 1/2 faces
+			jdx_deta(i, j) = X(i, j) - X(i, j - 1);
+			jdy_deta(i, j) = Y(i, j) - Y(i, j - 1);
+			jdx_dxi(i, j) = (X(i + 1, j) + X(i + 1, j - 1) - X(i - 1, j) - X(i - 1, j - 1)) / 4;
+			jdy_dxi(i, j) = (Y(i + 1, j) + Y(i + 1, j - 1) - Y(i - 1, j) - Y(i - 1, j - 1)) / 4;
+			Jj(i, j) = jdx_dxi(i, j) * jdy_deta(i, j) - jdx_deta(i, j) * jdy_dxi(i, j);
+			Sj(i, j) = (jdx_deta(i, j) * jdx_dxi(i, j) + jdy_deta(i, j) * jdy_dxi(i, j)) / Jj(i, j);
+			Dj(i, j) = (jdx_deta(i, j) * jdx_deta(i, j) + jdy_deta(i, j) * jdy_deta(i, j)) / Jj(i, j);
+			
+		}
+
 }
 
 

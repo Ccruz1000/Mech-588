@@ -10,4 +10,7 @@
 
 #define FLUX_H
 
+void calc_flux(Vector R, Solution &s);
+
+
 #endif

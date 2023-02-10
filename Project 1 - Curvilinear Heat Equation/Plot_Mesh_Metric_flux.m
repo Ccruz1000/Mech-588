@@ -5,18 +5,16 @@ clc;
 close all;
 
 # Define function to plot the meshmetric grid being used
-function plot = plot_meshmetric(neta, nxi, maxlim, minlim) 
-
+function plot = plot_meshmetric(neta, nxi, maxlim, minlim)
+  
 # Calculate y in terms of xi and eta
 function y_calc = y_calc(eta, xi, neta, nxi)
-y_calc = eta*xi;
-# y_calc = 0.5 * (xi^2 - eta^2);
+y_calc = cos(eta*pi)*sin(xi*pi);
 endfunction
 
 # Calculate x in terms of xi and eta
 function x_calc = x_calc(eta, xi, neta, nxi)
-x_calc = 0.5*(xi^2 - eta^2);
-# x_calc = eta * xi;
+x_calc = cos(xi*pi)*sin(eta*pi);
 endfunction
 
 # Create vectors for xi and eta
