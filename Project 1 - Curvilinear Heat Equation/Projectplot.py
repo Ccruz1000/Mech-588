@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
 import math
 
-dx_dxi = [5.625002222232e-02, 2.812499473721e-02, 1.406249935966e-02]
+dx_dxi = [5.707798228544e-02, 2.822170368627e-02, 1.407418046097e-02]
 dx_deta = [4.938263900313e-03, 1.246543322775e-03, 3.122956536154e-04]
 dy_dxi = [3.224174737130e-02, 1.574351892013e-02, 7.826952764783e-03]
-dy_deta = [3.130889512005e-07, 3.464501419137e-07, 3.850505017401e-07]
-grid = [1/10, 1/20, 1/40]
+dy_deta = [4.938310503551e-03, 1.246541830174e-03, 3.122947972526e-04]
+grid = [1/16, 1/32, 1/64]
 
 slopedx_dxi = (math.log(dx_dxi[-1]) - math.log(dx_dxi[0])) / (math.log(grid[-1]) - math.log(grid[0]))
 slopedx_deta = (math.log(dx_deta[-1]) - math.log(dx_deta[0])) / (math.log(grid[-1]) - math.log(grid[0]))

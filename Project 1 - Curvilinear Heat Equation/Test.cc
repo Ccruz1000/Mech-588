@@ -552,184 +552,6 @@ void test_all_metrics(std::string meshname)
 	test.jprintmetrics();
 }
 
-/********************************************************************
-// Test functions - Used to validate flux integral calculation
-********************************************************************/
-// Exact solution for test problem
-double f(double x, double y)
-{
-	return pow(x,4) + pow(y,4)- 6*pow(x,2)*pow(y,2);
-}
-
-// Initialize interior points 
-double f2(double x, double y)
-{
-	return exp(-100*(pow(x,2) + pow(y,2)));
-}
-
-// Initialize exact solution
-void initializeUe(Vector ue, Solution &s)
-{
-	unsigned long i,j;
-	double x, y;
-
-	const unsigned long Nx = s.nx;
-	const unsigned long Ny = s.ny;
-	const double dx = 1.0 / (s.nx - 1.0);
-	const double dy = 1.0 / (s.ny - 1.0);
-
-	for(i = 0; i < Nx; i++)
-		for(j = 0; j < Ny; j++){
-			x = s.X(i, j); y = s.Y(i, j);
-			ue(i,j) = f(x,y);
-		}
-}
-
-// Initialize test case
-void initializeU(Solution &s)
-{
-	unsigned long i,j;
-	double x,y;
-
-	const unsigned long Nx = s.nx;
-	const unsigned long Ny = s.ny;
-	const double dx = 1.0 / (s.nx - 1);
-	const double dy = 1.0 / (s.ny - 1);;
-	for(i = 0; i < Nx; i++){
-		j = 0; y = s.Y(i, j);
-		x = s.X(i, j);
-		s.u(i,j) = f(x,y);
-		j = Ny-1; y = s.Y(i, j);
-		x = s.X(i, j);
-		s.u(i,j) = f(x,y);
-	}
-
-	for(j = 0; j < Ny; j++){
-
-		i = 0; x = s.X(i, j);
-		y = s.Y(i, j);
-		s.u(i,j) = f(x,y);
-
-		i = Nx-1; x = s.X(i, j);
-		y = s.Y(i, j);
-		s.u(i,j) = f(x,y);
-	}
-
-	for(i = 1; i < Nx-1; i++)
-		for(j = 1; j < Ny-1; j++){
-			x = s.X(i, j), y = s.Y(i, j);
-			s.u(i,j) = f2(x,y);
-		}
-}
-
-// Compute matrix to solve system of equations for test case
-void computeMatrix(Matrix &M, const Solution &s)
-{
-	unsigned long i,j;
-	const double dx = 1.0 / (s.nx - 1.0);
-	const double dy = 1.0 - (s.ny - 1.0);
-	
-	for(i = 1; i < s.nx-1; i++)
-		for(j = 1; j < s.ny-1; j++){
-			M(i,j,0) = 1.0/(dx*dx);
-			M(i,j,1) = 1.0/(dy*dy);
-			M(i,j,3) = 1.0/(dy*dy);
-			M(i,j,4) = 1.0/(dx*dx);
-			M(i,j,2) = -(M(i,j,0) + M(i,j,1) + M(i,j,3) + M(i,j,4));
-		}
-		
-	for(i = 0; i < s.nx; i++)
-		for(int t = 0; t < 5; t++){
-			M(i,0,t) = (t == 2 ? 1.0 : 0.0);
-			M(i,s.ny-1, t) = (t == 2 ? 1.0 : 0.0);
-		}
-
-	for(j = 0; j < s.ny; j++)
-		for(int t = 0; t < 5; t++){
-			M(0,j,t) = (t == 2 ? 1.0 : 0.0);
-			M(s.nx-1,j,t) = (t == 2 ? 1.0 : 0.0);
-		}
-}
-
-void calc_flux(Vector R, Solution &s)
-{
-	unsigned long i,j;
-	unsigned long Nx = s.nx;
-	unsigned long Ny = s.ny;
-	double dx = 1.0 / (s.nx - 1);
-	double dy = 1.0 / (s.ny - 1);
-
-	for(i = 1; i < Nx-1; i++)
-		for(j = 1; j < Ny-1; j++)
-			R(i,j) = ((s.u(i+1,j) - 2*s.u(i,j) + s.u(i-1,j))/(dx*dx) + (s.u(i,j+1) - 2*s.u(i,j) + s.u(i,j-1))/(dy*dy));
-}
-
-// Compute boundary conditions for test case
-void applyBC(Vector &R, Vector &du, Solution &s)
-{
-	unsigned long i,j;
-	unsigned long Nx = s.nx;
-	unsigned long Ny = s.ny;
-
-	for(i = 0; i < Nx; i++){
-		j = 0;
-		R(i,j) = du(i,j) = 0.0;
-
-		j = Ny-1;
-		R(i,j) = du(i,j) = 0.0;
-	}
-
-	for(j = 0; j < Ny; j++){
-		i = 0;
-		R(i,j) = du(i,j) = 0.0;
-
-		i = Nx-1;
-		R(i,j) = du(i,j) = 0.0;
-	}
-}
-
-void solveSteadyLaplace(Solution &s)
-{
-	// Calculate exact solution
-	Vector ue(s.nx, s.ny);
-	initializeUe(ue, s);
-
-	Matrix A(s.nx, s.ny);
-	Vector R(s.nx, s.ny);
-	Vector du(s.nx, s.ny);
-
-	initializeU(s);
-	computeMatrix(A, s);
-	calc_flux(R, s);
-	applyBC(R, du, s);
-	R = -R;
-	double R0 = R.L2Norm();
-
-	// Start outer loop
-	int m = 0;
-	while(m < 10)
-	{
-		// Solve linear system
-		solveGS(du, A, R);
-
-		// Update solution
-		s.u = s.u + du;
-
-		// Compute residual
-		calc_flux(R, s);
-		applyBC(R, du, s);
-		R = -R;
-		double R1 = R.L2Norm();
-
-		//Check convergence
-		if(R1/R0 < 1e-5)
-			break;
-	}
-	// Calculate error
-	Vector e(s.nx, s.ny);
-	e = ue - s.u;
-	printf("%ldx%ld has error of %14.12e\n", s.nx, s.ny, e.L2Norm());
-}
 
 int main()
 {
@@ -755,7 +577,7 @@ int main()
 	// Test over (i + 1/2, j) faces
 	// itest_rectil_mesh_metric();
 	// itest_simple_mesh_metric();
-	// itest_quad_mesh_metric();
+	itest_quad_mesh_metric();
 	// Test over (i, j + 1/2) faces
 	// jtest_rectil_mesh_metric();
 	// jtest_simple_mesh_metric();
@@ -765,9 +587,9 @@ int main()
 	// test_all_metrics(rectil_mesh);
 
 	// Test flux integral
-	std::string fluxmesh = "Flux_testmesh-17x17.vel";
-	Solution test = readmesh(fluxmesh);
-	solveSteadyLaplace(test);
+	// std::string fluxmesh = "Flux_testmesh-17x17.vel";
+	// Solution test = readmesh(fluxmesh);
+	// solveSteadyLaplace(test);
 
 	return 0;
 } 
