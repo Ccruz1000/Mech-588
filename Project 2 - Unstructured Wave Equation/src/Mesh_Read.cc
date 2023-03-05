@@ -6,541 +6,159 @@
 // Mech 588 - Advanced CFD UBC Mechanical Engineering Winter 2023
 // Christian Rowsell (40131393)
 ********************************************************************/
-
-/********************************************************************
-// Operations from Mech 587 - Used in operator overloading
-********************************************************************/
-//Allocate memory for a 1D array
-void Operations::alloc1D(double **V, const unsigned long &N, bool isInit, double def) const
+// Constructor to initialize object
+Mesh::Mesh(int ncell, int nedge, int nbdry, int nvert)
+           : iNCell(ncell), iNEdge(nedge), iNBdry(nbdry), iNVert(nvert)
 {
-	if(*V != nullptr){
-		delete[] (*V);
-		(*V) = nullptr;
-	}
-
-	*V = new double[N];
-
-	if(isInit)
-		for(unsigned long i = 0; i < N; i++)
-			(*V)[i] = 0.0;
-}
-
-// Deallocate memory for a 1D array
-void Operations::deAlloc1D(double **V, const unsigned long &N) const
-{
-	if(*V != nullptr){
-		delete[] (*V);
-		(*V) = nullptr;
-	}
-}
-
-// Copy array to new space in memory
-void Operations::copyArray(double *S, double *T, const unsigned long &N) const
-{
-	for(int i = 0; i < N; i++)
-		T[i] = S[i];
-}
-
-// Addition used for vector + operator overloading
-void Operations::addVec(double *R, const double *V1, const double *V2, const unsigned long &N) const
-{
-	//Create an assertion error here.
-	for(unsigned long i = 0; i < N; i++)
-		R[i] = V1[i] + V2[i];
-}
-
-// Subtraction used for vector - operator overloading
-void Operations::subtractVec(double *R, const double *V1, const double *V2, const unsigned long &N) const
-{
-	//Create an assertion error here.
-	for(unsigned long i = 0; i < N; i++)
-		R[i] = V1[i] - V2[i];
-}
-
-// Scale vector by scalar
-void Operations::scaleVec(double *R, const double &a, const double *V1, const unsigned long &N) const
-{
-	//Create an assertion error here.
-	for(unsigned long i = 0; i < N; i++)
-		R[i] = a*V1[i];
-}
-
-// Take dot product of two vectors
-void Operations::dotVec(double &R, const double *V1, const double *V2, const unsigned long &N) const
-{
-	R = 0.0;
-	for(unsigned long i = 0; i < N; i++)
-		R = R + (V1[i]*V2[i]);
-}
-
-// Find maximum value of the absolute value of the vector
-void Operations::findAbsMax(double &R, unsigned long &idx, const double *V2, const unsigned long &N) const
-{
-	R = -1e20; idx = 0;
-	for(unsigned long i = 0; i < N; i++)
-		if(fabs(V2[i]) > R){
-			idx = i;
-			R = fabs(V2[i]);
-		}
-}
-
-// Find maximum value in vector
-void Operations::findMax(double &R, unsigned long &idx, const double *V2, const unsigned long &N) const
-{
-	R = -1e20; idx = 0;
-	for(unsigned long i = 0; i < N; i++)
-		if(V2[i] > R){
-			idx = i;
-			R = V2[i];
-		}
-}
-
-// Find minimum value in vector
-void Operations::findMin(double &R, unsigned long &idx, const double *V2, const unsigned long &N) const
-{
-	R = 1e20; idx = 0;
-	for(unsigned long i = 0; i < N; i++)
-		if(V2[i] < R){
-			idx = i;
-			R = V2[i];
-		}
-}
-
-/********************************************************************
-// Vector class from Mech 587 - Wrapper for 1D array to 2D array
-********************************************************************/
-// Constructors
-Vector::Vector() : Nx(0), Ny(0), N(0), b(nullptr), isInit(false){}
-
-Vector::Vector(unsigned long iNx, unsigned long iNy, bool initflag, double initVal): Nx(iNx), Ny(iNy), N(iNx*iNy), isInit(false), b(nullptr)
-{
-	O.alloc1D(&b,N,initflag,initVal);
-	isInit = true;
-}
-
-Vector::Vector(const Vector &V1) : Nx(V1.Nx), Ny(V1.Ny), N(V1.N), isInit(false), b(nullptr)
-{
-	O.alloc1D(&b,N,false);
-	isInit = true;
-	O.copyArray(V1.b, b, N);
-}
-
-// Destructor
-Vector::~Vector()
-{
-	O.deAlloc1D(&b,N);
-	isInit = false;
-	Nx = 0, Ny = 0; N = 0;
-}
-
-// Set size of vector and allocate memory 
-void Vector::setSize(unsigned long iNx, unsigned long iNy)
-{
-	Nx = iNx, Ny = iNy;
-	N = Nx*Ny;
-	b = nullptr;
-	O.alloc1D(&b,N);
-	isInit = true;
-}
-
-// Operator overloads
-double& Vector::operator()(unsigned long i, unsigned long j)
-{
-	if(!isInit){
-		printf("Matrix has not been dimensioned. Please check. Exiting\n");
-		exit(0);
-	}
-
-	unsigned long idxNode = i*Ny+j;
-	if(isInit && isValid(idxNode))
-		return b[idxNode];
-	else{
-		printf("attempted to access invalid memory location. Please check. Exiting\n");
-		exit(0);
-	}
-}
-
-double Vector::operator()(unsigned long i, unsigned long j) const
-{
-	if(!isInit){
-		printf("Matrix has not been dimensioned. Please check. Exiting\n");
-		exit(0);
-	}
-	unsigned long idxNode = i*Ny+j;
-	if(isInit && isValid(idxNode))
-		return b[idxNode];
-	else
-		return 0.0;
-}
-
-double& Vector::operator()(unsigned long i)
-{
-	if(!isInit){
-		printf("Vector has not been dimensioned. Please check. Exiting\n");
-		exit(0);
-	}
-
-	if(isValid(i))
-		return b[i];
-	else{
-		printf("attempted to access invalid memory location. Please check. Exiting\n");
-		exit(0);
-	}
-}
-
-double Vector::operator()(unsigned long i) const
-{
-	if(!isInit){
-		printf("Vector has not been dimensioned. Please check. Exiting\n");
-		exit(0);
-	}
-
-	if(isValid(i))
-		return b[i];
-	else
-		return 0.0;
-}
-
-Vector Vector::operator = (const Vector &V1)
-{
-	Nx = V1.Nx;
-	Ny = V1.Ny;
-
-	if(N == V1.N)
-		O.copyArray(V1.b, b, V1.N);
-	else{
-		O.deAlloc1D(&b, N);
-		N = V1.N;
-		O.alloc1D(&b, N);
-		O.copyArray(V1.b, b, N);
-	}
-
-	return *this;
-}
-
-Vector Vector::operator - ()
-{
-	Vector R(this->Nx, this->Ny, false);
-	O.scaleVec(R.b, -1.0, this->b, this->N);
-
-	return R;
-}
-
-Vector Vector::operator + (Vector const &V)
-{
-	if(V.N != this->N){
-		printf("Invalid vector addition operation. Vector dimensions do not match. Please check. Exiting \n");
-		exit(0);
-	}
-
-	Vector R(this->Nx, this->Ny, false);
-	O.addVec(R.b,this->b,V.b,this->N);
-
-	return R;
-}
-
-Vector Vector::operator - (const Vector &V)
-{
-	if(V.N != this->N){
-		printf("Invalid vector subtraction operation. Vector dimensions do not match. Please check. Exiting \n");
-		exit(0);
-	}
-
-	Vector R(this->Nx, this->Ny,false);
-	O.subtractVec(R.b,this->b,V.b,this->N);
-
-	return R;
-}
-
-Vector Vector::operator * (const double &a)
-{
-	Vector R(this->Nx, this->Ny, false);
-	O.scaleVec(R.b,a,this->b,this->N);
-	return R;
-}
-
-Vector Vector::operator + (Vector const &V) const
-{
-	if(V.N != this->N){
-		printf("Invalid vector addition operation. Vector dimensions do not match. Please check. Exiting \n");
-		exit(0);
-	}
-
-	Vector R(this->Nx, this->Ny, false);
-	O.addVec(R.b,this->b,V.b,this->N);
-
-	return R;
-}
-
-Vector Vector::operator - (const Vector &V) const
-{
-	if(V.N != this->N){
-		printf("Invalid vector subtraction operation. Vector dimensions do not match. Please check. Exiting \n");
-		exit(0);
-	}
-
-	Vector R(this->Nx, this->Ny,false);
-	O.subtractVec(R.b,this->b,V.b,this->N);
-
-	return R;
-}
-
-Vector Vector::operator * (const double &a) const
-{
-	Vector R(this->Nx, this->Ny, false);
-	O.scaleVec(R.b,a,this->b,this->N);
-	return R;
-}
-
-Vector operator * (const double &a, const Vector &V1)
-{
-	Operations O;
-	Vector R(V1.Nx, V1.Ny, false);
-	O.scaleVec(R.b,a,V1.b,V1.N);
-	return R;
-}
-
-// Computer L2Norm of vector
-const double Vector::L2Norm()
-{
-	double L2;
-	O.dotVec(L2,this->b, this->b, this->N);
-	L2 = sqrt(L2/(this->N));
-	return L2;
-}
-
-// Computer L infinity norm of vector
-const double Vector::LinfNorm(unsigned long &ix, unsigned long &iy)
-{
-	double Linf = -1e20;
-	unsigned long idx;
-	O.findAbsMax(Linf, idx, this->b, this->N);
-	ix = idx/Ny;
-	iy = idx%Ny;
-	return Linf;
-}
-
-// Find maximum value in vector
-const double Vector::GetMax()
-{
-	double max = -1e20;
-	unsigned long idx;
-	O.findMax(max,idx,this->b, this->N);
-	return max;
-}
-
-// Find minimum value in vector
-const double Vector::GetMin()
-{
-	double min = 1e20;
-	unsigned long idx;
-	O.findMin(min, idx, this->b, this->N);
-	return min;
-}
-
-// Store vector in file
-void Vector::storeV(char filename[50])
-{
-	FILE *f;
-	f = fopen(filename,"w");
-	for(unsigned long i = 0; i < Nx; i++){
-		for(unsigned long j = 0; j < Ny; j++)
-			fprintf(f,"%lu %lu %10e\n",i, j, (*this)(i,j));
-		fprintf(f,"\n");
-	}
-}
-
-/********************************************************************
-// Matrix class from Mech 587 
-********************************************************************/
-Matrix::Matrix(): isInit(false)
-{
-	N = 0, Nx = 0, Ny = 0;
-	for(int i = 0; i < 5; i++)
-		A[i] = nullptr;
-}
-
-Matrix::Matrix(unsigned long iNx, unsigned long iNy) : Nx(iNx), Ny(iNy), N(iNx*iNy), isInit(false)
-{
-	for(int i = 0; i < 5; i++){
-		A[i] = nullptr;
-		O.alloc1D(&A[i], N);
-	}
-	isInit = true;
-
-}
-
-Matrix::~Matrix()
-{
-	for(int i = 0; i < 5; i++)
-		O.deAlloc1D(&A[i], N);
-	Nx = 0, Ny = 0, N = 0;
-}
-
-bool Matrix::isValid(unsigned short pos, unsigned long idxNode) const
-{
-	if(idxNode < N && (pos >= 0 && pos <= 4))
-		return true;
-	return false;
-}
-
-double& Matrix::operator()(unsigned long i, unsigned long j, unsigned short pos)
-{
-	if(!isInit){
-		printf("Matrix has not been dimensioned. Please check. Exiting\n");
-		exit(0);
-	}
-
-	unsigned long idxNode = i*Ny+j;
-	if(isValid(pos, idxNode))
-		return A[pos][idxNode];
-	else
+	// Initialize cell edge data to -1. They will be updated later
+	for(int i = 0; i < iNCell; i++)
 	{
-		printf("Attempt to access invalid memory. Please check. Exiting \n");
-		exit(0);
-		//Trigger exit code
+		Cell_edge[0][i] = -1;
+		Cell_edge[1][i] = -1;
+		Cell_edge[2][i] = -1;
 	}
 }
 
-double Matrix::operator()(unsigned long i, unsigned long j, unsigned short pos) const
+// Member functions
+void Mesh::print_edges()
 {
-	if(!isInit){
-		printf("Matrix has not been dimensioned. Please check. Exiting\n");
-		exit(0);
-	}
-
-	unsigned long idxNode = i*Ny+j;
-	if(isValid(pos, idxNode))
-		return A[pos][idxNode];
-	else
-		return 0.0;
-}
-
-double& Matrix::operator()(unsigned long i, unsigned short pos)
-{
-	if(!isInit){
-		printf("Matrix has not been dimensioned. Please check. Exiting\n");
-		exit(0);
-	}
-
-	if(isValid(pos, i))
-		return A[pos][i];
-	else
+	for(int i = 0; i < iNEdge; i++)
 	{
-		printf("Attempt to access invalid memory. Please check. Exiting \n");
-		exit(0);
-		//Trigger exit code
+		printf("Edge: %i %i %i %i\n", Edge[0][i], Edge[1][i], Edge[2][i], Edge[3][i]);
+	}
+
+	for(int i = 0; i < iNBdry; i++)
+	{
+		printf("Bdry: %i %i %i\n", Bdry[0][i], Bdry[1][i], Bdry[2][i]);
 	}
 }
 
-double Matrix::operator()(unsigned long i, unsigned short pos) const
+void Mesh::print_vert_coord()
 {
-	if(!isInit){
-		printf("Matrix has not been dimensioned. Please check. Exiting\n");
-		exit(0);
-	}
-
-	if(isValid(pos, i))
-		return A[pos][i];
-	else
-		return 0.0;
+	for(int i = 0; i < iNVert; i++)
+	{
+		printf("Vertex: %i, X: %f, Y: %f\n", i, Vert[0][i], Vert[1][i]);
+	}	
 }
 
-void Matrix::setSize(unsigned long iNx, unsigned long iNy){
-	Nx = iNx, Ny = iNy;
-	N = Nx*Ny;
-	for(int i = 0; i < 5; i++){
-		A[i] = nullptr;
-		O.alloc1D(&A[i], N);
-	}
-	isInit = true;
-}
-
-// Gauss-Seidel Solver from Mech 587 
-void solveGS(Vector &u, const Matrix &A, const Vector &b)
+void Mesh::calc_cell_edge()
 {
-	size_t Ny = b.sizeNy();
-	unsigned long i;
-	const Vector* const u0 = &u;
+	// int Bdrycntr = 0;
+	// int Edgecntr = 0;
+	// for(int cell = 0; cell < iNCell; i++)
+	// {
+	// 	// Loop through edges to check if edge belongs to cell
+	// 	for(int edge = 0; edge < iNEdge; edge++)
+	// 	{
+	// 		if(Edge[0][edge] == cell || Edge[1][edge])
+	// 		{
+	// 		}
+	// 	}
 
-	int iter = 0;
-	while(1){
-		double L2Norm = 0.0;
-		for(i = 0; i < A.size(); i++){
-			double Res = 0.0;
-			Res = Res + A(i,0) * (*u0)(i-Ny);
-			Res = Res + A(i,1) * (*u0)(i-1);
-			Res = Res + A(i,2) * (*u0)(i);
-			Res = Res + A(i,3) * (*u0)(i+1);
-			Res = Res + A(i,4) * (*u0)(i+Ny);
+	// 	for(int bdry = 0; bdry < iNBdry; bdry++)
+	// 	{
 
-			Res = b(i) - Res;
+	// 	}
+	// }
+}
 
-			L2Norm += (Res*Res);
-			u(i) = u(i) + 1.8*(1.0/A(i,2))*Res;
-		}
-		L2Norm = sqrt(L2Norm/b.size());
-		++iter;
-		// printf("%d %14.12e\n",iter,L2Norm);
-		if(L2Norm < 1e-8 || iter > 50000)
+Mesh read_mesh(std::string meshname)
+{
+	std::ifstream mesh(meshname); // Read mesh
+	
+	// Check if mesh is opened, return error otherwise
+	if(mesh.is_open())
+	{
+		// Read number of cells, edges, boundary edges, and vertices
+		int iNCell, iNEdge, iNBdry, iNVert;
+		mesh >> iNCell >> iNEdge >> iNBdry >> iNVert;
+		printf("Number of Cells - %i\nNumber of Edges - %i\nNumber of Boundary Edges - %i\nNumber of Vertices - %i\n", iNCell, iNEdge, iNBdry, iNVert);
+		
+		// Store X and Y coordinates for each vertex (X is Vert[0], Y is Vert[1])
+		std::array<std::vector<double>, 2> Vert = {std::vector<double>(iNVert), std::vector<double>(iNVert)};
+		for(int i = 0; i < iNVert; i++)
 		{
-			printf("Gauss Seidel Iterations converged\n");
-			printf("iterations = %d, Error Residuals = %14.12e\n",iter,L2Norm);
-			break;
+			mesh >> Vert[0][i] >> Vert[1][i];
 		}
+
+		/*
+		Store boundary edges and internal edges seperately
+		For Bdry - Bdry[0]: Connected cell, Bdry[1]: Edge origin vertex, Bdry[2]: Edge destination vertex
+		For Edge - Edge[0]: Left cell Edge[1]: Right cell, Edge[2]: Edge origin vertex, Edge[3]: Edge destination vertex
+		*/
+		std::array<std::vector<int>, 3> Bdry = {std::vector<int>(iNBdry), std::vector<int>(iNBdry), std::vector<int>(iNBdry)};
+		std::array<std::vector<int>, 4> Edge = {std::vector<int>(iNEdge), std::vector<int>(iNEdge), std::vector<int>(iNEdge), std::vector<int>(iNEdge)};
+		int total_edge = iNBdry + iNEdge; // Total number of edges found in the mesh
+		int left, right, origin, destination; // Temporarily store values to allow for selecting which array they belong to
+		// Counters to use for indices
+		int Bdrycntr = 0;
+		int Edgecntr = 0;
+		for(int i = 0; i < total_edge; i++)
+		{
+			mesh >> left >> right >> origin >> destination;
+			if(right == -1)
+			{
+				Bdry[0][Bdrycntr] = left;
+				Bdry[1][Bdrycntr] = origin;
+				Bdry[2][Bdrycntr] = destination;
+				Bdrycntr += 1;
+			}
+			else
+			{
+				Edge[0][Edgecntr] = left;
+				Edge[1][Edgecntr] = right;
+				Edge[2][Edgecntr] = origin;
+				Edge[3][Edgecntr] = destination;
+				Edgecntr += 1;
+			}
+		}
+
+		Mesh temp(iNCell, iNEdge, iNBdry, iNVert);
+		// Populate array of vectors for vertex coordinate data
+		for(int i = 0; i < iNVert; i++)
+		{
+			temp.Vert[0][i] = Vert[0][i];
+			temp.Vert[1][i] = Vert[1][i];
+		}
+
+		// Populate array of vectors for boundary index data
+		for(int i = 0; i < iNBdry; i++)
+		{
+			temp.Bdry[0][i] = Bdry[0][i];
+			temp.Bdry[1][i] = Bdry[1][i];
+			temp.Bdry[2][i] = Bdry[2][i];
+		}
+
+		// Populate array of vectors for edge index data
+		for(int i = 0; i < iNEdge; i++)
+		{
+			temp.Edge[0][i] = Edge[0][i];
+			temp.Edge[1][i] = Edge[1][i];
+			temp.Edge[2][i] = Edge[2][i];
+			temp.Edge[3][i] = Edge[3][i];
+		}
+		return temp;
+	}
+
+	else
+	{
+		printf("Mesh file not found. Please check that proper filename was used\n");
+		exit(1);
 	}
 }
 
-/********************************************************************
-Class used to define mesh
-The following data is contained within this object
-- Number of cells, vertices, boundary edges, and edges
-- Utilizes .mesh file type
-
-********************************************************************/
-// class Mesh
-// {
-// private:
-
-
-// public:
-// 	 Mesh size data 
-// 	int iNVerts, iNEdges, iNBdryEdges, iNCells;
-// }
-
-// /********************************************************************
-// Class used to define individual cells when reading meshes
-// The following data is required for each cell
-// - Cell centroid location
-// - Cell vertices
-// - Cell face center locations
-// ********************************************************************/
-// class Cell
-// {
-// private:
-
-// public:
-// double (*cell_cent)[NDIM];
-// };
-
-// /********************************************************************
-// Class used to define individual cells when reading meshes
-// The following data is required for each vertex
-// - Cell centroid location
-// - Cell vertices
-// - Cell face center locations
-// ********************************************************************/
 int main()
 {
 // Read mesh 
-std::string meshname = "../Face-Cell/mech511-square-verycoarse.mesh";
+std::string verycoarse = "Face-Cell/mech511-square-verycoarse.mesh";
+std::string coarse = "Face-Cell/mech511-square-coarse.mesh";
+std::string medium = "Face-Cell/mech511-square-medium.mesh";
+std::string fine = "Face-Cell/mech511-square-fine.mesh";
+std::string veryfine = "Face-Cell/mech511-square-veryfine.mesh";
+std::string analytical = "Face-Cell/analytical.mesh";
 
+Mesh mesh = read_mesh(analytical);
+mesh.print_edges();
 
-std::ifstream mesh(meshname);
-
-int iNCell, iNEdge, iNBdry, iNVert;
-
-mesh >> iNCell >> iNEdge >> iNBdry >> iNVert;
-
-printf("%i %i %i %i \n", iNCell, iNEdge, iNBdry, iNVert);
+return 0;
 }
