@@ -77,10 +77,10 @@ void Mesh::calc_cell_edge()
 		}
 	}
 
-	for(int i = 0; i < iNCell; i++)
-	{
-		printf("Cell %i Edges: %i %i %i\n", i, Cell_edge[0][i], Cell_edge[1][i], Cell_edge[2][i]);
-	}
+	// for(int i = 0; i < iNCell; i++)
+	// {
+	// 	printf("Cell %i Edges: %i %i %i\n", i, Cell_edge[0][i], Cell_edge[1][i], Cell_edge[2][i]);
+	// }
 }
 
 void Mesh::calc_cell_neighbor()
@@ -149,17 +149,57 @@ void Mesh::calc_cell_neighbor()
 			} 
 
 		}
-
-		// printf("Number of neighbors for cell %i = %i\n", cell_index, num_neighbor);
+		// Reset number of neighbors
 		num_neighbor = 0;
 		neighbors_found = 0;
 	}
-	for(int i = 0; i < iNCell; i++)
-	{
-		printf("%i %i %i - Neighbors for Cell %i\n", Cell_neighbor[0][i], Cell_neighbor[1][i], Cell_neighbor[2][i], i);
-	}
+	// for(int i = 0; i < iNCell; i++)
+	// {
+	// 	printf("%i %i %i - Neighbors for Cell %i\n", Cell_neighbor[0][i], Cell_neighbor[1][i], Cell_neighbor[2][i], i);
+	// }
 }
 
+void Mesh::calc_edge_length()
+{
+	/*
+	In this function, we will loop over each edge, and calculate its length. We will
+	achieve this by using the pythagorean theorem, and finding dx and dy between the 
+	points.
+	*/
+
+	int index_origin, index_dest; // Find indices of vertices at each end of edge
+	double x_origin, y_origin; // Find coordinates at origin
+	double x_dest, y_dest; // Find coordinates at destination
+	double length; // Calculate length of edge
+	double dx, dy; // Find distance in x and y of edge
+
+	for(int i = 0; i < iNEdge; i++)
+	{
+		// Determine indices of edge origin and destination
+		index_origin = Edge[2][i];
+		index_dest = Edge[3][i];
+
+		// Determine x and y position at origin
+		x_origin = Vert[0][index_origin];
+		y_origin = Vert[1][index_origin];
+
+		// Determine x and y position at destination
+		x_dest = Vert[0][index_dest];
+		y_dest = Vert[1][index_dest];
+
+		// Calculate length of edge
+		dx = x_dest - x_origin;
+		dy = y_dest - y_origin;
+		length = sqrt((dx * dx) + (dy * dy));
+
+		Edge_length[i] = length;
+	}
+
+	for(int i = 0; i < iNEdge; i++)
+	{
+		printf("Edge %i has length %f\n", i, Edge_length[i]);
+	}
+}
 
 Mesh read_mesh(std::string meshname)
 {
@@ -258,10 +298,11 @@ std::string veryfine = "Face-Cell/mech511-square-veryfine.mesh";
 std::string analytical = "Face-Cell/analytical.mesh";
 
 
-Mesh mesh = read_mesh(verycoarse);
+Mesh mesh = read_mesh(analytical);
 // mesh.print_edges();
 mesh.calc_cell_edge();
 mesh.calc_cell_neighbor();
+mesh.calc_edge_length();
 
 time(&end);
 double time_taken = double(end - start);

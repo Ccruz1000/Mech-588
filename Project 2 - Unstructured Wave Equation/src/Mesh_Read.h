@@ -35,10 +35,16 @@ public:
 	std::array<std::vector<int>, 3> Bdry = {std::vector<int>(iNBdry), std::vector<int>(iNBdry), std::vector<int>(iNBdry)};
 	std::array<std::vector<int>, 4> Edge = {std::vector<int>(iNEdge), std::vector<int>(iNEdge), std::vector<int>(iNEdge), std::vector<int>(iNEdge)};
 	
-	// Store indices of edges and vertices for each cell
+	// Store indices of edges and neighbors for each cell
 	std::array<std::vector<int>, 3> Cell_edge = {std::vector<int>(iNCell), std::vector<int>(iNCell), std::vector<int>(iNCell)};
 	std::array<std::vector<int>, 3> Cell_neighbor = {std::vector<int>(iNCell), std::vector<int>(iNCell), std::vector<int>(iNCell)};
 
+	// Store length of each edge
+	std::vector<double> Edge_length = std::vector<double>(iNEdge); 
+
+	// Store coordinates of edge midpoint and cell centroid
+	std::array<std::vector<double>, 2> Cell_centroid = {std::vector<double>(iNCell), std::vector<double>(iNCell)};
+	std::array<std::vector<double>, 2> Edge_centroid = {std::vector<double>(iNEdge), std::vector<double>(iNEdge)}; 
 	// Constructors
 	Mesh(int ncell, int nedge, int nbdry, int nvert);
 
@@ -47,6 +53,7 @@ public:
 	void print_vert_coord();
 	void calc_cell_edge();
 	void calc_cell_neighbor();
+	void calc_edge_length();
 };
 
 Mesh read_mesh(std::string meshname);
