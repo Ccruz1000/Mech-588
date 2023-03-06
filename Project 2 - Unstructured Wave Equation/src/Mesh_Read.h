@@ -7,7 +7,7 @@
 #include <cstdlib>
 #include <vector>
 #include <array>
-
+#include <time.h>
 /********************************************************************
 // Unstructured Mesh Programming Assignment Function File Header
 // Mech 588 - Advanced CFD UBC Mechanical Engineering Winter 2023
@@ -32,12 +32,12 @@ public:
 	For Bdry - Bdry[0]: Connected cell, Bdry[1]: Edge origin vertex, Bdry[2]: Edge destination vertex
 	For Edge - Edge[0]: Left cell Edge[1]: Right cell, Edge[2]: Edge origin vertex, Edge[3]: Edge destination vertex
 	*/
-	//int Edge[4][iNEdge];
-	//int Bdry[3][iNBdry];
 	std::array<std::vector<int>, 3> Bdry = {std::vector<int>(iNBdry), std::vector<int>(iNBdry), std::vector<int>(iNBdry)};
 	std::array<std::vector<int>, 4> Edge = {std::vector<int>(iNEdge), std::vector<int>(iNEdge), std::vector<int>(iNEdge), std::vector<int>(iNEdge)};
 	
-	//int cell_neighbor[3][iNCell]; // Store indices of neighbors for each cell
+	// Store indices of edges and vertices for each cell
+	std::array<std::vector<int>, 3> Cell_edge = {std::vector<int>(iNCell), std::vector<int>(iNCell), std::vector<int>(iNCell)};
+	std::array<std::vector<int>, 3> Cell_neighbor = {std::vector<int>(iNCell), std::vector<int>(iNCell), std::vector<int>(iNCell)};
 
 	// Constructors
 	Mesh(int ncell, int nedge, int nbdry, int nvert);
@@ -45,6 +45,8 @@ public:
 	// Member functions
 	void print_edges();
 	void print_vert_coord();
+	void calc_cell_edge();
+	void calc_cell_neighbor();
 };
 
 Mesh read_mesh(std::string meshname);
