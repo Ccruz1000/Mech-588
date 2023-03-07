@@ -25,8 +25,10 @@ private:
 public:
 	// Store number of cells, internal edges, boundary edges, vertices
 	int iNCell, iNEdge, iNBdry, iNVert;
+	
 	// Array of vectors to store vertex coordinate data
 	std::array<std::vector<double>, 2> Vert = {std::vector<double>(iNVert), std::vector<double>(iNVert)}; // Store X and Y coordinates for each vertex (X is Vert[0], Y is Vert[1])
+	
 	/*
 	Store connected cells, and vertex indices for edges and boundary edges seperately
 	For Bdry - Bdry[0]: Connected cell, Bdry[1]: Edge origin vertex, Bdry[2]: Edge destination vertex
@@ -35,16 +37,18 @@ public:
 	std::array<std::vector<int>, 3> Bdry = {std::vector<int>(iNBdry), std::vector<int>(iNBdry), std::vector<int>(iNBdry)};
 	std::array<std::vector<int>, 4> Edge = {std::vector<int>(iNEdge), std::vector<int>(iNEdge), std::vector<int>(iNEdge), std::vector<int>(iNEdge)};
 	
-	// Store indices of edges and neighbors for each cell
+	// Store indices of edges, vertices and neighbors for each cell
 	std::array<std::vector<int>, 3> Cell_edge = {std::vector<int>(iNCell), std::vector<int>(iNCell), std::vector<int>(iNCell)};
 	std::array<std::vector<int>, 3> Cell_neighbor = {std::vector<int>(iNCell), std::vector<int>(iNCell), std::vector<int>(iNCell)};
-
+	std::array<std::vector<int>, 3> Cell_vert = {std::vector<int>(iNCell), std::vector<int>(iNCell), std::vector<int>(iNCell)};
+	
 	// Store length of each edge
 	std::vector<double> Edge_length = std::vector<double>(iNEdge); 
 
 	// Store coordinates of edge midpoint and cell centroid
 	std::array<std::vector<double>, 2> Cell_centroid = {std::vector<double>(iNCell), std::vector<double>(iNCell)};
 	std::array<std::vector<double>, 2> Edge_centroid = {std::vector<double>(iNEdge), std::vector<double>(iNEdge)}; 
+	
 	// Constructors
 	Mesh(int ncell, int nedge, int nbdry, int nvert);
 
@@ -53,7 +57,9 @@ public:
 	void print_vert_coord();
 	void calc_cell_edge();
 	void calc_cell_neighbor();
+	void calc_cell_vert();
 	void calc_edge_length();
+	void calc_cell_centroid();
 };
 
 Mesh read_mesh(std::string meshname);

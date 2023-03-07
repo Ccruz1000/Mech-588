@@ -201,6 +201,44 @@ void Mesh::calc_edge_length()
 	}
 }
 
+// Add comments, and refactor this
+void Mesh::calc_cell_vert()
+{
+	std::vector<int> Cell_pos = std::vector<int>(iNCell);
+	int cntr = 0;
+	int max_ed,min_ed;
+	for(int i = 0; i < iNCell; i++)
+	{
+	Cell_pos[i] = 0;
+	}
+	for( int i= 0; i < iNCell ; i++)
+	{
+	max_ed = std::max(Cell_edge[0][i], Cell_edge[1][i]);
+	max_ed = std::max(max_ed,Cell_edge[2][i]);
+
+	min_ed = std::min(Cell_edge[0][i], Cell_edge[1][i]);
+	min_ed= std::min(min_ed, Cell_edge[2][i]);
+
+	Cell_vert[0][i]= Edge[2][max_ed];
+	Cell_vert[1][i]= Edge[3][max_ed];
+	Cell_vert[2][i]= Edge[2][min_ed];
+	if(Edge[2][min_ed]== Edge[3][max_ed] || Edge[2][min_ed]== Edge[2][max_ed] )
+	        {
+	            Cell_vert[2][i]= Edge[3][min_ed];
+	        }
+
+	printf("Cell %i verts: %i %i %i\n", i, Cell_vert[0][i], Cell_vert[1][i], Cell_vert[2][i]);
+
+	}
+}
+
+
+
+// void Mesh::calc_cell_centroid()
+// {
+// 	int i = 0;
+// }
+
 Mesh read_mesh(std::string meshname)
 {
 	std::ifstream mesh(meshname); // Read mesh
@@ -303,7 +341,7 @@ Mesh mesh = read_mesh(analytical);
 mesh.calc_cell_edge();
 mesh.calc_cell_neighbor();
 mesh.calc_edge_length();
-
+mesh.calc_cell_vert();
 time(&end);
 double time_taken = double(end - start);
 printf("Code succesfully run in %.3f seconds\n", time_taken);
