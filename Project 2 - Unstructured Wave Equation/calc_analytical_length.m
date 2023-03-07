@@ -20,3 +20,12 @@ y2 = Vertex_coord(Cell_vertex(i, 2), 2);
 y3 = Vertex_coord(Cell_vertex(i, 3), 2);
 Cell_centroid(i, 2) = (y1 + y2 + y3)/3;
 end
+
+for i = 1:length(Edge_vertex)
+x1 = Vertex_coord(Edge_vertex(i, 1), 1);
+x2 = Vertex_coord(Edge_vertex(i, 2), 1);
+Edge_centroid(i, 1) = (x1 + x2)/2;
+y1 = Vertex_coord(Edge_vertex(i, 1), 2);
+y2 = Vertex_coord(Edge_vertex (i, 2), 2);
+Edge_centroid(i, 2) = (y1 + y2)/2;
+end

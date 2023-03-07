@@ -194,50 +194,129 @@ void Mesh::calc_edge_length()
 
 		Edge_length[i] = length;
 	}
-
-	for(int i = 0; i < iNEdge; i++)
-	{
-		printf("Edge %i has length %f\n", i, Edge_length[i]);
-	}
+	// 	for(int i = 0; i < iNEdge; i++)
+	// 	{
+	// 		printf("Edge %i has length %f\n", i, Edge_length[i]);
+	// 	}
 }
 
-// Add comments, and refactor this
 void Mesh::calc_cell_vert()
 {
+	// Store indices for each cell to assign their vertices
 	std::vector<int> Cell_pos = std::vector<int>(iNCell);
-	int cntr = 0;
-	int max_ed,min_ed;
+	int max_ed,min_ed;  // Store max and min edge index for each cell. 
+	// Initialize cell indices vector to be 0's
 	for(int i = 0; i < iNCell; i++)
 	{
-	Cell_pos[i] = 0;
+		Cell_pos[i] = 0;
 	}
+
 	for( int i= 0; i < iNCell ; i++)
 	{
-	max_ed = std::max(Cell_edge[0][i], Cell_edge[1][i]);
-	max_ed = std::max(max_ed,Cell_edge[2][i]);
+		/*
+		 This loop determines the cell vertices by first sorting the edges to find the 
+		 edge the the largest indice, and the edge with the smallest indice. It then assigns 
+		 the destination and origin vertices of the edge with the largest index to the cell, and
+		 then assigns the origin edge of the edge with the smallest index to the cell. Finally, it 
+		 checks to see if the index has been repeated. If it does, it will asign the desination index
+		 of the edge with the smallest index to the call. 
+		*/
+		// Determine edge with largest index.
+		max_ed = std::max(Cell_edge[0][i], Cell_edge[1][i]);
+		max_ed = std::max(max_ed,Cell_edge[2][i]);
+		// Determine edge smallest index
+		min_ed = std::min(Cell_edge[0][i], Cell_edge[1][i]);
+		min_ed= std::min(min_ed, Cell_edge[2][i]);
 
-	min_ed = std::min(Cell_edge[0][i], Cell_edge[1][i]);
-	min_ed= std::min(min_ed, Cell_edge[2][i]);
-
-	Cell_vert[0][i]= Edge[2][max_ed];
-	Cell_vert[1][i]= Edge[3][max_ed];
-	Cell_vert[2][i]= Edge[2][min_ed];
-	if(Edge[2][min_ed]== Edge[3][max_ed] || Edge[2][min_ed]== Edge[2][max_ed] )
+		// Assign vertex indices to cell
+		Cell_vert[0][i]= Edge[2][max_ed];
+		Cell_vert[1][i]= Edge[3][max_ed];
+		Cell_vert[2][i]= Edge[2][min_ed];
+	
+		// Finally, check if an index has been repeated. If it is, then assign the other vertex
+		// of the edge with the smaller index to the cell.
+		if(Edge[2][min_ed] == Edge[3][max_ed] || Edge[2][min_ed] == Edge[2][max_ed] )
 	        {
 	            Cell_vert[2][i]= Edge[3][min_ed];
 	        }
+	}
+	
+	// for(int i = 0; i < iNCell; i++)
+	// {	
+	// 	printf("Cell %i verts: %i %i %i\n", i, Cell_vert[0][i], Cell_vert[1][i], Cell_vert[2][i]);
+	// }
+}
 
-	printf("Cell %i verts: %i %i %i\n", i, Cell_vert[0][i], Cell_vert[1][i], Cell_vert[2][i]);
+void Mesh::calc_cell_centroid()
+{
+	double x1, x2, x3; // Store the X coordinate for each vertex of each cell.
+	double y1, y2, y3; // Store the Y coordinate for each vertex of each cell.
+	double x_ave, y_ave; // Store average values for x and y for each cell.
 
+	// Loop through each cell, and determine their vertex coordinates
+	for(int i = 0; i < iNCell; i++)
+	{
+		// Calculate x_ave
+		x1 = Vert[0][Cell_vert[0][i]];
+		x2 = Vert[0][Cell_vert[1][i]];
+		x3 = Vert[0][Cell_vert[2][i]];
+		x_ave = (x1 + x2 + x3) / 3;
+
+		// Calculate y_ave
+		y1 = Vert[1][Cell_vert[0][i]];
+		y2 = Vert[1][Cell_vert[1][i]];
+		y3 = Vert[1][Cell_vert[2][i]];
+		y_ave = (y1 + y2 + y3) / 3;
+
+		// Assign coordinates to cell centroid
+		Cell_centroid[0][i] = x_ave;
+		Cell_centroid[1][i] = y_ave;
+	}
+	// for(int i = 0; i < iNCell; i++)
+	// {
+	// 	printf("Cell %i centroid has coordinates X: %f Y: %f\n", i, Cell_centroid[0][i], Cell_centroid[1][i]);
+	// }
+}
+
+void Mesh::calc_edge_centroid()
+{
+	double x1, x2; // Store X coordinates for edge origin and destination
+	double y1, y2; // Store Y coordinates for edge origin and destination
+	double x_ave, y_ave; // Store centroid location for edge
+
+	// Loop through edges to calculate edge centroid coordinates
+	for(int i = 0; i < iNEdge; i++)
+	{
+		// Calculate x_ave
+		x1 = Vert[0][Edge[2][i]];
+		x2 = Vert[0][Edge[3][i]];
+		x_ave = (x1 + x2) / 2;
+
+		// Calculate y_ave
+		y1 = Vert[1][Edge[2][i]];
+		y2 = Vert[1][Edge[3][i]];
+		y_ave = (y1 + y2) / 2;
+
+		// Assign coordinates to edge centroid
+		Edge_centroid[0][i] = x_ave;
+		Edge_centroid[1][i] = y_ave;
+	}
+
+	for(int i = 0; i < iNEdge; i++)
+	{
+		printf("Edge %i Centroid has coordinates X:%f Y:%f\n", i, Edge_centroid[0][i], Edge_centroid[1][i]);
 	}
 }
 
-
-
-// void Mesh::calc_cell_centroid()
-// {
-// 	int i = 0;
-// }
+void Mesh::calc_all_param()
+{
+	calc_cell_edge();
+	calc_cell_neighbor();
+	calc_edge_length();
+	calc_cell_vert();
+	calc_cell_centroid();
+	calc_edge_centroid();
+}
 
 Mesh read_mesh(std::string meshname)
 {
@@ -327,6 +406,7 @@ int main()
 // Calculate runtime
 time_t start, end;
 time(&start);
+
 // Read mesh 
 std::string verycoarse = "Face-Cell/mech511-square-verycoarse.mesh";
 std::string coarse = "Face-Cell/mech511-square-coarse.mesh";
@@ -335,15 +415,12 @@ std::string fine = "Face-Cell/mech511-square-fine.mesh";
 std::string veryfine = "Face-Cell/mech511-square-veryfine.mesh";
 std::string analytical = "Face-Cell/analytical.mesh";
 
-
-Mesh mesh = read_mesh(analytical);
+Mesh mesh = read_mesh(veryfine);
 // mesh.print_edges();
-mesh.calc_cell_edge();
-mesh.calc_cell_neighbor();
-mesh.calc_edge_length();
-mesh.calc_cell_vert();
+// mesh.print_vert_coord();
+mesh.calc_all_param();
 time(&end);
-double time_taken = double(end - start);
+double time_taken = double(end - start); 
 printf("Code succesfully run in %.3f seconds\n", time_taken);
 return 0;
 }

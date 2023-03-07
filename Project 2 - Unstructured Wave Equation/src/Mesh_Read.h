@@ -60,6 +60,8 @@ public:
 	void calc_cell_vert();
 	void calc_edge_length();
 	void calc_cell_centroid();
+	void calc_edge_centroid();
+	void calc_all_param(); // Calculates all of the above parameters in one go
 };
 
 Mesh read_mesh(std::string meshname);
