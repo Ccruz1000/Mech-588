@@ -1,5 +1,6 @@
 // Included headers
 #include "Mesh_Read.h"
+#include "field_functions.h"
 
 /********************************************************************
 // Unstructured Mesh Programming Assignment Main File
@@ -25,16 +26,9 @@ Mesh mesh = read_mesh(analytical);
 
 std::vector<double> temp_cent = std::vector<double>(mesh.iNCell); // Store temperatures at cell centroids
 std::array<std::vector<double>, 2> vel = {std::vector<double>(mesh.iNEdge), std::vector<double>(mesh.iNEdge)}; // Store velocity u and v at edge midpoints
-double u, v; // store u and v velocities at edge midpoints
-double x, y; // store x and y coordinates at edge midpoints
 
-for(int i = 0; i < mesh.iNEdge; i++)
-{
-	x = mesh.Cell_centroid[0][i];
-	y = mesh.Cell_centroid[1][i];
-}
+initial_condition(mesh, temp_cent, vel);
 
-// printf(math.pi);
 
 time(&end);
 double time_taken = double(end - start); 

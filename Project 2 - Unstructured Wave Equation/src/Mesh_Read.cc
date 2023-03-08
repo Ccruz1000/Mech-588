@@ -328,12 +328,11 @@ void Mesh::calc_edge_norm()
 		Edge_norm[0][i] = (1 / Edge_length[i]) * (y_origin - y_dest);
 		Edge_norm[1][i] = (1 / Edge_length[i]) * (x_dest - x_origin);
 	}
-
-	for(int i = 0; i < iNEdge; i++)
-	{
-		printf("Edge %i has normal X: %f Y: %f\n", i, Edge_norm[0][i], Edge_norm[1][i]);
-		printf("Edge %i normal has length %f\n", i, sqrt(Edge_norm[0][i] * Edge_norm[0][i] + Edge_norm[1][i] * Edge_norm[1][i]));
-	}
+	// for(int i = 0; i < iNEdge; i++)
+	// {
+	// 	printf("Edge %i has normal X: %f Y: %f\n", i, Edge_norm[0][i], Edge_norm[1][i]);
+	// 	printf("Edge %i normal has length %f\n", i, sqrt(Edge_norm[0][i] * Edge_norm[0][i] + Edge_norm[1][i] * Edge_norm[1][i]));
+	// }
 }
 
 void Mesh::calc_all_param()
