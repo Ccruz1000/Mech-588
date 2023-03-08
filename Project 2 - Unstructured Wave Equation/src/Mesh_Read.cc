@@ -312,7 +312,6 @@ void Mesh::calc_edge_norm()
 {
 	double x_origin, y_origin; // Store coordinates at edge origin
 	double x_dest, y_dest; // Store coordinates at edge destination
-	double length;
 
 	// Loop through each edge to calculate their normal vector
 	for(int i = 0; i < iNEdge; i++)
@@ -335,7 +334,6 @@ void Mesh::calc_edge_norm()
 		printf("Edge %i has normal X: %f Y: %f\n", i, Edge_norm[0][i], Edge_norm[1][i]);
 		printf("Edge %i normal has length %f\n", i, sqrt(Edge_norm[0][i] * Edge_norm[0][i] + Edge_norm[1][i] * Edge_norm[1][i]));
 	}
-
 }
 
 void Mesh::calc_all_param()

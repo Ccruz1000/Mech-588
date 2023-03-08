@@ -3,8 +3,6 @@
 #include <string>
 #include <fstream>
 #include <cmath>
-#include <cstdio>
-#include <cstdlib>
 #include <vector>
 #include <array>
 #include <time.h>
