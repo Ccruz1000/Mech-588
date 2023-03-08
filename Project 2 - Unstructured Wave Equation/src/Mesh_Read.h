@@ -45,6 +45,9 @@ public:
 	// Store length of each edge
 	std::vector<double> Edge_length = std::vector<double>(iNEdge); 
 
+	// Store x and y components for normal vector of each edge. [0][i] is x component, [1][i] is y component for edge i
+	std::array<std::vector<double>, 2> Edge_norm = {std::vector<double>(iNEdge), std::vector<double>(iNEdge)};
+
 	// Store coordinates of edge midpoint and cell centroid
 	std::array<std::vector<double>, 2> Cell_centroid = {std::vector<double>(iNCell), std::vector<double>(iNCell)};
 	std::array<std::vector<double>, 2> Edge_centroid = {std::vector<double>(iNEdge), std::vector<double>(iNEdge)}; 
@@ -61,6 +64,7 @@ public:
 	void calc_edge_length();
 	void calc_cell_centroid();
 	void calc_edge_centroid();
+	void calc_edge_norm();
 	void calc_all_param(); // Calculates all of the above parameters in one go
 };
 

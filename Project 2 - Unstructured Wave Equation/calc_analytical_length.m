@@ -29,3 +29,8 @@ y1 = Vertex_coord(Edge_vertex(i, 1), 2);
 y2 = Vertex_coord(Edge_vertex (i, 2), 2);
 Edge_centroid(i, 2) = (y1 + y2)/2;
 end
+
+for i = 1:length(Edge_length)
+normal(i, 1) = (1 / Edge_length(i)) * (Vertex_coord(Edge_vertex(i, 1), 2) - Vertex_coord(Edge_vertex(i, 2), 2));
+normal(i, 2) = (1 / Edge_length(i)) * (Vertex_coord(Edge_vertex(i, 1), 1) - Vertex_coord(Edge_vertex(i, 2), 1));
+end

@@ -302,10 +302,40 @@ void Mesh::calc_edge_centroid()
 		Edge_centroid[1][i] = y_ave;
 	}
 
+	// for(int i = 0; i < iNEdge; i++)
+	// {
+	// 	printf("Edge %i Centroid has coordinates X:%f Y:%f\n", i, Edge_centroid[0][i], Edge_centroid[1][i]);
+	// }
+}
+
+void Mesh::calc_edge_norm()
+{
+	double x_origin, y_origin; // Store coordinates at edge origin
+	double x_dest, y_dest; // Store coordinates at edge destination
+	double length;
+
+	// Loop through each edge to calculate their normal vector
 	for(int i = 0; i < iNEdge; i++)
 	{
-		printf("Edge %i Centroid has coordinates X:%f Y:%f\n", i, Edge_centroid[0][i], Edge_centroid[1][i]);
+		// fetch coordinates at edge origin
+		x_origin = Vert[0][Edge[2][i]];
+		x_dest = Vert[0][Edge[3][i]];
+
+		// fetch coordinates at edge destination
+		y_origin = Vert[1][Edge[2][i]];
+		y_dest = Vert[1][Edge[3][i]];
+		
+		// Calculate x and y component for edge normal
+		Edge_norm[0][i] = (1 / Edge_length[i]) * (y_origin - y_dest);
+		Edge_norm[1][i] = (1 / Edge_length[i]) * (x_dest - x_origin);
 	}
+
+	for(int i = 0; i < iNEdge; i++)
+	{
+		printf("Edge %i has normal X: %f Y: %f\n", i, Edge_norm[0][i], Edge_norm[1][i]);
+		printf("Edge %i normal has length %f\n", i, sqrt(Edge_norm[0][i] * Edge_norm[0][i] + Edge_norm[1][i] * Edge_norm[1][i]));
+	}
+
 }
 
 void Mesh::calc_all_param()
@@ -316,6 +346,7 @@ void Mesh::calc_all_param()
 	calc_cell_vert();
 	calc_cell_centroid();
 	calc_edge_centroid();
+	calc_edge_norm();
 }
 
 Mesh read_mesh(std::string meshname)
@@ -391,6 +422,8 @@ Mesh read_mesh(std::string meshname)
 			temp.Edge[3][i] = Edge[3][i];
 		}
 
+		// Perform all calculations and bookkeping 
+		temp.calc_all_param();
 		return temp;
 	}
 
@@ -399,28 +432,4 @@ Mesh read_mesh(std::string meshname)
 		printf("Mesh file not found. Please check that proper filename was used\n");
 		exit(1);
 	}
-}
-
-int main()
-{
-// Calculate runtime
-time_t start, end;
-time(&start);
-
-// Read mesh 
-std::string verycoarse = "Face-Cell/mech511-square-verycoarse.mesh";
-std::string coarse = "Face-Cell/mech511-square-coarse.mesh";
-std::string medium = "Face-Cell/mech511-square-medium.mesh";
-std::string fine = "Face-Cell/mech511-square-fine.mesh";
-std::string veryfine = "Face-Cell/mech511-square-veryfine.mesh";
-std::string analytical = "Face-Cell/analytical.mesh";
-
-Mesh mesh = read_mesh(veryfine);
-// mesh.print_edges();
-// mesh.print_vert_coord();
-mesh.calc_all_param();
-time(&end);
-double time_taken = double(end - start); 
-printf("Code succesfully run in %.3f seconds\n", time_taken);
-return 0;
 }
