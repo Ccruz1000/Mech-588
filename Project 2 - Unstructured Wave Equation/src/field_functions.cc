@@ -31,23 +31,23 @@ void initial_condition(const Mesh &mesh, std::vector<double> &temp_cent, std::ar
 	}
 }
 
-void save_VTK(std::string filename &file, const Mesh mesh, const std::vector<double> temp_cent, const array<std::vector<double>, 2> vel)
-{
-	const char *fileChar = fileName.c_str(); // Convert string to array of characters
+// void save_VTK(std::string filename &file, const Mesh mesh, const std::vector<double> temp_cent, const array<std::vector<double>, 2> vel)
+// {
+// 	const char *fileChar = fileName.c_str(); // Convert string to array of characters
 
-	FILE *vtkFile; // Point FILE to vtkFile
-	vtkFile = fopen(fileChar, "w"); // Open vtkFile to write data
-	unsigned long i, j; // Counters for indices
+// 	FILE *vtkFile; // Point FILE to vtkFile
+// 	vtkFile = fopen(fileChar, "w"); // Open vtkFile to write data
+// 	unsigned long i, j; // Counters for indices
 
-	// Print data to VTK file
-	fprintf(vtkFile, "#vtk DataFile Version 2.0\n");
-	fprintf(vtkFile, "Title = \"Tri data\"\n");
-	fprintf(vtkFile, "ASCII\n");
-	fprintf(vtkFile, "DATASET UNSTRUCTURED_GRID\n");
+// 	// Print data to VTK file
+// 	fprintf(vtkFile, "#vtk DataFile Version 2.0\n");
+// 	fprintf(vtkFile, "Title = \"Tri data\"\n");
+// 	fprintf(vtkFile, "ASCII\n");
+// 	fprintf(vtkFile, "DATASET UNSTRUCTURED_GRID\n");
 
-	fclose(vtkFile);
-	//fprintf(vtkFile, "")
-}
+// 	fclose(vtkFile);
+// 	//fprintf(vtkFile, "")
+// }
 
 // void storeVTKSolution(Solution &s, std::string fileName)
 // {
