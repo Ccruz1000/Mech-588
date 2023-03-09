@@ -2,7 +2,7 @@
 #include "Mesh_Read.h"
 
 /********************************************************************
-// Unstructured Mesh Programming Assignment Function File Header
+// Unstructured Mesh Programming Assignment Field Functions File Header
 // Mech 588 - Advanced CFD UBC Mechanical Engineering Winter 2023
 // Christian Rowsell (40131393)
 ********************************************************************/

@@ -2,10 +2,11 @@
 #include "Mesh_Read.h"
 
 /********************************************************************
-// Curvillinear Mesh Programming Assignment Function File
+// Unstructured Mesh Programming Assignment Mesh Reading File
 // Mech 588 - Advanced CFD UBC Mechanical Engineering Winter 2023
 // Christian Rowsell (40131393)
 ********************************************************************/
+
 // Constructor to initialize object
 Mesh::Mesh(int ncell, int nedge, int nbdry, int nvert)
            : iNCell(ncell), iNEdge(nedge), iNBdry(nbdry), iNVert(nvert)
@@ -252,7 +253,6 @@ void Mesh::calc_cell_vert()
 	    double Xb, Yb;
 	    double Xc, Yc;
 
-
 	    // Fetch x and y components described above
 	    Xa = Vert[0][Cell_vert[0][i]];
 	    Xb = Vert[0][Cell_vert[1][i]];
@@ -261,18 +261,17 @@ void Mesh::calc_cell_vert()
 	    Ya = Vert[1][Cell_vert[0][i]];
 	    Yb = Vert[1][Cell_vert[1][i]];
 	    Yc = Vert[1][Cell_vert[2][i]];
-	    printf("Xa: %f Xb: %f Xc: %f Ya: %f Yb: %f Yc: %f\n", Xa, Xb, Xc, Ya, Yb, Yc);
+	    // printf("Xa: %f Xb: %f Xc: %f Ya: %f Yb: %f Yc: %f\n", Xa, Xb, Xc, Ya, Yb, Yc);
 	    // Perform cross product and calculate cell area
 	    double area;
 
 	    area = 0.5 * ((Xb - Xa) * (Yc - Ya) - (Yb - Ya)*(Xc - Xa));
 		int D; // Temporary variable to allow for switching of vertices B and C
-		
-	    printf("Cell %i has area %f\n", i, area);
+	    // printf("Cell %i has area %f\n", i, area);
 		
 		if (area > 0)
 		{
-			printf("Cell %i has vertices ordered CCW\n", i);
+			// printf("Cell %i has vertices ordered CCW\n", i);
 			Cell_area[i] = area;
 		}
 
@@ -282,15 +281,13 @@ void Mesh::calc_cell_vert()
 			D = Cell_vert[1][i];
 			Cell_vert[1][i] = Cell_vert[2][i];
 			Cell_vert[2][i] = D;
-			printf("Cell %i has vertices ordered CW\n", i);
-
+			// printf("Cell %i has vertices ordered CW\n", i);
 		}
-	}
-	
-	for(int i = 0; i < iNCell; i++)
-	{	
-		printf("Cell %i verts: %i %i %i\n", i, Cell_vert[0][i], Cell_vert[1][i], Cell_vert[2][i]);
-	}
+	}	
+	// for(int i = 0; i < iNCell; i++)
+	// {	
+	// 	printf("Cell %i verts: %i %i %i\n", i, Cell_vert[0][i], Cell_vert[1][i], Cell_vert[2][i]);
+	// }
 }
 
 void Mesh::calc_cell_centroid()
@@ -402,7 +399,7 @@ Mesh read_mesh(std::string meshname)
 		// Read number of cells, edges, boundary edges, and vertices
 		int iNCell, iNEdge, iNBdry, iNVert;
 		mesh >> iNCell >> iNEdge >> iNBdry >> iNVert;
-		printf("Number of Cells - %i\nNumber of Edges - %i\nNumber of Boundary Edges - %i\nNumber of Vertices - %i\n", iNCell, iNEdge, iNBdry, iNVert);
+		// printf("Number of Cells - %i\nNumber of Edges - %i\nNumber of Boundary Edges - %i\nNumber of Vertices - %i\n", iNCell, iNEdge, iNBdry, iNVert);
 		
 		// Store X and Y coordinates for each vertex (X is Vert[0], Y is Vert[1])
 		std::array<std::vector<double>, 2> Vert = {std::vector<double>(iNVert), std::vector<double>(iNVert)};
