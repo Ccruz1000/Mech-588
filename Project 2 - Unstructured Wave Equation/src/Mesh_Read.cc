@@ -421,6 +421,7 @@ Mesh read_mesh(std::string meshname)
 
 		// Perform all calculations and bookkeping 
 		temp.calc_all_param();
+		mesh.close();
 		return temp;
 	}
 

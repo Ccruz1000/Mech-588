@@ -32,7 +32,7 @@ end
 
 for i = 1:length(Edge_length)
 normal(i, 1) = (1 / Edge_length(i)) * (Vertex_coord(Edge_vertex(i, 1), 2) - Vertex_coord(Edge_vertex(i, 2), 2));
-normal(i, 2) = (1 / Edge_length(i)) * (Vertex_coord(Edge_vertex(i, 1), 1) - Vertex_coord(Edge_vertex(i, 2), 1));
+normal(i, 2) = (1 / Edge_length(i)) * (-Vertex_coord(Edge_vertex(i, 1), 1) + Vertex_coord(Edge_vertex(i, 2), 1));
 end
 
 for i = 1:length(Edge_centroid)
