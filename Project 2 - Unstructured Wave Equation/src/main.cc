@@ -28,11 +28,11 @@ std::vector<double> temp_cent = std::vector<double>(mesh.iNCell); // Store tempe
 std::array<std::vector<double>, 2> vel = {std::vector<double>(mesh.iNEdge), std::vector<double>(mesh.iNEdge)}; // Store velocity u and v at edge midpoints
 
 initial_condition(mesh, temp_cent, vel);
-
 std::string file = "Results/Test.vtk";
-
 save_VTK(file, mesh, temp_cent);
 
+std::array<std::vector<double>, 2> Cell_Grad = {std::vector<double>(mesh.iNCell), std::vector<double>(mesh.iNCell)};
+calc_grad(mesh, temp_cent, Cell_Grad);
 
 time(&end);
 double time_taken = double(end - start); 

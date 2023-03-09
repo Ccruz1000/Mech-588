@@ -79,47 +79,53 @@ void save_VTK(std::string fileName, const Mesh mesh, const std::vector<double> t
 		fprintf(vtkFile, "%14.12e\n", temp_cent[i]);
 	}
 
+	fprintf(vtkFile, "VECTORS Velocity DOUBLE\n");
+	for(int i = 0; i< mesh.iNCell; i++)
+	{
+		fprintf(vtkFile, "%14.12e %14.12e %14.12e\n", mesh.Cell_centroid[1][i]*pi(), -mesh.Cell_centroid[0][i]*pi(), 0.0);
+	}
+
 	fclose(vtkFile);
 }
 
-// void storeVTKSolution(Solution &s, std::string fileName)
-// {
-// 	const char * fileChar = fileName.c_str();
-// 	FILE *vtkFile;
-// 	vtkFile = fopen(fileChar, "w");
-// 	unsigned long i, j;
-// 	fprintf(vtkFile, "# vtk DataFile Version 2.0\n");
-// 	fprintf(vtkFile,"TITLE = \"Quad data\"\n");
-// 	fprintf(vtkFile,"ASCII\n");
-// 	fprintf(vtkFile,"DATASET STRUCTURED_GRID\n");
-// 	fprintf(vtkFile,"DIMENSIONS %lu %lu %d\n", s.ny, s.nx, 1);
-// 	fprintf(vtkFile,"POINTS %lu FLOAT\n",s.N);
-// 	for(int i = 0; i < s.nx; i++)
-// 		for(int j = 0; j < s.ny; j++)
-// 		{
-// 			fprintf(vtkFile, "%f %f %f\n", s.X(i, j), s.Y(i, j), 0.0);
-// 		}
-// 		// Change below to CELL_DATA
-// 	fprintf(vtkFile,"CELL_DATA %lu\n", (s.nx - 1) * (s.ny - 1));
-// 	fprintf(vtkFile,"SCALARS temperature FLOAT 1\n");
-// 	fprintf(vtkFile,"LOOKUP_TABLE default\n");
-// 	for(int i = 0; i < s.nx - 1; i++)
-// 		for(int j = 0; j < s.ny - 1; j++)
-// 		{
-// 			double PI = 4.0*atan(1.0);
-// 			s.T(i+1,j+1) = sin(PI*s.X(i+1,j+1))*sin(PI*s.Y(i+1,j+1));
-// 			s.T(i,j+1) = sin(PI*s.X(i,j+1))*sin(PI*s.Y(i,j+1));
-// 			s.T(i,j) = sin(PI*s.X(i,j))*sin(PI*s.Y(i,j));
-// 			s.T(i+1,j) = sin(PI*s.X(i+1,j))*sin(PI*s.Y(i+1,j));
+void calc_grad(const Mesh mesh, std::vector<double> temp_cent, std::array<std::vector<double>, 2> Cell_Grad)
+{
+	/*
+	This function will calculate the gradient in each cell. We will use the method derived in the analytical section of this project. 
+	The overall order of the function is as follows:
+	-> Loop through each cell
+	-> For each cell, count how many edges of the cell are boundary edges. 
+	-> Once we know how many boundary edges of the cell are boundary edges, we can determine which cells to use for the flux calculation. 
+	For each cell that has a boundary edge, we will use another edge from a neighboring cell. For example if cell i has neighboring cells a b and c,
+	we will use the a b and c to calculate the gradient in i. However, if cell i is on the boundary, and has neighbors a and b, where b is neighbors with 
+	d, then we will use a b and d to calculate the gradient in i. Finally, if cell i is on the boundary, and only has neighbor a (2 edges are boundary edges),
+	where a has neighbors e and f, we will use a e and f to calculate the gradient in i.
+	*/
+	// Loop through cells
+	for(int cell = 0; cell < mesh.iNCell; cell++)
+	{
+		// Check how many cell edges sit on the boundary.
+		int bound_edge = 0;
+		for(int edge = 0; edge < 3; edge++)
+		{
+			if (mesh.Edge[1][mesh.Cell_edge[edge][cell]] == -1 || mesh.Edge[1][mesh.Cell_edge[edge][cell]] == -1)
+			{
+				bound_edge += 1;
+			} 	
+		}
 
-// 			double Tavg = 0.25*(s.T(i+1,j+1) + s.T(i,j) + s.T(i,j+1)+ s.T(i+1,j));
-// 			fprintf(vtkFile, "%lf\n", Tavg);
-// 		}
-// 	// fprintf(vtkFile,"VECTORS velocity FLOAT\n");
-// 	// for(int i = 0; i < s.nx; i++)
-// 	// 	for(int j = 0; j < s.ny; j++)
-// 	// 	{
-// 	// 		fprintf(vtkFile, "%lf %lf %lf\n", s.u(i, j), s.v(i, j), 0.0);
-// 	// 	}
-// 	fclose(vtkFile);
-// }
+		// If there are 0 boundary edges, we will use the centroids of each neighbor
+		if(bound_edge == 0)
+		{
+			int neighbor 1;
+			int neighbor 2; 
+			int neighbor 3;
+			
+		}		
+		// If there is 1 boundary edge, we will use the centroids of neighbors a and b, as well as a neighbor of a
+
+		// If there is 2 boundary edges we will use the centroid of neighbor a, as well as two neighbors of a
+		printf("Cell %i has %i boundary edges\n", cell, bound_edge);
+	}
+}
+

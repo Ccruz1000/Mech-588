@@ -49,3 +49,8 @@ Yb = Vertex_coord(Cell_vertex(i, 2), 2);
 Xc = Vertex_coord(Cell_vertex(i, 3), 1);
 Cell_Area(i) = 0.5*((Xb - Xa)*(Yc - Ya) - (Yb - Ya)*(Xc-Xa));
 end
+
+for i = 1:length(Edge_centroid)
+Edge_vel(i, 1) = pi*Edge_centroid(i, 2);
+Edge_vel(i, 2) = -pi*Edge_centroid(i, 1);
+end

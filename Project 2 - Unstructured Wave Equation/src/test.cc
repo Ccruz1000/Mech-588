@@ -127,7 +127,7 @@ void test_edge_length(Mesh mesh)
 			if(test_value < 0)
 			{
 				tests_failed += 1;
-				printf("Error, negative edge length detected at edge %i\n", i);
+				printf("Error, negative test edge length detected at edge %i\n", i);
 				return;
 			}
 
