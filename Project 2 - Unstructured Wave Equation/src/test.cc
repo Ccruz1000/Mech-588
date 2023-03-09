@@ -298,7 +298,6 @@ int main()
 	test_cell_centroid(mesh);
 	printf("Centroid passed\n");
 
-
 	// After running tests inform user if tests failed or not
 	if(tests_failed == 0)
 	{
