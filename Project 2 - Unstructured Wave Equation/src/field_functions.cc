@@ -14,10 +14,10 @@ void initial_condition(const Mesh &mesh, std::vector<double> &temp_cent, std::ar
 		vel[1][i] = -mesh.Edge_centroid[0][i] * pi();
 	}
 
-	for(int i = 0; i < mesh.iNEdge; i++)
-	{
-		printf("Edge %i has velocity U: %f V: %f\n", i, vel[0][i], vel[1][i]);
-	}
+	// for(int i = 0; i < mesh.iNEdge; i++)
+	// {
+	// 	printf("Edge %i has velocity U: %f V: %f\n", i, vel[0][i], vel[1][i]);
+	// }
 
 	// Loop through cell centroids to calculate velocity at these points
 	for(int i = 0; i < mesh.iNCell; i++)
@@ -25,29 +25,56 @@ void initial_condition(const Mesh &mesh, std::vector<double> &temp_cent, std::ar
 		temp_cent[i] = exp(-5 * (mesh.Cell_centroid[0][i] * mesh.Cell_centroid[0][i] + (mesh.Cell_centroid[1][i] - 1) * (mesh.Cell_centroid[1][i] - 1)));
 	}
 
-	for(int i = 0; i < mesh.iNCell; i++)
-	{
-		printf("Cell %i has initial temp %14.12e\n", i, temp_cent[i]);
-	}
+	// for(int i = 0; i < mesh.iNCell; i++)
+	// {
+	// 	printf("Cell %i has initial temp %14.12e\n", i, temp_cent[i]);
+	// }
 }
 
-// void save_VTK(std::string filename &file, const Mesh mesh, const std::vector<double> temp_cent, const array<std::vector<double>, 2> vel)
-// {
-// 	const char *fileChar = fileName.c_str(); // Convert string to array of characters
+void save_VTK(std::string fileName, const Mesh mesh, const std::vector<double> temp_cent)
+{
+	const char * fileChar = fileName.c_str();
+	FILE *vtkFile;
+	vtkFile = fopen(fileChar, "w");
 
-// 	FILE *vtkFile; // Point FILE to vtkFile
-// 	vtkFile = fopen(fileChar, "w"); // Open vtkFile to write data
-// 	unsigned long i, j; // Counters for indices
+	// Print data to VTK file
+	fprintf(vtkFile, "# vtk DataFile Version 2.0\n");
+	fprintf(vtkFile, "Mech 588 VTK File\n");
+	fprintf(vtkFile, "ASCII\n");
+	fprintf(vtkFile, "DATASET UNSTRUCTURED_GRID\n");
+	fprintf(vtkFile, "POINTS %i DOUBLE\n", mesh.iNVert);
 
-// 	// Print data to VTK file
-// 	fprintf(vtkFile, "#vtk DataFile Version 2.0\n");
-// 	fprintf(vtkFile, "Title = \"Tri data\"\n");
-// 	fprintf(vtkFile, "ASCII\n");
-// 	fprintf(vtkFile, "DATASET UNSTRUCTURED_GRID\n");
+	// Print vertex coordinates
+	for(int i = 0; i < mesh.iNVert; i++)
+	{
+		fprintf(vtkFile, "%f %f %f \n", mesh.Vert[0][i], mesh.Vert[1][i], 0.0);
+	}
 
-// 	fclose(vtkFile);
-// 	//fprintf(vtkFile, "")
-// }
+	// Print cell connectivity
+	fprintf(vtkFile, "CELLS %i %i\n", mesh.iNCell, 4*mesh.iNCell);
+	for(int i = 0; i < mesh.iNCell; i++)
+	{
+		fprintf(vtkFile, "%i %i %i %i\n", 3, mesh.Cell_vert[0][i], mesh.Cell_vert[1][i], mesh.Cell_vert[2][i]);
+	}
+
+	// Print cell type for each cell (triangle = 5)
+	fprintf(vtkFile, "CELL_TYPES %i\n", mesh.iNCell);
+	for(int i = 0; i < mesh.iNCell; i++)
+	{
+		fprintf(vtkFile, "%i\n", 5);
+	}
+
+	// Create lookup table for temperature
+	fprintf(vtkFile, "CELL_DATA %i\n", mesh.iNCell);
+	fprintf(vtkFile, "SCALARS temperature DOUBLE 1\n");
+	fprintf(vtkFile, "LOOKUP_TABLE temperature\n");
+	for(int i = 0; i < mesh.iNCell; i++)
+	{
+		fprintf(vtkFile, "%14.12e\n", temp_cent[i]);
+	}
+
+	fclose(vtkFile);
+}
 
 // void storeVTKSolution(Solution &s, std::string fileName)
 // {

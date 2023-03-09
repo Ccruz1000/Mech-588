@@ -237,14 +237,60 @@ void Mesh::calc_cell_vert()
 		// of the edge with the smaller index to the cell.
 		if(Edge[2][min_ed] == Edge[3][max_ed] || Edge[2][min_ed] == Edge[2][max_ed] )
 	        {
-	            Cell_vert[2][i]= Edge[3][min_ed];
+	            Cell_vert[2][i] = Edge[3][min_ed];
 	        }
+
+	    /*
+	    Last step to make sure all indices are listed in counter clockwise order
+	    If we take the cross product of ABxAC where A B and C are the 3 indices, 
+	    order counterclockwise, we expect a positive value. If we get a negative value,
+	    then we know it is clockwise, and we can switch the indices for B and C to order 
+	    them counterclockwise
+	    */
+	    // Hold x and y components of vertices A, B, C
+	    double Xa, Ya; 
+	    double Xb, Yb;
+	    double Xc, Yc;
+
+
+	    // Fetch x and y components described above
+	    Xa = Vert[0][Cell_vert[0][i]];
+	    Xb = Vert[0][Cell_vert[1][i]];
+	    Xc = Vert[0][Cell_vert[2][i]];
+
+	    Ya = Vert[1][Cell_vert[0][i]];
+	    Yb = Vert[1][Cell_vert[1][i]];
+	    Yc = Vert[1][Cell_vert[2][i]];
+	    printf("Xa: %f Xb: %f Xc: %f Ya: %f Yb: %f Yc: %f\n", Xa, Xb, Xc, Ya, Yb, Yc);
+	    // Perform cross product and calculate cell area
+	    double area;
+
+	    area = 0.5 * ((Xb - Xa) * (Yc - Ya) - (Yb - Ya)*(Xc - Xa));
+		int D; // Temporary variable to allow for switching of vertices B and C
+		
+	    printf("Cell %i has area %f\n", i, area);
+		
+		if (area > 0)
+		{
+			printf("Cell %i has vertices ordered CCW\n", i);
+			Cell_area[i] = area;
+		}
+
+		else
+		{
+			Cell_area[i] = -area;
+			D = Cell_vert[1][i];
+			Cell_vert[1][i] = Cell_vert[2][i];
+			Cell_vert[2][i] = D;
+			printf("Cell %i has vertices ordered CW\n", i);
+
+		}
 	}
 	
-	// for(int i = 0; i < iNCell; i++)
-	// {	
-	// 	printf("Cell %i verts: %i %i %i\n", i, Cell_vert[0][i], Cell_vert[1][i], Cell_vert[2][i]);
-	// }
+	for(int i = 0; i < iNCell; i++)
+	{	
+		printf("Cell %i verts: %i %i %i\n", i, Cell_vert[0][i], Cell_vert[1][i], Cell_vert[2][i]);
+	}
 }
 
 void Mesh::calc_cell_centroid()

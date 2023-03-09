@@ -25,7 +25,7 @@ public:
 	int iNCell, iNEdge, iNBdry, iNVert;
 	
 	// Array of vectors to store vertex coordinate data
-	std::array<std::vector<double>, 2> Vert = {std::vector<double>(iNVert), std::vector<double>(iNVert)}; // Store X and Y coordinates for each vertex (X is Vert[0], Y is Vert[1])
+	std::array<std::vector<double>, 2> Vert = {std::vector<double>(iNVert), std::vector<double>(iNVert)}; // Store X and Y coordinates for each vertex (Xi is Vert[0][i[, Yi is Vert[1][i])
 	
 	/*
 	Store connected cells, and vertex indices for edges and boundary edges seperately
@@ -42,6 +42,9 @@ public:
 	
 	// Store length of each edge
 	std::vector<double> Edge_length = std::vector<double>(iNEdge); 
+
+	// Store area of each cell
+	std::vector<double> Cell_area = std::vector<double>(iNCell);
 
 	// Store x and y components for normal vector of each edge. [0][i] is x component, [1][i] is y component for edge i
 	std::array<std::vector<double>, 2> Edge_norm = {std::vector<double>(iNEdge), std::vector<double>(iNEdge)};

@@ -12,6 +12,6 @@
 #define FIELD_FUNCTIONS_H
 
 void initial_condition(const Mesh &mesh, std::vector<double> &temp_cent, std::array<std::vector<double>, 2> &vel);
-// void save_VTK(std::string filename &file, const Mesh mesh, const std::vector<double> temp_cent, const array<std::vector<double>, 2> vel);
+void save_VTK(std::string fileName, const Mesh mesh, const std::vector<double> temp_cent);
 
 #endif

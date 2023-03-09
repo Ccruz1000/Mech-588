@@ -29,6 +29,10 @@ std::array<std::vector<double>, 2> vel = {std::vector<double>(mesh.iNEdge), std:
 
 initial_condition(mesh, temp_cent, vel);
 
+std::string file = "Results/Test.vtk";
+
+save_VTK(file, mesh, temp_cent);
+
 
 time(&end);
 double time_taken = double(end - start); 

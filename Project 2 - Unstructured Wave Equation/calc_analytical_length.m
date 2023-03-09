@@ -39,3 +39,13 @@ for i = 1:length(Edge_centroid)
 vel(i, 1) = Edge_centroid(i, 2) * pi;
 vel(i, 2) = -Edge_centroid(i, 1) *pi;
 end
+
+for i = 1:length(Cell_vertex)
+Xb = Vertex_coord(Cell_vertex(i, 2), 1);
+Xa = Vertex_coord(Cell_vertex(i, 1), 1);
+Yc = Vertex_coord(Cell_vertex(i, 3), 2);
+Ya = Vertex_coord(Cell_vertex(i, 1), 2);
+Yb = Vertex_coord(Cell_vertex(i, 2), 2);
+Xc = Vertex_coord(Cell_vertex(i, 3), 1);
+Cell_Area(i) = 0.5*((Xb - Xa)*(Yc - Ya) - (Yb - Ya)*(Xc-Xa));
+end
