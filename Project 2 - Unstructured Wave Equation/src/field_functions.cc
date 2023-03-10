@@ -88,7 +88,7 @@ void save_VTK(std::string fileName, const Mesh mesh, const std::vector<double> t
 	fclose(vtkFile);
 }
 
-void calc_grad(const Mesh mesh, std::vector<double> temp_cent, std::array<std::vector<double>, 2> Cell_Grad)
+void calc_grad(const Mesh mesh, std::vector<double> temp_cent, std::array<std::vector<double>, 2> &Cell_Grad)
 {
 	/*
 	This function will calculate the gradient in each cell. We will use the method derived in the analytical section of this project. 
@@ -101,7 +101,7 @@ void calc_grad(const Mesh mesh, std::vector<double> temp_cent, std::array<std::v
 	d, then we will use a b and d to calculate the gradient in i. Finally, if cell i is on the boundary, and only has neighbor a (2 edges are boundary edges),
 	where a has neighbors e and f, we will use a e and f to calculate the gradient in i.
 	*/
-	// Loop through cells
+	// Loop through cells 
 	for(int cell = 0; cell < mesh.iNCell; cell++)
 	{
 		// Check how many cell edges sit on the boundary.
@@ -114,48 +114,109 @@ void calc_grad(const Mesh mesh, std::vector<double> temp_cent, std::array<std::v
 			} 	
 		}
 
+		int neighbor[3] = {-1, -1, -1}; // Store the neighbors in this 
+		int num_neighbor = 0; // Calculate the neighbors found, used for indexing
+
 		// If there are 0 boundary edges, we will use the centroids of each neighbor
 		if(bound_edge == 0)
 		{
-			int neighbor[3];
 			for(int i = 0; i < 3; i++)
 			{
-				neighbor[i] = mesh.Cell_neighbor[i][cell];
+				neighbor[num_neighbor] = mesh.Cell_neighbor[i][cell];
+				num_neighbor += 1;
 			}
-			printf("Cell %i has neighbors %i %i %i\n", cell, neighbor[0], neighbor[1], neighbor[2]);
+			// printf("Cell %i has neighbors %i %i %i\n", cell, neighbor[0], neighbor[1], neighbor[2]);
 		}
 
 		// If there is 1 boundary edge, we will use the centroids of neighbors a and b, as well as a neighbor of a
 		if(bound_edge == 1)
 		{
-			int neighbor[2];
+			// a is the index of neighbor cell, a. b is the index of neighbor cell b
+			int a;
 			for(int i = 0; i < 3; i++)
 			{
 				if(mesh.Cell_neighbor[i][cell] != -1)
-				{
-					neighbor[i] = mesh.Cell_neighbor[i][cell];
+				{ 
+					a = mesh.Cell_neighbor[i][cell];
+					neighbor[num_neighbor] = a;
+					num_neighbor += 1; // Increment index
+					// Loop through list of neighbors for cell a
+					for(int j = 0; j < 3; j++)
+					{
+						// Check if neighbor of cell a is a boundary, or the current cell i
+						if(mesh.Cell_neighbor[j][a] != -1 && mesh.Cell_neighbor[j][a] != cell)
+						{
+							neighbor[num_neighbor] = mesh.Cell_neighbor[j][a];
+							// If for some reason the loop continues after the list is full, stop
+							if(num_neighbor == 2);
+							{
+								break;
+							}
+							num_neighbor += 1;
+						}
+					}
 				}
 			}
-			printf("Cell %i has neighbors %i %i\n", cell, neighbor[0], neighbor[1]);
 		}
 
 		// If there are 2 boundary edges we will use the centroid of neighbor a, as well as two neighbors of a
 		if(bound_edge == 2)
 		{
-			int neighbor = 9;
+			// a is the index of cell a
+			int a;
 			for(int i = 0; i < 3; i++)
 			{
-				//printf("Cell %i Neighbor %i\n", cell, i);
 				if(mesh.Cell_neighbor[i][cell] != -1)
 				{
-					neighbor = mesh.Cell_neighbor[i][cell];
+					a = mesh.Cell_neighbor[i][cell];
+					neighbor[num_neighbor] = a;
+					num_neighbor += 1; // Increment index
+					// Loop through list of neighbors for cell a
+					for(int j = 0; j < 3; j++)
+					{
+						// Check if neighbor of cell a is a boundary, or the current cell i
+						if(mesh.Cell_neighbor[j][a] != -1 && mesh.Cell_neighbor[j][a] != cell)
+						{
+							neighbor[num_neighbor] = mesh.Cell_neighbor[j][a];
+							num_neighbor += 1;
+						}
+					}
 				}
-
-				printf("Cell %i: %i %i %i, %i\n", cell, mesh.Cell_neighbor[0][cell], mesh.Cell_neighbor[1][cell], mesh.Cell_neighbor[2][cell], bound_edge);
 			}
-			printf("Cell %i has neighbors %i\n", cell, neighbor);
-		}		
-		printf("Cell %i has %i boundary edges\n", cell, bound_edge);
+		}
+		// Now that we have found the cells to use in the flux calculations, we can determine the gradient 
+		// using the math outline in analytical. 
+		double x0, x1, x2, x3; // Store x coordinates of centroid for each cell
+		double y0, y1, y2, y3; // Store y coordinates of centroid for each cell
+		double T0, T1, T2, T3; // Store cell averaged temperature for each cell
+		double DX2, DY2, DXDY, DXT, DYT; // Store amounts used for solving 2x2 system
+		
+		x0 = mesh.Cell_centroid[0][cell];
+		x1 = mesh.Cell_centroid[0][neighbor[0]];
+		x2 = mesh.Cell_centroid[0][neighbor[1]];
+		x3 = mesh.Cell_centroid[0][neighbor[2]];
+
+		y0 = mesh.Cell_centroid[1][cell];
+		printf("Y of cell %i is %f\n", cell, y0);
+		y1 = mesh.Cell_centroid[1][neighbor[0]];
+		y2 = mesh.Cell_centroid[1][neighbor[1]];
+		y3 = mesh.Cell_centroid[1][neighbor[2]];
+
+		T0 = temp_cent[cell];
+		T1 = temp_cent[neighbor[0]];
+		T2 = temp_cent[neighbor[1]];
+		T3 = temp_cent[neighbor[2]];
+
+		DX2 = pow((x1 - x0), 2) + pow((x2 - x0), 2) + pow((x3 - x0), 2);
+		DY2 = pow((y1 - y0), 2) + pow((y2 - y0), 2) + pow((y3 - y0), 2);
+		DXDY = ((x1 - x0) * (y1 - y0)) + ((x2 - x0) * (y2 - y0)) + ((x3 - x0) * (y3 - y0));
+		DXT = ((x1 - x0) * (T1 - T0)) + ((x2 - x0) * (T2 - T0)) + ((x3 - x0) * (T3 - T0));
+		DYT = ((y1 - y0) * (T1 - T0)) + ((y2 - y0) * (T2 - T0)) + ((y3 - y0) * (T3 - T0));
+
+		Cell_Grad[0][cell] = (1 / (DX2 * DY2 - pow(DXDY, 2))) * (DY2 * DXT - DXDY * DYT);
+		Cell_Grad[1][cell] = (1 / (DX2 * DY2 - pow(DXDY, 2))) * (DXDY * DXT + DX2 * DYT);
 	}
+
+
 }
 

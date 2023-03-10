@@ -283,6 +283,33 @@ int main()
 	std::string analytical = "Face-Cell/analytical.mesh";
 	Mesh mesh = read_mesh(analytical);
 
+	//Mesh veryfine = read_mesh("Face-Cell/mech511-square-veryfine.mesh");
+
+	std::vector<double> temp_cent = std::vector<double>(mesh.iNCell); // Store temperatures at cell centroids
+	std::array<std::vector<double>, 2> Exact_Grad = {std::vector<double>(mesh.iNCell), std::vector<double>(mesh.iNCell)}; // Store gradient
+	// Populate initial value for cell temperatures
+	for(int i = 0; i < mesh.iNCell; i++)
+	{
+		temp_cent[i] = 5 * mesh.Cell_centroid[0][i] + 3 * mesh.Cell_centroid[1][i]; // 5*x + 6*y linear cell mesh
+		Exact_Grad[0][i] = 5.0;
+		Exact_Grad[1][i] = 6.0;  // Expected gradient of 5 w.r.t x, and 6 w.r.t y
+	}
+
+	std::array<std::vector<double>, 2> Cell_Grad = {std::vector<double>(mesh.iNCell), std::vector<double>(mesh.iNCell)}; // Store gradient
+	calc_grad(mesh, temp_cent, Cell_Grad); // Calculate gradient
+	std::array<std::vector<double>, 2> Grad_error = {std::vector<double>(mesh.iNCell), std::vector<double>(mesh.iNCell)}; // Store gradient
+	
+	for(int i = 0; i < mesh.iNCell; i++)
+	{
+		Grad_error[0][i] = Exact_Grad[0][i] - Cell_Grad[0][i];
+		Grad_error[1][i] = Exact_Grad[1][i] - Cell_Grad[1][i];
+		printf("Grad Cell: %i X: %f Y: %f\n", i, Cell_Grad[0][i], Cell_Grad[1][i]);
+		//printf("Grad Error Cell: %i X: %f Y: %f\n", i, Grad_error[0][i], Grad_error[1][i]);
+	}
+
+
+
+
 	printf("\n\n*******************************************\n           TESTING\n*******************************************\n");
 	
 	test_vertex(mesh);
