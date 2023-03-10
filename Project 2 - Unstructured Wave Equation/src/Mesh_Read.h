@@ -37,6 +37,7 @@ public:
 	std::array<std::vector<int>, 4> Edge = {std::vector<int>(iNEdge), std::vector<int>(iNEdge), std::vector<int>(iNEdge), std::vector<int>(iNEdge)};
 	
 	// Store indices of edges, vertices and neighbors for each cell
+	// For each of these Cell_edge[0][i] represents the 1st "thing" of the ith cell
 	std::array<std::vector<int>, 3> Cell_edge = {std::vector<int>(iNCell), std::vector<int>(iNCell), std::vector<int>(iNCell)};
 	std::array<std::vector<int>, 3> Cell_neighbor = {std::vector<int>(iNCell), std::vector<int>(iNCell), std::vector<int>(iNCell)};
 	std::array<std::vector<int>, 3> Cell_vert = {std::vector<int>(iNCell), std::vector<int>(iNCell), std::vector<int>(iNCell)};

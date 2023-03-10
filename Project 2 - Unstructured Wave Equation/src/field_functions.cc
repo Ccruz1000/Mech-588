@@ -108,7 +108,7 @@ void calc_grad(const Mesh mesh, std::vector<double> temp_cent, std::array<std::v
 		int bound_edge = 0;
 		for(int edge = 0; edge < 3; edge++)
 		{
-			if (mesh.Edge[1][mesh.Cell_edge[edge][cell]] == -1 || mesh.Edge[1][mesh.Cell_edge[edge][cell]] == -1)
+			if (mesh.Edge[0][mesh.Cell_edge[edge][cell]] == -1 || mesh.Edge[1][mesh.Cell_edge[edge][cell]] == -1)
 			{
 				bound_edge += 1;
 			} 	
@@ -117,14 +117,44 @@ void calc_grad(const Mesh mesh, std::vector<double> temp_cent, std::array<std::v
 		// If there are 0 boundary edges, we will use the centroids of each neighbor
 		if(bound_edge == 0)
 		{
-			int neighbor 1;
-			int neighbor 2; 
-			int neighbor 3;
-			
-		}		
-		// If there is 1 boundary edge, we will use the centroids of neighbors a and b, as well as a neighbor of a
+			int neighbor[3];
+			for(int i = 0; i < 3; i++)
+			{
+				neighbor[i] = mesh.Cell_neighbor[i][cell];
+			}
+			printf("Cell %i has neighbors %i %i %i\n", cell, neighbor[0], neighbor[1], neighbor[2]);
+		}
 
-		// If there is 2 boundary edges we will use the centroid of neighbor a, as well as two neighbors of a
+		// If there is 1 boundary edge, we will use the centroids of neighbors a and b, as well as a neighbor of a
+		if(bound_edge == 1)
+		{
+			int neighbor[2];
+			for(int i = 0; i < 3; i++)
+			{
+				if(mesh.Cell_neighbor[i][cell] != -1)
+				{
+					neighbor[i] = mesh.Cell_neighbor[i][cell];
+				}
+			}
+			printf("Cell %i has neighbors %i %i\n", cell, neighbor[0], neighbor[1]);
+		}
+
+		// If there are 2 boundary edges we will use the centroid of neighbor a, as well as two neighbors of a
+		if(bound_edge == 2)
+		{
+			int neighbor = 9;
+			for(int i = 0; i < 3; i++)
+			{
+				//printf("Cell %i Neighbor %i\n", cell, i);
+				if(mesh.Cell_neighbor[i][cell] != -1)
+				{
+					neighbor = mesh.Cell_neighbor[i][cell];
+				}
+
+				printf("Cell %i: %i %i %i, %i\n", cell, mesh.Cell_neighbor[0][cell], mesh.Cell_neighbor[1][cell], mesh.Cell_neighbor[2][cell], bound_edge);
+			}
+			printf("Cell %i has neighbors %i\n", cell, neighbor);
+		}		
 		printf("Cell %i has %i boundary edges\n", cell, bound_edge);
 	}
 }
