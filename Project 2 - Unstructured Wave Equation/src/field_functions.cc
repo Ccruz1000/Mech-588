@@ -184,6 +184,7 @@ void calc_grad(const Mesh mesh, std::vector<double> temp_cent, std::array<std::v
 				}
 			}
 		}
+		// printf("Cell %i will use %i %i and %i in gradient calcs\n", cell, neighbor[0], neighbor[1], neighbor[2]);
 		// Now that we have found the cells to use in the flux calculations, we can determine the gradient 
 		// using the math outline in analytical. 
 		double x0, x1, x2, x3; // Store x coordinates of centroid for each cell
@@ -197,7 +198,6 @@ void calc_grad(const Mesh mesh, std::vector<double> temp_cent, std::array<std::v
 		x3 = mesh.Cell_centroid[0][neighbor[2]];
 
 		y0 = mesh.Cell_centroid[1][cell];
-		printf("Y of cell %i is %f\n", cell, y0);
 		y1 = mesh.Cell_centroid[1][neighbor[0]];
 		y2 = mesh.Cell_centroid[1][neighbor[1]];
 		y3 = mesh.Cell_centroid[1][neighbor[2]];
@@ -210,13 +210,14 @@ void calc_grad(const Mesh mesh, std::vector<double> temp_cent, std::array<std::v
 		DX2 = pow((x1 - x0), 2) + pow((x2 - x0), 2) + pow((x3 - x0), 2);
 		DY2 = pow((y1 - y0), 2) + pow((y2 - y0), 2) + pow((y3 - y0), 2);
 		DXDY = ((x1 - x0) * (y1 - y0)) + ((x2 - x0) * (y2 - y0)) + ((x3 - x0) * (y3 - y0));
+		//printf("DX2 %f\nDY2 %f\nDXDY %f\n", DX2, DY2, DXDY);
 		DXT = ((x1 - x0) * (T1 - T0)) + ((x2 - x0) * (T2 - T0)) + ((x3 - x0) * (T3 - T0));
 		DYT = ((y1 - y0) * (T1 - T0)) + ((y2 - y0) * (T2 - T0)) + ((y3 - y0) * (T3 - T0));
+		//printf("DXT %f\nDYT %f\n", DXT, DYT);
 
 		Cell_Grad[0][cell] = (1 / (DX2 * DY2 - pow(DXDY, 2))) * (DY2 * DXT - DXDY * DYT);
-		Cell_Grad[1][cell] = (1 / (DX2 * DY2 - pow(DXDY, 2))) * (DXDY * DXT + DX2 * DYT);
+		Cell_Grad[1][cell] = (1 / (DX2 * DY2 - pow(DXDY, 2))) * (-DXDY * DXT + DX2 * DYT);
 	}
 
 
 }
-

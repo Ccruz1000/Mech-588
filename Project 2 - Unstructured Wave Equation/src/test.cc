@@ -50,6 +50,7 @@ void test_vertex(Mesh mesh)
 		printf("Vertex test file not found. Please check that proper filename was used\n");
 		exit(1);
 	}
+	printf("Vertices passed\n");
 }
 
 void test_cell_area(Mesh mesh)
@@ -96,6 +97,7 @@ void test_cell_area(Mesh mesh)
 		printf("Area test file not found. Please check that proper filename was used\n");
 		exit(1);
 	}
+	printf("Cell area passed\n");
 }
 
 void test_edge_length(Mesh mesh)
@@ -146,6 +148,7 @@ void test_edge_length(Mesh mesh)
 		printf("Edge length test file not found. Please check that proper filename was used\n");
 		exit(1);
 	}
+	printf("Edge length passed\n");
 }
 
 void test_edge_norm(Mesh mesh)
@@ -192,6 +195,7 @@ void test_edge_norm(Mesh mesh)
 		printf("Norm test file not found. Please check that proper filename was used\n");
 		exit(1);
 	}
+	printf("Norm passed\n");
 }
 
 void test_edge_midpoint(Mesh mesh)
@@ -234,6 +238,7 @@ void test_edge_midpoint(Mesh mesh)
 		printf("Midpoint test file not found. Please check that proper filename was used\n");
 		exit(1);
 	}
+	printf("Midpoint passed\n");
 }
 
 void test_cell_centroid(Mesh mesh)
@@ -276,25 +281,22 @@ void test_cell_centroid(Mesh mesh)
 		printf("Cell centroid test file not found. Please check that proper filename was used\n");
 		exit(1);
 	}
+	printf("Centroid passed\n");
 }
 
-int main()
+void test_grad_calc(Mesh mesh)
 {
-	std::string analytical = "Face-Cell/analytical.mesh";
-	Mesh mesh = read_mesh(analytical);
-
-	//Mesh veryfine = read_mesh("Face-Cell/mech511-square-veryfine.mesh");
-
+	double tol = 1e-8; // Acceptable error in calculating gradients 
 	std::vector<double> temp_cent = std::vector<double>(mesh.iNCell); // Store temperatures at cell centroids
 	std::array<std::vector<double>, 2> Exact_Grad = {std::vector<double>(mesh.iNCell), std::vector<double>(mesh.iNCell)}; // Store gradient
 	// Populate initial value for cell temperatures
 	for(int i = 0; i < mesh.iNCell; i++)
 	{
-		temp_cent[i] = 5 * mesh.Cell_centroid[0][i] + 3 * mesh.Cell_centroid[1][i]; // 5*x + 6*y linear cell mesh
+		temp_cent[i] = 5 * mesh.Cell_centroid[0][i] + 6 * mesh.Cell_centroid[1][i]; // 5*x + 6*y linear cell mesh
 		Exact_Grad[0][i] = 5.0;
 		Exact_Grad[1][i] = 6.0;  // Expected gradient of 5 w.r.t x, and 6 w.r.t y
 	}
-
+ 
 	std::array<std::vector<double>, 2> Cell_Grad = {std::vector<double>(mesh.iNCell), std::vector<double>(mesh.iNCell)}; // Store gradient
 	calc_grad(mesh, temp_cent, Cell_Grad); // Calculate gradient
 	std::array<std::vector<double>, 2> Grad_error = {std::vector<double>(mesh.iNCell), std::vector<double>(mesh.iNCell)}; // Store gradient
@@ -303,27 +305,173 @@ int main()
 	{
 		Grad_error[0][i] = Exact_Grad[0][i] - Cell_Grad[0][i];
 		Grad_error[1][i] = Exact_Grad[1][i] - Cell_Grad[1][i];
-		printf("Grad Cell: %i X: %f Y: %f\n", i, Cell_Grad[0][i], Cell_Grad[1][i]);
-		//printf("Grad Error Cell: %i X: %f Y: %f\n", i, Grad_error[0][i], Grad_error[1][i]);
+		
+		// Warn if error exceeds tolerance
+		if(Grad_error[0][i] > tol)
+		{
+			tests_failed += 1;
+			printf("Error in calculating cell gradient x-component at cell %i\n", i);
+			return;
+		}
+
+		if(Grad_error[1][i] > tol)
+		{
+			tests_failed += 1;
+			printf("Error in calculating cell gradient y-component at cell %i\n", i);
+			return;
+		}
 	}
+	printf("Gradient calculation passed \n");
+}
 
+void test_grad_indices(Mesh mesh)
+{
+	for(int cell = 0; cell < mesh.iNCell; cell++)
+	{
+		// Check how many cell edges sit on the boundary.
+		int bound_edge = 0;
+		for(int edge = 0; edge < 3; edge++)
+		{
+			if (mesh.Edge[0][mesh.Cell_edge[edge][cell]] == -1 || mesh.Edge[1][mesh.Cell_edge[edge][cell]] == -1)
+			{
+				bound_edge += 1;
+			} 	
+		}
 
+		int neighbor[3] = {-1, -1, -1}; // Store the neighbors in this 
+		int num_neighbor = 0; // Calculate the neighbors found, used for indexing
 
+		// If there are 0 boundary edges, we will use the centroids of each neighbor
+		if(bound_edge == 0)
+		{
+			for(int i = 0; i < 3; i++)
+			{
+				neighbor[num_neighbor] = mesh.Cell_neighbor[i][cell];
+				num_neighbor += 1;
+			}
+			// printf("Cell %i has neighbors %i %i %i\n", cell, neighbor[0], neighbor[1], neighbor[2]);
+		}
+
+		// If there is 1 boundary edge, we will use the centroids of neighbors a and b, as well as a neighbor of a
+		if(bound_edge == 1)
+		{
+			// a is the index of neighbor cell, a. b is the index of neighbor cell b
+			int a;
+			for(int i = 0; i < 3; i++)
+			{
+				if(mesh.Cell_neighbor[i][cell] != -1)
+				{ 
+					a = mesh.Cell_neighbor[i][cell];
+					neighbor[num_neighbor] = a;
+					num_neighbor += 1; // Increment index
+					// Loop through list of neighbors for cell a
+					for(int j = 0; j < 3; j++)
+					{
+						// Check if neighbor of cell a is a boundary, or the current cell i
+						if(mesh.Cell_neighbor[j][a] != -1 && mesh.Cell_neighbor[j][a] != cell)
+						{
+							neighbor[num_neighbor] = mesh.Cell_neighbor[j][a];
+							// If for some reason the loop continues after the list is full, stop
+							if(num_neighbor == 2);
+							{
+								break;
+							}
+							num_neighbor += 1;
+						}
+					}
+				}
+			}
+		}
+
+		// If there are 2 boundary edges we will use the centroid of neighbor a, as well as two neighbors of a
+		if(bound_edge == 2)
+		{
+			// a is the index of cell a
+			int a;
+			for(int i = 0; i < 3; i++)
+			{
+				if(mesh.Cell_neighbor[i][cell] != -1)
+				{
+					a = mesh.Cell_neighbor[i][cell];
+					neighbor[num_neighbor] = a;
+					num_neighbor += 1; // Increment index
+					// Loop through list of neighbors for cell a
+					for(int j = 0; j < 3; j++)
+					{
+						// Check if neighbor of cell a is a boundary, or the current cell i
+						if(mesh.Cell_neighbor[j][a] != -1 && mesh.Cell_neighbor[j][a] != cell)
+						{
+							neighbor[num_neighbor] = mesh.Cell_neighbor[j][a];
+							num_neighbor += 1;
+						}
+					}
+				}
+			}
+		}
+
+		// Check if any neighbor is still -1, or if any neighbors repeat
+		for(int i = 0; i < 3; i++)
+		{
+			if(neighbor[i] == -1)
+			{
+				tests_failed += 1;
+				printf("Error, cell %i has neighboring cells that do not exist (VALUE OF -1 FOR BOUNDARY)\n", cell);
+				return;
+			}
+
+			for(int j = i + 1; j < 3; j++)
+			{
+				if(neighbor[i] == neighbor[j])
+				{
+					tests_failed += 1;
+					printf("Error, cell %i has repeating indices for gradient calculation\n", cell);
+					return;
+				}
+			}
+		}
+	}
+	printf("Gradient indices successful\n");
+}
+
+int main()
+{
+	// Calculate runtime
+	time_t start, end;
+	time(&start);
+	// Read test meshes
+	 
+	std::string verycoarse = "Face-Cell/mech511-square-verycoarse.mesh";
+	std::string coarse = "Face-Cell/mech511-square-coarse.mesh";
+	std::string medium = "Face-Cell/mech511-square-medium.mesh";
+	std::string fine = "Face-Cell/mech511-square-fine.mesh";
+	std::string veryfine = "Face-Cell/mech511-square-veryfine.mesh";
+	std::string analytical = "Face-Cell/analytical.mesh";
+	Mesh mesh = read_mesh(analytical);
+	// Mesh verycoarse_mesh = read_mesh(verycoarse);
+	// Mesh coarse_mesh = read_mesh(coarse);
+	Mesh medium_mesh = read_mesh(medium);
+	// Mesh fine_mesh = read_mesh(fine);
+	// Mesh veryfine_mesh = read_mesh(veryfine);
 
 	printf("\n\n*******************************************\n           TESTING\n*******************************************\n");
 	
 	test_vertex(mesh);
-	printf("Vertices passed\n");
 	test_cell_area(mesh);
-	printf("Cell area passed\n");
 	test_edge_length(mesh);
-	printf("Edge length passed\n");
 	test_edge_norm(mesh);
-	printf("Norm passed\n");
 	test_edge_midpoint(mesh);
-	printf("Midpoint passed\n");
 	test_cell_centroid(mesh);
-	printf("Centroid passed\n");
+	// Run tests on all meshes
+	// test_grad_calc(verycoarse_mesh);
+	// test_grad_calc(coarse_mesh);
+	test_grad_calc(medium_mesh);
+	// test_grad_calc(fine_mesh);
+	// test_grad_calc(veryfine_mesh);
+	// test_grad_indices(verycoarse_mesh);
+	// test_grad_indices(coarse_mesh);
+	test_grad_indices(medium_mesh);
+	// test_grad_indices(fine_mesh);
+	// test_grad_indices(veryfine_mesh);
 
 	// After running tests inform user if tests failed or not
 	if(tests_failed == 0)
@@ -344,6 +492,8 @@ int main()
 		}
 	}
 
-
+time(&end);
+double time_taken = double(end - start); 
+printf("Tests succesfully ran in %.8f seconds\n", time_taken);
 return 0;
 }
