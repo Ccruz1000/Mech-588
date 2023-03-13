@@ -430,7 +430,7 @@ void test_grad_indices(Mesh mesh)
 			}
 		}
 	}
-	printf("Gradient indices successful\n");
+	printf("Gradient indices passed\n");
 }
 
 int main()
