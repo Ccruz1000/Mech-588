@@ -14,5 +14,7 @@
 void initial_condition(const Mesh &mesh, std::vector<double> &temp_cent, std::array<std::vector<double>, 2> &vel);
 void save_VTK(std::string fileName, const Mesh mesh, const std::vector<double> temp_cent);
 void calc_grad(const Mesh mesh, std::vector<double> temp_cent, std::array<std::vector<double>, 2> &Cell_Grad);
+void calc_upwind(Mesh &mesh, std::array<std::vector<double>, 2> vel);
+void calc_flux(Mesh &mesh, std::vector<double> temp_cent, std::array<std::vector<double>, 2> Cell_Grad);
 
 #endif

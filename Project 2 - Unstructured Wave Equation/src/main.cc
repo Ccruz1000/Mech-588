@@ -33,6 +33,8 @@ save_VTK(file, mesh, temp_cent);
 
 std::array<std::vector<double>, 2> Cell_Grad = {std::vector<double>(mesh.iNCell), std::vector<double>(mesh.iNCell)};
 calc_grad(mesh, temp_cent, Cell_Grad);
+calc_upwind(mesh, vel);
+calc_flux(mesh, temp_cent, Cell_Grad);
 
 time(&end);
 double time_taken = double(end - start); 

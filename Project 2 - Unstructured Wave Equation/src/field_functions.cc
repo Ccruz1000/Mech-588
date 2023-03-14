@@ -26,11 +26,11 @@ void initial_condition(const Mesh &mesh, std::vector<double> &temp_cent, std::ar
 	// }
 
 	// Loop through cell centroids to calculate velocity at these points
-	for(int i = 0; i < mesh.iNCell; i++)
-	{
-		temp_cent[i] = exp(-5 * (mesh.Cell_centroid[0][i] * mesh.Cell_centroid[0][i] + (mesh.Cell_centroid[1][i] - 1) * (mesh.Cell_centroid[1][i] - 1)));
-	}
-
+	// for(int i = 0; i < mesh.iNCell; i++)
+	// {
+	// 	temp_cent[i] = exp(-5 * (mesh.Cell_centroid[0][i] * mesh.Cell_centroid[0][i] + (mesh.Cell_centroid[1][i] - 1) * (mesh.Cell_centroid[1][i] - 1)));
+	// }
+	temp_cent = {100.0, 102.0, 101.0, 97.0}; // Used for testing flux based on analytical 
 	// for(int i = 0; i < mesh.iNCell; i++)
 	// {
 	// 	printf("Cell %i has initial temp %14.12e\n", i, temp_cent[i]);
@@ -218,6 +218,56 @@ void calc_grad(const Mesh mesh, std::vector<double> temp_cent, std::array<std::v
 		Cell_Grad[0][cell] = (1 / (DX2 * DY2 - pow(DXDY, 2))) * (DY2 * DXT - DXDY * DYT);
 		Cell_Grad[1][cell] = (1 / (DX2 * DY2 - pow(DXDY, 2))) * (-DXDY * DXT + DX2 * DYT);
 	}
+}
 
+void calc_upwind(Mesh &mesh, std::array<std::vector<double>, 2> vel)
+{
+	/* 
+	This function will loop through each edge, and take the dot product of the edge normal and the
+	velocity at the edge midpoint. Based on the sign of this dot proudct, we can determine the upwind
+	and downwind cell. We can then asssign the indices to our vector based on the following convention:
+	Our normal point into the right cell if you walk from edge origin to vertex. Therefore, if the dot product 
+	is positive, the upwind cell is the left cell, and if it is negative the upwind cell is the right cell. 
+	NOTE: IF IM WRONG WE SHOULD SEE ROTATION THAT IS CCW INSTEAD OF CW, AND WE CAN CHANGE INDICES.
+	*/ 
+	double dot_product; // Store calculate value for the dot product at each edge
+	// Loop through edges 
+	for(int i = 0; i < mesh.iNEdge; i++)
+	{
+		dot_product = vel[0][i] * mesh.Edge_norm[0][i] + vel[1][i] * mesh.Edge_norm[1][i]; // compute dot product for cell edge
+		// Add left cell as upwind if dot product is positive
+		if(dot_product > 0)
+		{
+			mesh.Edge_upwind[0][i] = mesh.Edge[0][i];
+			mesh.Edge_upwind[1][i] = mesh.Edge[1][i];
+		}
+		else
+		{
+			mesh.Edge_upwind[0][i] = mesh.Edge[1][i];
+			mesh.Edge_upwind[1][i] = mesh.Edge[0][i];
+		}
+		// printf("Edge %i has normal velocity %f with upwind cell %i and downwind cell %i\n", i, dot_product, mesh.Edge_upwind[0][i], mesh.Edge_upwind[1][i]);
+	}
+}
+
+void calc_flux(Mesh &mesh, std::vector<double> temp_cent, std::array<std::vector<double>, 2> Cell_Grad)
+{
+	/*
+	This function will begin by calculating the solution at each edge
+	based on the upwind cell.
+	*/
+	int upwind_cell; // Store upwind cell index for the edge
+	double dxf, dyf; // Store difference in x and y between cell centroid, and edge midpoint coordinates
+	double Ti; // Store solution at edge midpoint
+	// Loop through edges to calculate solution at edge midpoint
+	for(int i = 0; i < mesh.iNEdge; i++)
+	{
+		upwind_cell = mesh.Edge_upwind[0][i];
+		dxf = mesh.Edge_centroid[0][i] - mesh.Cell_centroid[0][upwind_cell];
+		dyf = mesh.Edge_centroid[1][i] - mesh.Cell_centroid[1][upwind_cell];
+		Ti = temp_cent[upwind_cell] + Cell_Grad[0][upwind_cell] * dxf + Cell_Grad[1][upwind_cell] * dyf;
+		printf("Edge %i has solution %f\n", i, Ti);
+		
+	}
 
 }

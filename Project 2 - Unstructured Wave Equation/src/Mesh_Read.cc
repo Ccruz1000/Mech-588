@@ -368,8 +368,8 @@ void Mesh::calc_edge_norm()
 		y_dest = Vert[1][Edge[3][i]];
 		
 		// Calculate x and y component for edge normal
-		Edge_norm[0][i] = (1 / Edge_length[i]) * (y_origin - y_dest);
-		Edge_norm[1][i] = (1 / Edge_length[i]) * (x_dest - x_origin);
+		Edge_norm[0][i] = (1 / Edge_length[i]) * (y_dest - y_origin);
+		Edge_norm[1][i] = (1 / Edge_length[i]) * (-x_dest + x_origin);
 	}
 	// for(int i = 0; i < iNEdge; i++)
 	// {

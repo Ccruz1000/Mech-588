@@ -31,7 +31,7 @@ public:
 	/*
 	Store connected cells, and vertex indices for edges and boundary edges seperately
 	For Bdry - Bdry[0]: Connected cell, Bdry[1]: Edge origin vertex, Bdry[2]: Edge destination vertex
-	For Edge - Edge[0]: Left cell Edge[1][i]: Right cell, Edge[2][i]: Edge origin vertex, Edge[3][i]: Edge destination vertex
+	For Edge - Edge[0][i]: Left cell, Edge[1][i]: Right cell, Edge[2][i]: Edge origin vertex, Edge[3][i]: Edge destination vertex
 	*/
 	std::array<std::vector<int>, 3> Bdry = {std::vector<int>(iNBdry), std::vector<int>(iNBdry), std::vector<int>(iNBdry)};
 	std::array<std::vector<int>, 4> Edge = {std::vector<int>(iNEdge), std::vector<int>(iNEdge), std::vector<int>(iNEdge), std::vector<int>(iNEdge)};
@@ -55,6 +55,9 @@ public:
 	std::array<std::vector<double>, 2> Cell_centroid = {std::vector<double>(iNCell), std::vector<double>(iNCell)};
 	std::array<std::vector<double>, 2> Edge_centroid = {std::vector<double>(iNEdge), std::vector<double>(iNEdge)}; 
 	
+	// Store upwind and downwind cell for each edge. Edge_upwind[0][i] is the upwind cell index, while Edge_upwind[1][i] is 
+	// the downwind cell index. 
+	std::array<std::vector<int>, 3> Edge_upwind = {std::vector<int>(iNEdge), std::vector<int>(iNEdge)};
 	// Constructors
 	Mesh(int ncell, int nedge, int nbdry, int nvert);
 
