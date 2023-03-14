@@ -565,7 +565,7 @@ void test_upwind_calc()
 		printf("Error calculating upwind and downwind cell for vertical velocity at edge 4\n");
 		return;
 	}
-
+	
 	printf("Upwind cells succesfully tested for vertical velocity test case\n");	
 }
 
