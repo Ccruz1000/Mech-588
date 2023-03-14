@@ -569,6 +569,58 @@ void test_upwind_calc()
 	printf("Upwind cells succesfully tested for vertical velocity test case\n");	
 }
 
+void test_edge_flux(Mesh mesh)
+{
+	double tol = 1e-8;
+	std::array<std::vector<double>, 2> Cell_Grad = {std::vector<double>(mesh.iNCell), std::vector<double>(mesh.iNCell)};
+	std::vector<double> Edge_flux = std::vector<double>(mesh.iNEdge);
+	std::vector<double> temp_cent = {100.0, 102.0, 101.0, 97.0};
+	std::array<std::vector<double>, 2> vel = {std::vector<double>(mesh.iNEdge), std::vector<double>(mesh.iNEdge)};
+	// Set velocity to be magnitude 2 in the positive x direction
+	for(int i = 0; i < mesh.iNEdge; i++)
+	{
+		vel[0][i] = 2.0; 
+		vel[1][i] = 0.0;
+	}
+	// Calculate upwind cells
+	calc_upwind(mesh, vel);
+	// Calculate gradients in each cell
+	calc_grad(mesh, temp_cent, Cell_Grad);
+	calc_flux(mesh, temp_cent, Cell_Grad, Edge_flux);
+	// Check that flux is expected value based on matlab calculation
+	double flux_horizontal = 201.8921844250773;
+	double flux_error = Edge_flux[8] - flux_horizontal;
+	if(fabs(flux_error) > tol)
+	{
+		tests_failed += 1;
+		printf("Error calculating flux at edge 8 in horizontal test case\n");
+		return;
+	}
+
+	// Repeat same test but with velocity magnitude -2 in y direction
+	for(int i = 0; i < mesh.iNEdge; i++)
+	{
+		vel[0][i] = 0.0; 
+		vel[1][i] = -2.0;
+	}
+	// Calculate upwind cells
+	calc_upwind(mesh, vel);
+	// Calculate gradients in each cell
+	calc_grad(mesh, temp_cent, Cell_Grad);
+	calc_flux(mesh, temp_cent, Cell_Grad, Edge_flux);
+	// Check that flux is expected value based on matlab calculation
+	double flux_vertical = 50.47304610626933;
+	flux_error = Edge_flux[8] - flux_vertical;
+	if(fabs(flux_error) > tol)
+	{
+		tests_failed += 1;
+		printf("Error calculating flux at edge 8 in horizontal test case\n");
+		return;
+	}
+
+	printf("Edge flux calculation passed\n");
+}
+
 int main()
 {
 	// Calculate runtime
@@ -583,11 +635,7 @@ int main()
 	std::string veryfine = "Face-Cell/mech511-square-veryfine.mesh";
 	std::string analytical = "Face-Cell/analytical.mesh";
 	Mesh mesh = read_mesh(analytical);
-	// Mesh verycoarse_mesh = read_mesh(verycoarse);
-	// Mesh coarse_mesh = read_mesh(coarse);
 	Mesh medium_mesh = read_mesh(medium);
-	// Mesh fine_mesh = read_mesh(fine);
-	// Mesh veryfine_mesh = read_mesh(veryfine);
 
 	printf("\n\n*******************************************\n           TESTING\n*******************************************\n");
 	
@@ -597,19 +645,24 @@ int main()
 	test_edge_norm(mesh);
 	test_edge_midpoint(mesh);
 	test_cell_centroid(mesh);
+	test_grad_calc(medium_mesh);
+	test_grad_indices(medium_mesh);
+	test_upwind_calc();
+	test_edge_flux(mesh);
+
 	// Run tests on all meshes
+	// Mesh verycoarse_mesh = read_mesh(verycoarse);
+	// Mesh coarse_mesh = read_mesh(coarse);
+	// Mesh fine_mesh = read_mesh(fine);
+	// Mesh veryfine_mesh = read_mesh(veryfine);
 	// test_grad_calc(verycoarse_mesh);
 	// test_grad_calc(coarse_mesh);
-	test_grad_calc(medium_mesh);
 	// test_grad_calc(fine_mesh);
 	// test_grad_calc(veryfine_mesh);
 	// test_grad_indices(verycoarse_mesh);
 	// test_grad_indices(coarse_mesh);
-	test_grad_indices(medium_mesh);
 	// test_grad_indices(fine_mesh);
 	// test_grad_indices(veryfine_mesh);
-	test_upwind_calc();
-
 	// After running tests inform user if tests failed or not
 	if(tests_failed == 0)
 	{

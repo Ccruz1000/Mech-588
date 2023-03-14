@@ -26,11 +26,11 @@ void initial_condition(const Mesh &mesh, std::vector<double> &temp_cent, std::ar
 	// }
 
 	// Loop through cell centroids to calculate velocity at these points
-	// for(int i = 0; i < mesh.iNCell; i++)
-	// {
-	// 	temp_cent[i] = exp(-5 * (mesh.Cell_centroid[0][i] * mesh.Cell_centroid[0][i] + (mesh.Cell_centroid[1][i] - 1) * (mesh.Cell_centroid[1][i] - 1)));
-	// }
-	temp_cent = {100.0, 102.0, 101.0, 97.0}; // Used for testing flux based on analytical 
+	for(int i = 0; i < mesh.iNCell; i++)
+	{
+		temp_cent[i] = exp(-5 * (mesh.Cell_centroid[0][i] * mesh.Cell_centroid[0][i] + (mesh.Cell_centroid[1][i] - 1) * (mesh.Cell_centroid[1][i] - 1)));
+	}
+	// temp_cent = {100.0, 102.0, 101.0, 97.0}; // Used for testing flux based on analytical 
 	// for(int i = 0; i < mesh.iNCell; i++)
 	// {
 	// 	printf("Cell %i has initial temp %14.12e\n", i, temp_cent[i]);
@@ -257,7 +257,7 @@ flux across the edge by multiplying by edge length, and then loop through the ce
 After that we just have to timestep and we DONE BABY!!!!
 */
 
-void calc_flux(Mesh &mesh, std::vector<double> temp_cent, std::array<std::vector<double>, 2> Cell_Grad)
+void calc_flux(Mesh &mesh, std::vector<double> temp_cent, std::array<std::vector<double>, 2> Cell_Grad, std::vector<double> &Edge_flux)
 {
 	/*
 	This function will begin by calculating the solution at each edge
@@ -273,8 +273,7 @@ void calc_flux(Mesh &mesh, std::vector<double> temp_cent, std::array<std::vector
 		dxf = mesh.Edge_centroid[0][i] - mesh.Cell_centroid[0][upwind_cell];
 		dyf = mesh.Edge_centroid[1][i] - mesh.Cell_centroid[1][upwind_cell];
 		Ti = temp_cent[upwind_cell] + Cell_Grad[0][upwind_cell] * dxf + Cell_Grad[1][upwind_cell] * dyf;
+		Edge_flux[i] = mesh.dot_product[i] * Ti * mesh.Edge_length[i];
 		// printf("Edge %i has solution %f\n", i, Ti);
-		
 	}
-
 }

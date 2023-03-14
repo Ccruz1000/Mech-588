@@ -22,10 +22,11 @@ std::string fine = "Face-Cell/mech511-square-fine.mesh";
 std::string veryfine = "Face-Cell/mech511-square-veryfine.mesh";
 std::string analytical = "Face-Cell/analytical.mesh";
 
-Mesh mesh = read_mesh(analytical);
+Mesh mesh = read_mesh(veryfine);
 
 std::vector<double> temp_cent = std::vector<double>(mesh.iNCell); // Store temperatures at cell centroids
 std::array<std::vector<double>, 2> vel = {std::vector<double>(mesh.iNEdge), std::vector<double>(mesh.iNEdge)}; // Store velocity u and v at edge midpoints
+std::vector<double> Edge_flux = std::vector<double>(mesh.iNEdge); // Store flux at each edge
 
 initial_condition(mesh, temp_cent, vel);
 std::string file = "Results/Test.vtk";
@@ -34,7 +35,7 @@ save_VTK(file, mesh, temp_cent);
 std::array<std::vector<double>, 2> Cell_Grad = {std::vector<double>(mesh.iNCell), std::vector<double>(mesh.iNCell)};
 calc_grad(mesh, temp_cent, Cell_Grad);
 calc_upwind(mesh, vel);
-calc_flux(mesh, temp_cent, Cell_Grad);
+calc_flux(mesh, temp_cent, Cell_Grad, Edge_flux);
 
 time(&end);
 double time_taken = double(end - start); 
