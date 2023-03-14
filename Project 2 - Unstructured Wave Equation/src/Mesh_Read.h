@@ -57,7 +57,8 @@ public:
 	
 	// Store upwind and downwind cell for each edge. Edge_upwind[0][i] is the upwind cell index, while Edge_upwind[1][i] is 
 	// the downwind cell index. 
-	std::array<std::vector<int>, 3> Edge_upwind = {std::vector<int>(iNEdge), std::vector<int>(iNEdge)};
+	std::array<std::vector<int>, 2> Edge_upwind = {std::vector<int>(iNEdge), std::vector<int>(iNEdge)};
+	std::vector<double> dot_product = std::vector<double>(iNEdge); // Stores the dot product of vel*norm at each edge
 	// Constructors
 	Mesh(int ncell, int nedge, int nbdry, int nvert);
 

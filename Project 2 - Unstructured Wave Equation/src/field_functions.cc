@@ -234,9 +234,9 @@ void calc_upwind(Mesh &mesh, std::array<std::vector<double>, 2> vel)
 	// Loop through edges 
 	for(int i = 0; i < mesh.iNEdge; i++)
 	{
-		dot_product = vel[0][i] * mesh.Edge_norm[0][i] + vel[1][i] * mesh.Edge_norm[1][i]; // compute dot product for cell edge
+		mesh.dot_product[i] = vel[0][i] * mesh.Edge_norm[0][i] + vel[1][i] * mesh.Edge_norm[1][i]; // compute dot product for cell edge
 		// Add left cell as upwind if dot product is positive
-		if(dot_product > 0)
+		if(mesh.dot_product[i] > 0)
 		{
 			mesh.Edge_upwind[0][i] = mesh.Edge[0][i];
 			mesh.Edge_upwind[1][i] = mesh.Edge[1][i];
@@ -249,6 +249,13 @@ void calc_upwind(Mesh &mesh, std::array<std::vector<double>, 2> vel)
 		// printf("Edge %i has normal velocity %f with upwind cell %i and downwind cell %i\n", i, dot_product, mesh.Edge_upwind[0][i], mesh.Edge_upwind[1][i]);
 	}
 }
+
+/*
+Now that above works, we need to calculate the flux at each edge. Currently, below calculates
+the solution at the edge midpoint based on the upwind cell properly. We just need to find the total 
+flux across the edge by multiplying by edge length, and then loop through the cells to add the total flux integral.
+After that we just have to timestep and we DONE BABY!!!!
+*/
 
 void calc_flux(Mesh &mesh, std::vector<double> temp_cent, std::array<std::vector<double>, 2> Cell_Grad)
 {
@@ -266,7 +273,7 @@ void calc_flux(Mesh &mesh, std::vector<double> temp_cent, std::array<std::vector
 		dxf = mesh.Edge_centroid[0][i] - mesh.Cell_centroid[0][upwind_cell];
 		dyf = mesh.Edge_centroid[1][i] - mesh.Cell_centroid[1][upwind_cell];
 		Ti = temp_cent[upwind_cell] + Cell_Grad[0][upwind_cell] * dxf + Cell_Grad[1][upwind_cell] * dyf;
-		printf("Edge %i has solution %f\n", i, Ti);
+		// printf("Edge %i has solution %f\n", i, Ti);
 		
 	}
 

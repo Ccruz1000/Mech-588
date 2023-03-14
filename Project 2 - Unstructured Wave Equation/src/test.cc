@@ -433,6 +433,142 @@ void test_grad_indices(Mesh mesh)
 	printf("Gradient indices passed\n");
 }
 
+void test_upwind_calc()
+{
+	// Read unit square mesh
+	std::string meshfile = "Face-Cell/Unit_square.mesh";
+	Mesh mesh = read_mesh(meshfile);
+	std::string fileName = "Results/Test.vtk";
+	// Write values of 0 to allow saving vtk file
+	std::vector<double> temp_cent = std::vector<double>(mesh.iNCell);
+	for(int i = 0; i < mesh.iNCell; i++)
+	{
+		temp_cent[i] = 0.0;
+	}
+
+	std::array<std::vector<double>, 2> vel = {std::vector<double>(mesh.iNEdge), std::vector<double>(mesh.iNEdge)};
+	// Set value of velocity to [1; 0] ( 1 in x direction)
+	for(int i = 0; i < mesh.iNEdge; i++)
+	{
+		vel[0][i] = 1.0;
+		vel[1][i] = 0.0;
+	}
+	// Calculate dot products, and upwind cells based on a horizontal velocity with magnitude 1
+	for(int i = 0; i < mesh.iNEdge; i++)
+	{
+		mesh.dot_product[i] = vel[0][i] * mesh.Edge_norm[0][i] + vel[1][i] * mesh.Edge_norm[1][i]; // compute dot product for cell edge
+		// Add left cell as upwind if dot product is positive
+		if(mesh.dot_product[i] > 0)
+		{
+			mesh.Edge_upwind[0][i] = mesh.Edge[0][i];
+			mesh.Edge_upwind[1][i] = mesh.Edge[1][i];
+		}
+		else
+		{
+			mesh.Edge_upwind[0][i] = mesh.Edge[1][i];
+			mesh.Edge_upwind[1][i] = mesh.Edge[0][i];
+		}
+	}
+	// Check dot products for normal velocity
+	if(mesh.dot_product[0] != -1.0)
+	{
+		tests_failed += 1;
+		printf("Error calculating dot product of edge norm and velocity for horizontal velocity at edge 0\n");
+		return;
+	}
+
+	if(mesh.dot_product[1] != 0.0)
+	{
+		tests_failed += 1;
+		printf("Error calculating dot product of edge norm and velocity for horizontal velocity at edge 1\n");
+		return;
+	}
+
+	if(mesh.dot_product[2] != 1.0)
+	{
+		tests_failed += 1;
+		printf("Error calculating dot product of edge norm and velocity for horizontal velocity at edge 2\n");
+		return;
+	}
+
+	if(mesh.dot_product[3] != 0.0)
+	{
+		tests_failed += 1;
+		printf("Error calculating dot product of edge norm and velocity for horizontal velocity at edge 3\n");
+		return;
+	}
+
+	if(mesh.Edge_upwind[0][4] != 0 && mesh.Edge_upwind[1][4] != 1)
+	{
+		tests_failed += 1;
+		printf("Error calculating upwind and downwind cell for horizontal velocity at edge 4\n");
+		return;
+	}
+
+	printf("Upwind cells succesfully tested for horizontal velocity test case\n");
+
+	// Set value of velocity to [0; 1] ( 1 in y direction)
+	for(int i = 0; i < mesh.iNEdge; i++)
+	{
+		vel[0][i] = 0.0;
+		vel[1][i] = 1.0;
+	}
+
+	// Calculate dot products, and upwind cells based on a vertical velocity with magnitude 1
+	for(int i = 0; i < mesh.iNEdge; i++)
+	{
+		mesh.dot_product[i] = vel[0][i] * mesh.Edge_norm[0][i] + vel[1][i] * mesh.Edge_norm[1][i]; // compute dot product for cell edge
+		// Add left cell as upwind if dot product is positive
+		if(mesh.dot_product[i] > 0)
+		{
+			mesh.Edge_upwind[0][i] = mesh.Edge[0][i];
+			mesh.Edge_upwind[1][i] = mesh.Edge[1][i];
+		}
+		else
+		{
+			mesh.Edge_upwind[0][i] = mesh.Edge[1][i];
+			mesh.Edge_upwind[1][i] = mesh.Edge[0][i];
+		}
+	}
+	// Check dot products for normal velocity
+	if(mesh.dot_product[0] != 0.0)
+	{
+		tests_failed += 1;
+		printf("Error calculating dot product of edge norm and velocity for vertical velocity at edge 0\n");
+		return;
+	}
+
+	if(mesh.dot_product[1] != 1.0)
+	{
+		tests_failed += 1;
+		printf("Error calculating dot product of edge norm and velocity for vertical velocity at edge 1\n");
+		return;
+	}
+
+	if(mesh.dot_product[2] != 0.0)
+	{
+		tests_failed += 1;
+		printf("Error calculating dot product of edge norm and velocity for vertical velocity at edge 2\n");
+		return;
+	}
+
+	if(mesh.dot_product[3] != -1.0)
+	{
+		tests_failed += 1;
+		printf("Error calculating dot product of edge norm and velocity for vertical velocity at edge 3\n");
+		return;
+	}
+
+	if(mesh.Edge_upwind[0][4] != 1 && mesh.Edge_upwind[1][4] != 0)
+	{
+		tests_failed += 1;
+		printf("Error calculating upwind and downwind cell for vertical velocity at edge 4\n");
+		return;
+	}
+
+	printf("Upwind cells succesfully tested for vertical velocity test case\n");	
+}
+
 int main()
 {
 	// Calculate runtime
@@ -472,6 +608,7 @@ int main()
 	test_grad_indices(medium_mesh);
 	// test_grad_indices(fine_mesh);
 	// test_grad_indices(veryfine_mesh);
+	test_upwind_calc();
 
 	// After running tests inform user if tests failed or not
 	if(tests_failed == 0)
