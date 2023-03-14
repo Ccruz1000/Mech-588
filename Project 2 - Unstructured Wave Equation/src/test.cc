@@ -618,6 +618,15 @@ void test_edge_flux(Mesh mesh)
 		return;
 	}
 
+	for(int i = 0; i < mesh.iNEdge; i++)
+	{
+		if((i == 0 || i == 1 || i == 2 || i == 3 || i == 5 || i == 7)  && Edge_flux[i] != 0.0)
+		{
+			tests_failed += 1;
+			printf("Boundary conditions not properly enforced at edge %i for edge flux test case\n", i);
+			return;
+		}
+	}
 	printf("Edge flux calculation passed\n");
 }
 

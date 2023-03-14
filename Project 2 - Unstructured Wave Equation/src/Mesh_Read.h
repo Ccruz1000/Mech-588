@@ -59,6 +59,7 @@ public:
 	// the downwind cell index. 
 	std::array<std::vector<int>, 2> Edge_upwind = {std::vector<int>(iNEdge), std::vector<int>(iNEdge)};
 	std::vector<double> dot_product = std::vector<double>(iNEdge); // Stores the dot product of vel*norm at each edge
+	
 	// Constructors
 	Mesh(int ncell, int nedge, int nbdry, int nvert);
 

@@ -22,7 +22,7 @@ std::string fine = "Face-Cell/mech511-square-fine.mesh";
 std::string veryfine = "Face-Cell/mech511-square-veryfine.mesh";
 std::string analytical = "Face-Cell/analytical.mesh";
 
-Mesh mesh = read_mesh(veryfine);
+Mesh mesh = read_mesh(analytical);
 
 std::vector<double> temp_cent = std::vector<double>(mesh.iNCell); // Store temperatures at cell centroids
 std::array<std::vector<double>, 2> vel = {std::vector<double>(mesh.iNEdge), std::vector<double>(mesh.iNEdge)}; // Store velocity u and v at edge midpoints

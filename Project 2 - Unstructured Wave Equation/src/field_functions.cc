@@ -257,16 +257,17 @@ flux across the edge by multiplying by edge length, and then loop through the ce
 After that we just have to timestep and we DONE BABY!!!!
 */
 
+// This calculates the flux at each edge
 void calc_flux(Mesh &mesh, std::vector<double> temp_cent, std::array<std::vector<double>, 2> Cell_Grad, std::vector<double> &Edge_flux)
 {
 	/*
-	This function will begin by calculating the solution at each edge
-	based on the upwind cell.
+	This function will begin by calculating the solution at each edge based on the upwind cell.
+	It will also assign a value of zero flux to any edge that is on the boundary, to impose our initial condition
 	*/
 	int upwind_cell; // Store upwind cell index for the edge
 	double dxf, dyf; // Store difference in x and y between cell centroid, and edge midpoint coordinates
 	double Ti; // Store solution at edge midpoint
-	// Loop through edges to calculate solution at edge midpoint
+	// Loop through edges to calculate solution at edge midpoint. 
 	for(int i = 0; i < mesh.iNEdge; i++)
 	{
 		upwind_cell = mesh.Edge_upwind[0][i];
@@ -274,6 +275,23 @@ void calc_flux(Mesh &mesh, std::vector<double> temp_cent, std::array<std::vector
 		dyf = mesh.Edge_centroid[1][i] - mesh.Cell_centroid[1][upwind_cell];
 		Ti = temp_cent[upwind_cell] + Cell_Grad[0][upwind_cell] * dxf + Cell_Grad[1][upwind_cell] * dyf;
 		Edge_flux[i] = mesh.dot_product[i] * Ti * mesh.Edge_length[i];
+		// Check if edge is a boundary edge, if it is assign Edge_flux a value of 0 to enforce boundary condition
+		if(mesh.Edge[0][i] == -1 || mesh.Edge[1][i] == -1)
+		{
+			Edge_flux[i] = 0.0;
+		}
 		// printf("Edge %i has solution %f\n", i, Ti);
 	}
 }
+
+// void calc_flux_integral(Mesh mesh, std::vector<double> Edge_flux, std::vector<double> &Cell_Flux_Integral)
+// {
+	
+// 	This function will calculate the total flux integral at each cell. We currently have formulated the flux integral in a way that
+// 	we can add it to the right cell, and subtract it from the left cell for each edge. This function will work as follows:
+// 	1. Loop through each cell.
+// 	2. For each cell, look at each edge that makes up the cell.
+// 	3. For each edge, check if the cell is on the left or the right of the edge.
+// 		3.1. If the cell is on the right of the edge, we will add it to our total flux integral
+	
+// }
