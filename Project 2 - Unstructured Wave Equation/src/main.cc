@@ -15,7 +15,7 @@ time_t start, end;
 time(&start);
 
 // Input data
-std::string meshname = "Face-Cell/mech511-square-verycoarse.mesh"; // Enter mesh file name
+std::string meshname = "Face-Cell/mech511-square-fine.mesh"; // Enter mesh file name
 double dt_max = 1e-4; // Enter maximum stable timestep here
 double max_time = 2; // Enter maximum time here
 double t0 = 0.0; // Enter initial time here 
@@ -49,7 +49,7 @@ double time_curr = 0.0; // Current time
 double InitNorm = calc_L2Norm(Temp); // Save initial L2Norm
 double finalNorm;
 
-while(time_curr <= max_time)
+while(time_curr < max_time)
 {
 	// Initialize all values of temperature at the previous step to be the values of the current timestep
 	for(int i = 0; i < mesh.iNCell; i++)
