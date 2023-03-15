@@ -18,4 +18,6 @@ void calc_upwind(Mesh &mesh, std::array<std::vector<double>, 2> vel);
 void calc_flux(Mesh &mesh, std::vector<double> temp_cent, std::array<std::vector<double>, 2> Cell_Grad, std::vector<double> &Edge_flux);
 void calc_flux_integral(Mesh mesh, std::vector<double> Edge_flux, std::vector<double> &Cell_Flux_Integral);
 double calc_L2Norm(std::vector<double> vector);
+void euler(Mesh mesh, std::vector<double> &Temp, std::vector<double> &flux_curr, double &dt);
+void adams_bashforth(Mesh mesh, std::vector<double> &Temp, std::vector<double> &flux_curr, std::vector<double> &flux_prev, double &dt, int itime);
 #endif

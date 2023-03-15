@@ -16,7 +16,7 @@ time(&start);
 
 // Input data
 std::string meshname = "Face-Cell/mech511-square-verycoarse.mesh"; // Enter mesh file name
-double dt_max = 2.5e-3; // Enter maximum stable timestep here
+double dt_max = 1e-4; // Enter maximum stable timestep here
 double max_time = 2; // Enter maximum time here
 double t0 = 0.0; // Enter initial time here 
 double CFL = 1.0; // Enter CFL number here. Timestep will be CFL*dt_max
@@ -26,12 +26,12 @@ double dt = CFL * dt_max; // Timestep dt
 // Read mesh
 Mesh mesh = read_mesh(meshname);
 
-// Vector to store temperature at each cell
-std::vector<double> Temp = std::vector<double>(mesh.iNCell); 
+
 
 // Initialize velocity vector, and initial conditions for temperature
-std::vector<double> flux_curr = std::vector<double>(mesh.iNCell); // Store temperature at each cell centroid for the current timestep
-std::vector<double> flux_prev = std::vector<double>(mesh.iNCell); // Store temperature at each cell centroid for the previous timestep
+std::vector<double> Temp = std::vector<double>(mesh.iNCell); // Vector to store temperature at each cell
+std::vector<double> flux_curr = std::vector<double>(mesh.iNCell); // Store flux integral for each cell centroid for the current timestep
+std::vector<double> flux_prev = std::vector<double>(mesh.iNCell); // Store flux integral for each cell centroid for the previous timestep
 std::array<std::vector<double>, 2> vel = {std::vector<double>(mesh.iNEdge), std::vector<double>(mesh.iNEdge)}; // Store velocity at each edge midpoint
 initial_condition(mesh, Temp, vel);
 
@@ -46,9 +46,10 @@ std::vector<double> Edge_flux = std::vector<double>(mesh.iNEdge); // Store flux 
 int itime = 0; // Number of timesteps passed
 double time_curr = 0.0; // Current time
 
-double InitNorm = calc_L2Norm(flux_curr); // Save initial L2Norm
+double InitNorm = calc_L2Norm(Temp); // Save initial L2Norm
+double finalNorm;
 
-while(time_curr < max_time)
+while(time_curr <= max_time)
 {
 	// Initialize all values of temperature at the previous step to be the values of the current timestep
 	for(int i = 0; i < mesh.iNCell; i++)
@@ -57,15 +58,34 @@ while(time_curr < max_time)
 	}
 
 	// Calculate gradient at each cell
-	calc_grad(mesh, flux_curr, Cell_Grad);
+	calc_grad(mesh, Temp, Cell_Grad);
 	// Calculate flux at each edge
-	calc_flux(mesh, flux_curr, Cell_Grad, Edge_flux);
+	calc_flux(mesh, Temp, Cell_Grad, Edge_flux);
+	// Calculate flux integral for each cell
+	calc_flux_integral(mesh, Edge_flux, flux_curr);
+	// Step time forward
+	adams_bashforth(mesh, Temp, flux_curr, flux_prev, dt, itime);
+	// Save VTK file every num_sol timesteps
+	if(itime % num_sol == 0)
+	{
+		printf("VTK File Saved\n");
+		std::string fileName = "Results/Timestep-" + std::to_string(itime) + ".vtk";
+		save_VTK(fileName, mesh, Temp);
+	}
+
+	if(time_curr == 2.0)
+	{
+		finalNorm = calc_L2Norm(Temp);
+	}
 
 	// Timestep using Adams-Bashforth second order
 	itime += 1;
 	time_curr += dt;
 	printf("Time at timestep %i is %f\n", itime, time_curr);
 }
+
+double error = InitNorm - finalNorm;
+printf("Final L2Norm Error is %f\n", error);
 // 
 
 // // Read mesh 

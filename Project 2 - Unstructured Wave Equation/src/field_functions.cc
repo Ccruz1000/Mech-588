@@ -341,3 +341,29 @@ double calc_L2Norm(std::vector<double> vector)
 
 	return sqrt(L2Norm);
 }
+
+void euler(Mesh mesh, std::vector<double> &Temp, std::vector<double> &flux_curr, double &dt)
+{
+	// Loop through each cell, and update the value based on explicit euler timestepping
+	for(int i = 0; i < mesh.iNCell; i++)
+	{
+		Temp[i] = Temp[i] + (flux_curr[i] * dt);
+	}
+}
+
+void adams_bashforth(Mesh mesh, std::vector<double> &Temp, std::vector<double> &flux_curr, std::vector<double> &flux_prev, double &dt, int itime)
+{
+	// Use forward euler for 1st timestep only
+	if(itime < 1)
+	{
+		euler(mesh, Temp, flux_curr, dt);
+	}
+	// Adams Bashforth 2nd order timestepping
+	else
+	{
+		for(int i = 0; i < mesh.iNCell; i++)
+		{
+			Temp[i] = Temp[i] + ((1.5 * flux_curr[i] * dt) - (0.5 * flux_prev[i] * dt));
+		}
+	}
+}
