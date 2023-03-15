@@ -630,6 +630,71 @@ void test_edge_flux(Mesh mesh)
 	printf("Edge flux calculation passed\n");
 }
 
+void test_flux_integral(Mesh mesh)
+{
+	double tol = 1e-8;
+	double flux_error;
+	// Initialize temperature and velocity field
+	std::array<std::vector<double>, 2> vel = {std::vector<double>(mesh.iNEdge), std::vector<double>(mesh.iNEdge)};
+	std::vector<double> temp_cent = std::vector<double>(mesh.iNCell);
+	for(int i = 0; i < mesh.iNEdge; i++)
+	{
+		vel[0][i] = 1.0;
+		vel[1][i] = 0.0;
+	}
+
+	// Initializes temperature field to be 1 - x
+	for(int i = 0; i < mesh.iNCell; i++)
+	{
+		temp_cent[i] = 1 - mesh.Cell_centroid[0][i];
+	}
+
+	// Perform flux integral calculation
+	// Store gradient in each cell
+	std::array<std::vector<double>, 2> Cell_Grad = {std::vector<double>(mesh.iNCell), std::vector<double>(mesh.iNCell)};
+	// Store flux for each edge
+	std::vector<double> Edge_flux = std::vector<double>(mesh.iNEdge);
+	// Store total flux integral for each cell
+	std::vector<double> Cell_flux_integral = std::vector<double>(mesh.iNCell);
+	calc_grad(mesh, temp_cent, Cell_Grad);
+	calc_upwind(mesh, vel);
+	calc_flux(mesh, temp_cent, Cell_Grad, Edge_flux);
+	calc_flux_integral(mesh, Edge_flux, Cell_flux_integral);
+
+	for(int i = 0; i < mesh.iNCell; i++)
+	{
+		// If cell is not at boundary, then we expect a flux integral of 1
+		if(mesh.Cell_neighbor[0][i] != -1 && mesh.Cell_neighbor[1][i] != -1 && mesh.Cell_neighbor[2][i] != -1)
+		{
+			// Check that flux integral is 1.0
+			flux_error = 1.0 - Cell_flux_integral[i];
+			// Check that tolerance is met
+			if(flux_error > tol)
+			{
+				tests_failed += 1;
+				printf("Flux integration test failed at cell %i\n", i);
+				return;
+			}
+		}
+	}
+	printf("Flux integration passed\n");
+}
+
+void test_L2Norm()
+{
+	std::vector<double> vector = {1.0, 2.0, 3.0, 4.0, 5.0};
+	double norm = calc_L2Norm(vector);
+
+	if(norm != 7.416198487095663)
+	{
+		tests_failed += 1; 
+		printf("L2Norm not properly calculated\n");
+		return;
+	}
+
+	printf("L2Norm passed\n");
+}
+
 int main()
 {
 	// Calculate runtime
@@ -643,8 +708,9 @@ int main()
 	std::string fine = "Face-Cell/mech511-square-fine.mesh";
 	std::string veryfine = "Face-Cell/mech511-square-veryfine.mesh";
 	std::string analytical = "Face-Cell/analytical.mesh";
+	Mesh verycoarse_mesh = read_mesh(verycoarse);
 	Mesh mesh = read_mesh(analytical);
-	Mesh medium_mesh = read_mesh(medium);
+	Mesh medium_mesh = read_mesh(verycoarse);
 
 	printf("\n\n*******************************************\n           TESTING\n*******************************************\n");
 	
@@ -658,9 +724,10 @@ int main()
 	test_grad_indices(medium_mesh);
 	test_upwind_calc();
 	test_edge_flux(mesh);
+	test_flux_integral(medium_mesh);
+	test_L2Norm();
 
 	// Run tests on all meshes
-	// Mesh verycoarse_mesh = read_mesh(verycoarse);
 	// Mesh coarse_mesh = read_mesh(coarse);
 	// Mesh fine_mesh = read_mesh(fine);
 	// Mesh veryfine_mesh = read_mesh(veryfine);

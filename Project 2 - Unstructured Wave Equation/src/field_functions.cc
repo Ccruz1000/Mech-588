@@ -284,14 +284,60 @@ void calc_flux(Mesh &mesh, std::vector<double> temp_cent, std::array<std::vector
 	}
 }
 
-// void calc_flux_integral(Mesh mesh, std::vector<double> Edge_flux, std::vector<double> &Cell_Flux_Integral)
-// {
-	
-// 	This function will calculate the total flux integral at each cell. We currently have formulated the flux integral in a way that
-// 	we can add it to the right cell, and subtract it from the left cell for each edge. This function will work as follows:
-// 	1. Loop through each cell.
-// 	2. For each cell, look at each edge that makes up the cell.
-// 	3. For each edge, check if the cell is on the left or the right of the edge.
-// 		3.1. If the cell is on the right of the edge, we will add it to our total flux integral
-	
-// }
+void calc_flux_integral(Mesh mesh, std::vector<double> Edge_flux, std::vector<double> &Cell_Flux_Integral)
+{
+	/*
+	This function will calculate the total flux integral at each cell. We currently have formulated the flux integral in a way that
+	we can add it to the right cell, and subtract it from the left cell for each edge. This function will work as follows:
+	1. Loop through each cell.
+	2. For each cell, look at each edge that makes up the cell.
+	3. For each edge, check if the cell is on the left or the right of the edge.
+		3.1. If the cell is on the right of the edge, we will add it to our total flux integral for this cell
+		3.2. If the cell is on the left of the edge, we will subtract it to our total flux integral for this cell
+	4. Once we have added the flux of each edge to the total flux integral of the cell we move to the next cell and repeat
+	*/
+	double multi; // We will use this to determine if we add or subtract the flux from the flux integral. If the cell is on 
+	// the left of the edge, it will be -1, if it is on the right of the cell it will be 1. Then we can always add multi*flux for each edge to our
+	// total flux integral and dont have to worry about sign changes
+	int edge_index; // store index of each edge
+	double flux_integral;
+	// Loop through cells
+	for(int i = 0; i < mesh.iNCell; i++)
+	{
+		// Initialize flux integral to be 0 for the cell
+		flux_integral = 0.0;
+		// For each cell, loop through each edge
+		for(int j = 0; j < 3; j++)
+		{
+			edge_index = mesh.Cell_edge[j][i]; 
+			// check if cell is on the left or right. If the cell is on the left multi becomes -1.0, if it is on the right multi becomes 1.0
+			if(mesh.Edge[0][edge_index] == i)
+			{
+				multi = -1.0; 
+			}
+			
+			if(mesh.Edge[1][edge_index] == i)
+			{
+				multi = 1.0;
+			}
+			
+			// Add flux to the total flux integral
+			flux_integral +=  (1 / mesh.Cell_area[i]) * multi * Edge_flux[edge_index];
+		}
+		// Once all edges are done, assign value to flux integral array
+		Cell_Flux_Integral[i] = flux_integral;
+		// printf("Cell %i has total flux integral %f\n", i, Cell_Flux_Integral[i]);
+	}
+}
+
+double calc_L2Norm(std::vector<double> vector)
+{
+	int size = vector.size(); // Find size of vector
+	double L2Norm = 0; // Store L2Norm of vector
+	for(int i = 0; i < size; i++)
+	{
+		L2Norm += vector[i] * vector[i];
+	}
+
+	return sqrt(L2Norm);
+}
