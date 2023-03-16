@@ -20,4 +20,7 @@ void calc_flux_integral(Mesh mesh, std::vector<double> Edge_flux, std::vector<do
 double calc_L2Norm(std::vector<double> vector);
 void euler(Mesh mesh, std::vector<double> &Temp, std::vector<double> &flux_curr, double &dt);
 void adams_bashforth(Mesh mesh, std::vector<double> &Temp, std::vector<double> &flux_curr, std::vector<double> &flux_prev, double &dt, int itime);
+void midpoint(Mesh mesh, std::vector<double> &Temp, std::vector<double> &flux_curr, double &dt);
+void RK2(Mesh mesh, std::vector<double> &Temp, std::vector<double> &flux_curr, double &dt);
+
 #endif

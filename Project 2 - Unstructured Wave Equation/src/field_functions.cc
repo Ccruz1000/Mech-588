@@ -367,3 +367,55 @@ void adams_bashforth(Mesh mesh, std::vector<double> &Temp, std::vector<double> &
 		}
 	}
 }
+
+void midpoint(Mesh mesh, std::vector<double> &Temp, std::vector<double> &flux_curr, double &dt)
+{
+	// This function will perform timestepping using the midpoint method. This should give 
+	// second order accuracy
+	std::vector<double> Temp_mid = std::vector<double>(mesh.iNCell); // Store temperature at midpoint
+	std::array<std::vector<double>, 2> Cell_Grad_mid = {std::vector<double>(mesh.iNCell), std::vector<double>(mesh.iNCell)};
+	std::vector<double> Edge_flux_mid = std::vector<double>(mesh.iNEdge); // Store flux at each edge
+	std::vector<double> flux_mid = std::vector<double>(mesh.iNCell); 
+	for(int i = 0; i < mesh.iNCell; i++)
+	{
+		Temp_mid[i] = Temp[i] + (0.5 * dt * flux_curr[i]);
+	}
+
+	// Calculate flux at the midpoint
+	calc_grad(mesh, Temp_mid, Cell_Grad_mid);
+	calc_flux(mesh, Temp_mid, Cell_Grad_mid, Edge_flux_mid);
+	calc_flux_integral(mesh, Edge_flux_mid, flux_mid);
+
+	// Once the temperature at the midpoint has been calculated, calculate the temperature
+	// at the next timestep with second order accuracy
+	for(int i = 0; i < mesh.iNCell; i++)
+	{
+		Temp[i] = Temp[i] + dt*flux_mid[i]; 
+	}
+}
+
+void RK2(Mesh mesh, std::vector<double> &Temp, std::vector<double> &flux_curr, double &dt)
+{
+	// This will perform timestepping using the RK2 time scheme
+	std::vector<double> Temp_int = std::vector<double>(mesh.iNCell); // Store intermediate temperature
+	std::array<std::vector<double>, 2> Cell_Grad_int = {std::vector<double>(mesh.iNCell), std::vector<double>(mesh.iNCell)}; // Store intermediate gradient
+	std::vector<double> Edge_flux_int = std::vector<double>(mesh.iNEdge); // Store flux at each edge for intermediate step
+	std::vector<double> flux_int = std::vector<double>(mesh.iNCell); // Store intermediate flux
+
+	// Calculate intermediate temperature
+	for(int i = 0; i < mesh.iNCell; i++)
+	{
+		Temp_int[i] = Temp[i] + dt * flux_curr[i];
+	}
+
+	// Calculate intermediate flux based on above temperature
+	calc_grad(mesh, Temp_int, Cell_Grad_int);
+	calc_flux(mesh, Temp_int, Cell_Grad_int, Edge_flux_int);
+	calc_flux_integral(mesh, Edge_flux_int, flux_int);
+
+	// Calculate temperature at next timestep
+	for(int i = 0; i < mesh.iNCell; i++)
+	{
+		Temp[i] = Temp[i] + (flux_curr[i] + flux_int[i]) * (dt / 2);
+	}
+}

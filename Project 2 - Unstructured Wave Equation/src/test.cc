@@ -36,7 +36,7 @@ void test_vertex(Mesh mesh)
 				printf("Error reading mesh X coordinate at vertex %i\n", i);
 				return;
 			}
-
+			
 			if (y_error > coord_tol)
 			{
 				tests_failed += 1;
@@ -544,7 +544,7 @@ void test_upwind_calc()
 		printf("Error calculating dot product of edge norm and velocity for vertical velocity at edge 1\n");
 		return;
 	}
-
+	
 	if(mesh.dot_product[2] != 0.0)
 	{
 		tests_failed += 1;
