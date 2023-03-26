@@ -17,12 +17,11 @@ time(&start);
 // Input data
 // std::string meshname = "Face-Cell/Unit_square.mesh";
 std::string meshname = "Face-Cell/mech511-square-medium.mesh"; // Enter mesh file name
-double dt_max = 5.3e-6; // Enter maximum stable timestep here
+double dt_max = 8.04e-3; // Enter maximum stable timestep here
 double max_time = 2; // Enter maximum time here
 double t0 = 0.0; // Enter initial time here 
 double CFL = 1.0; // Enter CFL number here. Timestep will be CFL*dt_max
-int num_fps = 20; // How many solutions to save per unit of time 
-// int num_sol = 10;
+int num_fps = 20; // How many solutions to save
 int num_sol = max_time / (dt_max * num_fps); // How often do we want to save a solution file? Every num_sol timesteps, a solution will be saved
 double dt = CFL * dt_max; // Timestep dt
 int num_timestep = max_time / dt; // Number of timesteps before solution finishes
@@ -33,7 +32,7 @@ Below, select the time scheme
 3 - Midpoint
 4 - RK2 
 */
-int timescheme = 2; 
+int timescheme = 4; 
 
 // Read mesh
 Mesh mesh = read_mesh(meshname);
@@ -158,7 +157,7 @@ for(int i = 0; i < mesh.iNCell; i++)
 {
 	Temp_error[i] = Temp_final[i] - Temp_init[i];
 }
-printf("%i timesteps\n", num_timestep);
+
 double error = calc_L2Norm(Temp_error);
 printf("Final L2Norm Error is %14.12e\n", error);
 
