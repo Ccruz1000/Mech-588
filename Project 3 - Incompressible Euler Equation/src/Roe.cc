@@ -39,10 +39,8 @@ void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, do
 			std::string var; // Store the variable that is being populated
 			std::string val; // Store the value as a string
 			// Loop through each line of the input file
-			while(true)
+			while(input >> var >> val)
 			{
-				input >> var >> val;
-
 				// Check which variable is being populated and assign value appropriately
 				// Definitely better way to do this, but if it ain't broke don't fix it
 				if (var == "CFL:")
@@ -75,11 +73,11 @@ void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, do
 					gamma = std::stod(val);					
 				}
 
-				// Leave loop once end of line is reached
-				if(input.eof())
-				{
-					break;
-				}
+				// // Leave loop once end of line is reached
+				// if(input.eof())
+				// {
+				// 	break;
+				// }
 			}
 			// Close input file once we are done with it
 			input.close();

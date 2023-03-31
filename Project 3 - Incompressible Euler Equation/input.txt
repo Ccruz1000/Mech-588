@@ -2,5 +2,5 @@ CFL: 0.4
 nx: 100
 xbegin: 0
 xend: 1
-dt: 2.5e-4
+dt: 2.5e-2
 gamma: 1.4
