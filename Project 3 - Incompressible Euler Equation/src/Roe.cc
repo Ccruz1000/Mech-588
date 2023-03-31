@@ -9,7 +9,8 @@
 
 // Goated video - https://www.youtube.com/watch?v=F_PsFHvt8IU&ab_channel=P.S.Volpiani
 
-void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, double &xend, double &dt, double &gamma)
+// Read input values from input file
+void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, double &xend, double &dt, double &gamma, double *init_cond)
 {
 	/*
 		This function will read the input file, which will be used to select the 
@@ -26,6 +27,12 @@ void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, do
 		xend = 1;
 		dt = 2.5e-2;
 		gamma = 1.4;
+		init_cond[0] = 6; // left density
+		init_cond[1] = 0; // left velocity
+		init_cond[2] = 12; // left pressure
+		init_cond[3] = 1; // right density
+		init_cond[4] = 0; // right velocity
+		init_cond[5] = 1; // right pressure
 	}
 
 	// If input file is properly provided, try to read values from it
@@ -38,6 +45,16 @@ void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, do
 		{
 			std::string var; // Store the variable that is being populated
 			std::string val; // Store the value as a string
+
+			/*
+			The following will be used to ensure that each variable was assigned properly.
+			If there is an error in the input file (for example missing :), then one of the lines
+			will be read, but the variable will not be assigned the value. This will inform the 
+			user if this happens
+			*/
+			int numval = 0; 
+			int numline = 0;
+
 			// Loop through each line of the input file
 			while(input >> var >> val)
 			{
@@ -46,33 +63,86 @@ void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, do
 				if (var == "CFL:")
 				{
 					CFL = std::stod(val);
+					numval += 1;
 				}
 
 				else if (var == "nx:")
 				{
-					nx = std::stoi(val);					
+					nx = std::stoi(val);
+					numval += 1;					
 				}
 
 				else if (var == "xbegin:")
 				{
-					xbegin = std::stod(val);					
+					xbegin = std::stod(val);
+					numval += 1;					
 				}
 
 				else if (var == "xend:")
 				{
-					xend = std::stod(val);					
+					xend = std::stod(val);	
+					numval += 1;				
 				}
 
 				else if(var == "dt:")
 				{
-					dt = std::stod(val);					
+					dt = std::stod(val);
+					numval += 1;					
 				}
 
 				else if (var == "gamma:")
 				{
-					gamma = std::stod(val);					
+					gamma = std::stod(val);	
+					numval += 1;				
 				}
+
+				else if (var == "rhol:")
+				{
+					init_cond[0] = std::stod(val);	
+					numval += 1;				
+				}
+
+				else if (var == "ul:")
+				{
+					init_cond[1] = std::stod(val);	
+					numval += 1;				
+				}
+
+				else if (var == "Pl:")
+				{
+					init_cond[2] = std::stod(val);	
+					numval += 1;				
+				}
+
+				else if (var == "rhor:")
+				{
+					init_cond[3] = std::stod(val);	
+					numval += 1;				
+				}
+
+				else if (var == "ur:")
+				{
+					init_cond[4] = std::stod(val);	
+					numval += 1;				
+				}
+
+				else if (var == "Pr:")
+				{
+					init_cond[5] = std::stod(val);	
+					numval += 1;				
+				}
+
+				numline += 1;
 			}
+
+			// Check that all variables were assigned
+			if(numval != numline)
+			{
+				printf("\n****************************************************\n");
+				printf("Warning! All values may not have been assigned.\nPlease check input file.\n");
+				printf("\n****************************************************\n");
+			}
+
 			// Close input file once we are done with it
 			input.close();
 		}
@@ -85,3 +155,70 @@ void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, do
 	}
 }
 
+// Assign values from input, based on whether input file is given
+void assign_input(int argc, char* argv[], double &CFL, int &nx, double &xbegin, double &xend, double &dt, double &gamma, double *init_cond)
+{
+	// Check if input file was supplied
+	if(argc < 2)
+	{
+		printf("\nNo input file was provided. Please check.\nDefault parameters will be assigned to all input parameters.\n");
+		
+		std::string input_file = "Null";
+		read_input(input_file, CFL, nx, xbegin, xend, dt, gamma, init_cond);
+	}
+
+	// Let user know that input was successfully provided
+	else 
+	{
+		// Convert the inputs file from an array of char to a string
+		std::string input_file = argv[1];
+
+		// Inform user that the input file was successfully provided, and let them know which one was provided.
+		std::cout << "\nInput file provided successfully" << std::endl;
+		std::cout << "File given: " << input_file << std::endl;
+		read_input(input_file, CFL, nx, xbegin, xend, dt, gamma, init_cond);
+	}
+}
+
+// Assign initial conditions based on input values
+void initial_conditions(std::vector<double> &rho, std::vector<double> &u, std::vector<double> &P, int nx, double *init_cond)
+{
+	int mid = nx/2; // Point where membrane is contained
+
+	// Assign values to each point
+	for(int i = 0; i < nx; i++)
+	{
+		// Left hand side if before mid
+		if(i < mid)
+		{
+			rho[i] = init_cond[0];
+			u[i] = init_cond[1];
+			P[i] = init_cond[2];
+		}
+		// Right hand side after mid
+		else
+		{
+			rho[i] = init_cond[3];
+			u[i] = init_cond[4];
+			P[i] = init_cond[5];
+		}
+	}
+}
+
+// Save solution to file, which can be plotted later using python
+void save_results(std::string fileName, std::vector<double> rho, std::vector<double> u, std::vector<double> P, double dx, int nx)
+{
+	const char *fileChar = fileName.c_str();
+	FILE *solutionFile;
+	solutionFile = fopen(fileChar, "w");
+
+	// Print file header
+	fprintf(solutionFile, "X rho u P\n");
+
+	// Print values
+	for(int i = 0; i < nx; i++)
+	{
+		fprintf	(solutionFile, "%14.12e %14.12e %14.12e %14.12e\n", i * dx, rho[i], u[i], P[i]);
+	}
+
+}

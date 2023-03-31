@@ -9,32 +9,38 @@
 
 int main(int argc, char* argv[])
 {
-	// Run parameters
-	double CFL, xbegin, xend, dt, gamma;
-	int nx; // Store number of points in mesh
+	// Declare run parameters
+	double CFL, xbegin, xend, dt, dx, gamma;
+	int nx;
 
-	// Check if input file was supplied
-	if(argc < 2)
-	{
-		printf("No input file was provided. Please check.\nDefault parameters will be assigned to all input parameters.\n");
-		
-		std::string input_file = "Null";
-		read_input(input_file, CFL, nx, xbegin, xend, dt, gamma);
-	}
+	// We will store the initial condition values in an array. The first 3 entries will be for the left side
+	// and will represent rho, u, and P in that order. The next 3 entries will be for the right side, and will 
+	// represent rho, u, and P in that order
 
-	// Let user know that input was successfully provided
-	else 
-	{
-		// Convert the inputs file from an array of char to a string
-		std::string input_file = argv[1]; // = argv[1].c_str();
+	double init_cond[6] = {0};
 
-		// Inform user that the input file was successfully provided, and let them know which one was provided.
-		std::cout << "Input file provided successfully" << std::endl;
-		std::cout << "File given: " << input_file << std::endl;
-		read_input(input_file, CFL, nx, xbegin, xend, dt, gamma);
-	}
+	// Read input file, or provide default values if none given
+	assign_input(argc, argv, CFL, nx, xbegin, xend, dt, gamma, init_cond);
 
-	printf("CFL: %f xbegin: %f xend: %f dt: %f gamma: %f nx: %d\n", CFL, xbegin, xend, dt, gamma, nx);
+	printf("\nCFL: %f xbegin: %f xend: %f dt: %f gamma: %f nx: %d\n", CFL, xbegin, xend, dt, gamma, nx);
+	printf("\nInitial conditions:\nLeft: rho - %f u - %f P - %f\nRight: rho - %f u - %f P - %f\n", init_cond[0], init_cond[1], init_cond[2], init_cond[3], init_cond[4], init_cond[5]);
+
+	// Calculate the spatial step
+	dx = (xend - xbegin) / (nx - 1);
+
+	// Assign vectors to store parameters
+	std::vector<double> rho = std::vector<double>(nx);  // Store density
+	std::vector<double> u = std::vector<double>(nx);  // Store velocity
+	std::vector<double> P = std::vector<double>(nx);  // Store pressure
+	
+	// Assign initial condition values
+	initial_conditions(rho, u, P, nx, init_cond);
+
+	// Save initial condition results
+	std::string fileName = "Results/Init_cond.txt";
+	save_results(fileName, rho, u, P, dx, nx);
+
+
 
 	return 0;
 }

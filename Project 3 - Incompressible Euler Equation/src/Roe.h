@@ -15,6 +15,9 @@
 
 #define ROE_H
 
-void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, double &xend, double &dt, double &gamma);
+void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, double &xend, double &dt, double &gamma, double *init_cond);
+void assign_input(int argc, char* argv[], double &CFL, int &nx, double &xbegin, double &xend, double &dt, double &gamma, double *init_cond);
+void initial_conditions(std::vector<double> &rho, std::vector<double> &u, std::vector<double> &P, int nx, double *init_cond);
+void save_results(std::string fileName, std::vector<double> rho, std::vector<double> u, std::vector<double> P, double dx, int nx);
 
 #endif
