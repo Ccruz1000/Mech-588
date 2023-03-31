@@ -1,0 +1,6 @@
+CFL: 0.4
+nx: 100
+xbegin: 0
+xend: 1
+dt: 2.5e-4
+gamma: 1.4
