@@ -92,3 +92,4 @@ void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, do
 		}
 	}
 }
+
