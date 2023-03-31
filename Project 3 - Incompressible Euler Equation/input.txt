@@ -1,6 +1,15 @@
+<<<<<<< HEAD
 CFL 0.4
 nx: 100
 xbegin: 0
 xend: 1
 dt: 2.5e-4
 gamma: 1.4
+=======
+CFL: 0.4
+nx: 100
+xbegin: 0
+xend: 1
+dt: 2.5e-2
+gamma: 1.4
+>>>>>>> 5e2c2716ea9ff7aacac402f8f3335f8680ab05c2
