@@ -72,12 +72,6 @@ void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, do
 				{
 					gamma = std::stod(val);					
 				}
-
-				// // Leave loop once end of line is reached
-				// if(input.eof())
-				// {
-				// 	break;
-				// }
 			}
 			// Close input file once we are done with it
 			input.close();
