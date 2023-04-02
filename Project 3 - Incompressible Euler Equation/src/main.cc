@@ -30,11 +30,7 @@ int main(int argc, char* argv[])
 
 	// Create array to store primitives. Prim[0][i] is rho, Prim[1][i] is velocity, Prim[2][i] is pressure, and Prim[3][i] is energy
 	std::array<std::vector<double>, 4> Prim = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
-	// std::vector<double> rho = std::vector<double>(nx);  // Store density
-	// std::vector<double> u = std::vector<double>(nx);  // Store velocity
-	// std::vector<double> P = std::vector<double>(nx);  // Store pressure
-	// std::vector<double> E = std::vector<double>(nx); // Store energy
-	
+
 	// Assign initial condition values
 	initial_conditions(Prim, nx, init_cond, gamma);
 
@@ -52,6 +48,8 @@ int main(int argc, char* argv[])
 		U[2][i] = Prim[3][i] * Prim[0][i];
 		c[i] = std::sqrt(gamma * Prim[2][i] / Prim[0][i]);
 	}
+	Roe_flux(U, Prim, dx, gamma, c, nx);
+
 
 	return 0;
 }
