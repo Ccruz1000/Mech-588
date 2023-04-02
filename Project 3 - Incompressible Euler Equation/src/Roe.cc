@@ -181,7 +181,7 @@ void assign_input(int argc, char* argv[], double &CFL, int &nx, double &xbegin, 
 }
 
 // Assign initial conditions based on input values
-void initial_conditions(std::vector<double> &rho, std::vector<double> &u, std::vector<double> &P, int nx, double *init_cond)
+void initial_conditions(std::array<std::vector<double>, 4> &Prim, int nx, double *init_cond, double gamma)
 {
 	int mid = nx/2; // Point where membrane is contained
 
@@ -191,34 +191,73 @@ void initial_conditions(std::vector<double> &rho, std::vector<double> &u, std::v
 		// Left hand side if before mid
 		if(i < mid)
 		{
-			rho[i] = init_cond[0];
-			u[i] = init_cond[1];
-			P[i] = init_cond[2];
+			Prim[0][i] = init_cond[0];  // Store density
+			Prim[1][i] = init_cond[1];  // Store velocity
+			Prim[2][i] = init_cond[2];  // Store pressure
 		}
 		// Right hand side after mid
 		else
 		{
-			rho[i] = init_cond[3];
-			u[i] = init_cond[4];
-			P[i] = init_cond[5];
+			Prim[0][i] = init_cond[3];  // Store density
+			Prim[1][i] = init_cond[4];  // Store velocity
+			Prim[2][i] = init_cond[5];  // Store pressure
 		}
+		// Calculate energy from the assigned initial conditions
+		Prim[3][i] = Prim[2][i] / ((gamma - 1) * Prim[0][i]) + (Prim[1][i] * Prim[1][i] / 2); // Store energy
 	}
 }
 
 // Save solution to file, which can be plotted later using python
-void save_results(std::string fileName, std::vector<double> rho, std::vector<double> u, std::vector<double> P, double dx, int nx)
+void save_results(std::string fileName, std::array<std::vector<double>, 4> &Prim, double dx, int nx)
 {
 	const char *fileChar = fileName.c_str();
 	FILE *solutionFile;
 	solutionFile = fopen(fileChar, "w");
 
 	// Print file header
-	fprintf(solutionFile, "X rho u P\n");
+	fprintf(solutionFile, "X rho u P E\n");
 
 	// Print values
 	for(int i = 0; i < nx; i++)
 	{
-		fprintf	(solutionFile, "%14.12e %14.12e %14.12e %14.12e\n", i * dx, rho[i], u[i], P[i]);
+		fprintf	(solutionFile, "%14.12e %14.12e %14.12e %14.12e %14.12e\n", i * dx, Prim[0][i], Prim[1][i], Prim[2][i], Prim[3][i]);
 	}
-
 }
+
+// The following will compute the product of 2 3x3 matrices
+void matrix_mult3x3(double A[3][3], double B[3][3], double C[3][3])
+{
+	// Empty matrix to store results in
+	double D[3][3] = {{0}};
+	for(int i = 0; i < 3; i++)
+		for(int j = 0; j < 3; j++)
+		{
+			for(int k = 0; k < 3; k++)
+			{
+				C[i][j] += A[i][k] * B[k][j];
+			}
+			// C[i][j] = D[i][j];
+		}
+}
+
+// The following will compute a matrix vector multiplication of a 3x3 matrix, and a 3x1 vector
+void matrix_vector(double A[3][3], double B[3], double C[3])
+{
+	double D[3] = {0};
+	for(int i = 0; i < 3; i++)
+	{
+		for(int j = 0; j < 3; j++)
+		{
+			D[i] += A[i][j] * B[j];
+		}
+		C[i] = D[i];
+	}
+}
+
+// // The following will compute the flux using the Roe scheme
+// void Roe_flux(std::array<std::vector<double>, 3> &U, double dx, double gamma, std::vector<double> c, int nx)
+// {
+// 	// Compute the primitive variables from the conserved variables
+// 	std::vector<double> 
+// }
+

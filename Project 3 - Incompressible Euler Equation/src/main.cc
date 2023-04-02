@@ -22,25 +22,36 @@ int main(int argc, char* argv[])
 	// Read input file, or provide default values if none given
 	assign_input(argc, argv, CFL, nx, xbegin, xend, dt, gamma, init_cond);
 
-	printf("\nCFL: %f xbegin: %f xend: %f dt: %f gamma: %f nx: %d\n", CFL, xbegin, xend, dt, gamma, nx);
-	printf("\nInitial conditions:\nLeft: rho - %f u - %f P - %f\nRight: rho - %f u - %f P - %f\n", init_cond[0], init_cond[1], init_cond[2], init_cond[3], init_cond[4], init_cond[5]);
+	// printf("\nCFL: %f xbegin: %f xend: %f dt: %f gamma: %f nx: %d\n", CFL, xbegin, xend, dt, gamma, nx);
+	// printf("\nInitial conditions:\nLeft: rho - %f u - %f P - %f\nRight: rho - %f u - %f P - %f\n", init_cond[0], init_cond[1], init_cond[2], init_cond[3], init_cond[4], init_cond[5]);
 
 	// Calculate the spatial step
 	dx = (xend - xbegin) / (nx - 1);
 
-	// Assign vectors to store parameters
-	std::vector<double> rho = std::vector<double>(nx);  // Store density
-	std::vector<double> u = std::vector<double>(nx);  // Store velocity
-	std::vector<double> P = std::vector<double>(nx);  // Store pressure
+	// Create array to store primitives. Prim[0][i] is rho, Prim[1][i] is velocity, Prim[2][i] is pressure, and Prim[3][i] is energy
+	std::array<std::vector<double>, 4> Prim = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
+	// std::vector<double> rho = std::vector<double>(nx);  // Store density
+	// std::vector<double> u = std::vector<double>(nx);  // Store velocity
+	// std::vector<double> P = std::vector<double>(nx);  // Store pressure
+	// std::vector<double> E = std::vector<double>(nx); // Store energy
 	
 	// Assign initial condition values
-	initial_conditions(rho, u, P, nx, init_cond);
+	initial_conditions(Prim, nx, init_cond, gamma);
 
 	// Save initial condition results
 	std::string fileName = "Results/Init_cond.txt";
-	save_results(fileName, rho, u, P, dx, nx);
+	save_results(fileName, Prim, dx, nx);
 
-
+	// Create and populate array to store conserved variables. Calculate speed of sound in each cell at the same time
+	std::array<std::vector<double>, 3> U = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
+	std::vector<double> c = std::vector<double>(nx);
+	for(int i = 0; i < nx; i++)
+	{
+		U[0][i] = Prim[0][i];
+		U[1][i] = Prim[0][i] * Prim[1][i];
+		U[2][i] = Prim[3][i] * Prim[0][i];
+		c[i] = std::sqrt(gamma * Prim[2][i] / Prim[0][i]);
+	}
 
 	return 0;
 }

@@ -142,6 +142,7 @@ def flux_roe(q,dx,gamma,a,nx):
     F = func_flux(q,gamma);
     Phi=0.5*(F[:,0:nx-1]+F[:,1:nx])-0.5*Phi
     
+
     dF = (Phi[:,1:-1]-Phi[:,0:-2])
     
     return (dF)
@@ -149,7 +150,7 @@ def flux_roe(q,dx,gamma,a,nx):
 # Parameters
 CFL    = 0.50               # Courant Number
 gamma  = 1.4                # Ratio of specific heats
-ncells = 400                # Number of cells
+ncells = 200                # Number of cells
 x_ini =0.; x_fin = 1.       # Limits of computational domain
 dx = (x_fin-x_ini)/ncells   # Step size
 nx = ncells+1               # Number of points
@@ -161,7 +162,7 @@ u0 = zeros(nx)
 p0 = zeros(nx)
 halfcells = int(ncells/2)
 
-IC = 1 # 6 IC cases are available
+IC = 3 # 6 IC cases are available
 if IC == 1:
     print ("Configuration 1, Sod's Problem")
     p0[:halfcells] = 1.0  ; p0[halfcells:] = 0.1;
@@ -203,7 +204,7 @@ E0 = p0/((gamma-1.)*r0)+0.5*u0**2 # Total Energy density
 a0 = sqrt(gamma*p0/r0)            # Speed of sound
 q  = np.array([r0,r0*u0,r0*E0])   # Vector of conserved variables
 
-if (False):
+if (True):
     fig = plt.subplots()
     ax1 = plt.subplot(4, 1, 1)
     #plt.title('Lax-Wendroff scheme')
@@ -297,4 +298,4 @@ while t < tEnd:
         plt.subplots_adjust(bottom=0.15)
         plt.subplots_adjust(top=0.95)
         plt.show()
-        fig.savefig("fig_Sod_Roe_it"+str(it)+".pdf", dpi=300)
+        # fig.savefig("fig_Sod_Roe_it"+str(it)+".pdf", dpi=300)
