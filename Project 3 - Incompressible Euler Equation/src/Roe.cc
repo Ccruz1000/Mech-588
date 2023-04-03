@@ -69,7 +69,7 @@ void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, do
 
 				else if (var == "nx:")
 				{
-					nx = std::stoi(val);
+					nx = std::stoi(val) + 2; // Add 2 for ghost cells
 					numval += 1;					
 				}
 
@@ -193,7 +193,7 @@ void initial_conditions(std::array<std::vector<double>, 4> &Prim, int nx, double
 	int mid = nx/2; // Point where membrane is contained
 
 	// Assign values to each point
-	for(int i = 0; i < nx; i++)
+	for(int i = 1; i < nx - 1; i++)
 	{
 		// Left hand side if before mid
 		if(i < mid)
@@ -226,7 +226,7 @@ void save_results(std::string fileName, std::array<std::vector<double>, 4> &Prim
 	fprintf(solutionFile, "X rho u P E\n");
 
 	// Print values
-	for(int i = 0; i < nx; i++)
+	for(int i = 1; i < nx - 1; i++)
 	{
 		fprintf	(solutionFile, "%14.12e %14.12e %14.12e %14.12e %14.12e\n", i * dx, Prim[0][i], Prim[1][i], Prim[2][i], Prim[3][i]);
 	}
@@ -268,7 +268,7 @@ void Roe_flux(std::array<std::vector<double>, 3> &U, std::array<std::vector<doub
 	double epsilon = 1e-8; // Value to smooth out absolute values of eigenvectors near 0
 	std::vector<double> htot = std::vector<double>(nx); // Store enthalpy
 	// Compute the primitive variables from the conserved variables
-	for(int i = 0; i < nx; i++)
+	for(int i = 1; i < nx - 1; i++)
 	{
 		Prim[0][i] = U[0][i]; // Density
 		Prim[1][i] = U[1][i] / U[0][i]; // Velocity
@@ -290,7 +290,15 @@ void Roe_flux(std::array<std::vector<double>, 3> &U, std::array<std::vector<doub
 	// Store normal flux
 	std::array<std::vector<double>, 3> Fnorm = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)}; 
 
-	for(int i = 0; i < nx; i++)
+	// Boundary conditions
+	Fnorm[0][0] = 0; // UPDATE THIS TO BE PROPER VALUE
+	Fnorm[1][0] = Prim[2][1]; // UPDATE THIS TO PROPER VALUE
+	Fnorm[2][0] = 0; // UPDATE THIS TO PROPER VALUE
+
+	Fnorm[0][nx - 1] = 0; // UPDATE THIS TO BE PROPER VALUE
+	Fnorm[1][nx - 1] = Prim[2][nx - 2]; // UPDATE THIS TO PROPER VALUE
+	Fnorm[2][nx - 1] = 0; // UPDATE THIS TO PROPER VALUE
+	for(int i = 1; i < nx - 1; i++)
 	{
 		Fnorm[0][i] = Prim[0][i] * Prim[1][i]; // rho*u
 		Fnorm[1][i] = Prim[0][i] * Prim[1][i] * Prim[1][i] + Prim[2][i]; // rho*u^2 + P
@@ -301,15 +309,18 @@ void Roe_flux(std::array<std::vector<double>, 3> &U, std::array<std::vector<doub
 	std::array<std::vector<double>, 3> U_tild = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
 	std::vector<double> u_tild = std::vector<double>(nx);
 	double rho_tild, h_tild, h_left, h_right;
-	for(int i = 0; i < nx; i++)
+	for(int i = 1; i < nx - 1; i++)
 	{	
 		// Calculate rho averaged density and velocity
-		rho_tild = std::sqrt(Prim[0][i + 1] + Prim[0][i]); 
+		rho_tild = std::sqrt(Prim[0][i + 1] * Prim[0][i]); 
 		u_tild[i] = (Prim[0][i + 1] * Prim[1][i + 1] + rho_tild * Prim[1][i]) / (Prim[0][i + 1] + rho_tild);
 
 		// Calculate enthalpy
-		h_left = Prim[3][i] + Prim[2][i] / Prim[0][i];
-		h_right = Prim[3][i + 1] + Prim[2][i + 1] / Prim[0][i + 1];
+		// h_left = Prim[3][i] + Prim[2][i] / Prim[0][i];
+		// h_right = Prim[3][i + 1] + Prim[2][i + 1] / Prim[0][i + 1];
+		// h_tild = (Prim[0][i + 1] * h_right + rho_tild * h_left) / (Prim[0][i + 1] + rho_tild);
+		h_left = (gamma / (gamma - 1)) * (Prim[2][i] / Prim[0][i]);
+		h_right = (gamma / (gamma - 1)) * (Prim[2][i + 1] / Prim[0][i + 1]);
 		h_tild = (Prim[0][i + 1] * h_right + rho_tild * h_left) / (Prim[0][i + 1] + rho_tild);
 		
 		// Populate Roe averaged solution vector
@@ -317,9 +328,9 @@ void Roe_flux(std::array<std::vector<double>, 3> &U, std::array<std::vector<doub
 		U_tild[1][i] = rho_tild * u_tild[i];
 		U_tild[2][i] = h_tild;
 
-		double A_tild[3][3] = {{0, 1, 0},
-							   {-0.5 *(u_tild[i] * u_tild[i]) * (3 - gamma), u_tild[i] * (3 - gamma), gamma - 1},
-							   {-gamma * u_tild[i] * U_tild[2][i] / U_tild[0][i] + (gamma - 1) * pow(u_tild[i], 3), gamma * (U_tild[2][i] / U_tild[0][i]) - (3 / 2) * (gamma - 1) * u_tild[i] * u_tild[i], gamma * u_tild[i]}};
+		// double A_tild[3][3] = {{0, 1, 0},
+		// 					   {-0.5 *(u_tild[i] * u_tild[i]) * (3 - gamma), u_tild[i] * (3 - gamma), gamma - 1},
+		// 					   {-gamma * u_tild[i] * U_tild[2][i] / U_tild[0][i] + (gamma - 1) * pow(u_tild[i], 3), gamma * (U_tild[2][i] / U_tild[0][i]) - (3 / 2) * (gamma - 1) * u_tild[i] * u_tild[i], gamma * u_tild[i]}};
 	} 
 
 	// Matrices to calculate Roes flux
@@ -331,18 +342,27 @@ void Roe_flux(std::array<std::vector<double>, 3> &U, std::array<std::vector<doub
 	double dv_du[3][3] = {0};
 	double A_tild[3][3] = {0};
 
+	// Boundary condition
+	F[0][0] = 0; // UPDATE THIS TO BE PROPER VALUE
+	F[1][0] = Prim[2][1]; // UPDATE THIS TO PROPER VALUE
+	F[2][0] = 0; // UPDATE THIS TO PROPER VALUE
+
+	F[0][nx - 1] = 0; // UPDATE THIS TO BE PROPER VALUE
+	F[1][nx - 1] = Prim[2][nx - 2]; // UPDATE THIS TO PROPER VALUE
+	F[2][nx - 1] = 0; // UPDATE THIS TO PROPER VALUE
+
 	// Calculate flux at each cell
-	for(int i = 0; i < nx; i++)
+	for(int i = 1; i < nx - 1; i++)
 	{
 		double du_dv[3][3] = {{1, 0, 0},
 		                      {u_tild[i], U_tild[0][i], 0}, 
-		                      {0.5 * u_tild[i] * u_tild[i], U_tild[0][i] * u_tild[i], gamma - 1}};
+		                      {0.5 * u_tild[i] * u_tild[i], U_tild[0][i] * u_tild[i], 1.0 / (gamma - 1)}};
 		/*
 				|1     0     0        |
 		du_dv = |u     rho   0        |
 				|u^2/2 rho*u gamma - 1|
 		*/
-		double XR[3][3] = {{u_tild[i], c[i] * (u_tild[i] + c[i]) / U_tild[0][i], c[i] * ((c[i] - u_tild[i])) / U_tild[0][i]},
+		double XR[3][3] = {{1.0, U_tild[0][i] / c[i], -U_tild[0][i] / c[i]},
 					       {0, 1, 1},
 					       {0, U_tild[0][i] * c[i], -U_tild[0][i] * c[i]}};
 		/*
@@ -413,26 +433,26 @@ void Roe_flux(std::array<std::vector<double>, 3> &U, std::array<std::vector<doub
 
 		// Calculate total flux
 		// Boundary conditions
-		if(i == 0)
-		{
-			F[0][i] = 0;
-			F[1][i] = init_cond[2];
-			F[2][i] = 0;
-		}
+		// if(i == 0)
+		// {
+		// 	F[0][i] = 0;
+		// 	F[1][i] = init_cond[2]; // UPDATE THIS TO BE PROPER VALUE
+		// 	F[2][i] = 0;
+		// }
 
-		else if (i == nx - 1)
-		{
-			F[0][i] = 0;
-			F[1][i] = init_cond[5];
-			F[2][i] = 0;
-		}
+		// else if (i == nx - 1)
+		// {
+		// 	F[0][i] = 0;
+		// 	F[1][i] = init_cond[5]; // 
+		// 	F[2][i] = 0;
+		// }
 
-		else
-		{
-			F[0][i] = 0.5 * (Fnorm[0][i] + Fnorm[0][i + 1]) - 0.5 * Roe[0];
-			F[1][i] = 0.5 * (Fnorm[1][i] + Fnorm[1][i + 1]) - 0.5 * Roe[1];
-			F[2][i] = 0.5 * (Fnorm[2][i] + Fnorm[2][i + 1]) - 0.5 * Roe[2];
-		}
+		// else
+		// {
+		F[0][i] = 0.5 * (Fnorm[0][i] + Fnorm[0][i + 1]) - 0.5 * Roe[0];
+		F[1][i] = 0.5 * (Fnorm[1][i] + Fnorm[1][i + 1]) - 0.5 * Roe[1];
+		F[2][i] = 0.5 * (Fnorm[2][i] + Fnorm[2][i + 1]) - 0.5 * Roe[2];
+		// }
 		// F[0][i] = 0.5 * (Fnorm[0][i] + Fnorm[0][i + 1]) - 0.5 * Roe[0];
 		// F[1][i] = 0.5 * (Fnorm[1][i] + Fnorm[1][i + 1]) - 0.5 * Roe[1];
 		// F[2][i] = 0.5 * (Fnorm[2][i] + Fnorm[2][i + 1]) - 0.5 * Roe[2];
