@@ -10,7 +10,7 @@
 // Goated video - https://www.youtube.com/watch?v=F_PsFHvt8IU&ab_channel=P.S.Volpiani
 
 // Read input values from input file
-void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, double &xend, double &dt, double &gamma, double *init_cond)
+void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, double &xend, double &dt, double &gamma, double *init_cond, double &t_final)
 {
 	/*
 		This function will read the input file, which will be used to select the 
@@ -33,6 +33,7 @@ void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, do
 		init_cond[3] = 1; // right density
 		init_cond[4] = 0; // right velocity
 		init_cond[5] = 1; // right pressure
+		t_final = 0.15;
 	}
 
 	// If input file is properly provided, try to read values from it
@@ -132,6 +133,12 @@ void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, do
 					numval += 1;				
 				}
 
+				else if (var == "tfinal:")
+				{
+					t_final = std::stod(val);
+					numval += 1;
+				}
+
 				numline += 1;
 			}
 
@@ -156,7 +163,7 @@ void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, do
 }
 
 // Assign values from input, based on whether input file is given
-void assign_input(int argc, char* argv[], double &CFL, int &nx, double &xbegin, double &xend, double &dt, double &gamma, double *init_cond)
+void assign_input(int argc, char* argv[], double &CFL, int &nx, double &xbegin, double &xend, double &dt, double &gamma, double *init_cond, double &t_final)
 {
 	// Check if input file was supplied
 	if(argc < 2)
@@ -164,7 +171,7 @@ void assign_input(int argc, char* argv[], double &CFL, int &nx, double &xbegin, 
 		printf("\nNo input file was provided. Please check.\nDefault parameters will be assigned to all input parameters.\n");
 		
 		std::string input_file = "Null";
-		read_input(input_file, CFL, nx, xbegin, xend, dt, gamma, init_cond);
+		read_input(input_file, CFL, nx, xbegin, xend, dt, gamma, init_cond, t_final);
 	}
 
 	// Let user know that input was successfully provided
@@ -176,7 +183,7 @@ void assign_input(int argc, char* argv[], double &CFL, int &nx, double &xbegin, 
 		// Inform user that the input file was successfully provided, and let them know which one was provided.
 		std::cout << "\nInput file provided successfully" << std::endl;
 		std::cout << "File given: " << input_file << std::endl;
-		read_input(input_file, CFL, nx, xbegin, xend, dt, gamma, init_cond);
+		read_input(input_file, CFL, nx, xbegin, xend, dt, gamma, init_cond, t_final);
 	}
 }
 
@@ -256,7 +263,7 @@ void matrix_vector(double A[3][3], double B[3], double C[3])
 }
 
 // The following will compute the flux using the Roe scheme
-void Roe_flux(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 4> &Prim, std::array<std::vector<double>, 3> &F, double dx, double gamma, std::vector<double> c, int nx)
+void Roe_flux(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 4> &Prim, std::array<std::vector<double>, 3> &F, double dx, double gamma, std::vector<double> c, int nx, double *init_cond)
 {
 	double epsilon = 1e-8; // Value to smooth out absolute values of eigenvectors near 0
 	std::vector<double> htot = std::vector<double>(nx); // Store enthalpy
@@ -266,9 +273,18 @@ void Roe_flux(std::array<std::vector<double>, 3> &U, std::array<std::vector<doub
 		Prim[0][i] = U[0][i]; // Density
 		Prim[1][i] = U[1][i] / U[0][i]; // Velocity
 		Prim[3][i] = U[2][i]; // Energy
-		Prim[2][i] = 0.5 * (1 - gamma) * U[1] * U[1] / U[0] + (gamma - 1) * U[2];  // Pressure (P = 0.5 * (1 - gamma) * U2^2/U1 + (gamma - 1) * U3
+		Prim[2][i] = 0.5 * (1 - gamma) * U[1][i] * U[1][i] / U[0][i] + (gamma - 1) * U[2][i];  // Pressure (P = 0.5 * (1 - gamma) * U2^2/U1 + (gamma - 1) * U3
 		// calculate enthalpy
-		htot[i] = gamma / (gamma - 1) * Prim[2][i] / Prim[0][i] + 0.5 * Prim[1][i] * Prim[1][i];
+		
+		if(Prim[0][i] < 0)
+		{
+			printf("Warning! Negative density found.\n");
+		}
+
+		if(Prim[2][i] < 0)
+		{
+			printf("Warning! Negative pressure found.\n");
+		}
 	}
 
 	// Store normal flux
@@ -276,19 +292,20 @@ void Roe_flux(std::array<std::vector<double>, 3> &U, std::array<std::vector<doub
 
 	for(int i = 0; i < nx; i++)
 	{
-		F[0][i] = Prim[0][i] * Prim[1][i]; // rho*u
-		F[1][i] = Prim[0][i] * Prim[1][i] * Prim[1][i] + Prim[2][i]; // rho*u^2 + P
-		F[2][i] = Prim[1][i] * (Prim[2][i] + Prim[3][i]); // u*(P+Et)
+		Fnorm[0][i] = Prim[0][i] * Prim[1][i]; // rho*u
+		Fnorm[1][i] = Prim[0][i] * Prim[1][i] * Prim[1][i] + Prim[2][i]; // rho*u^2 + P
+		Fnorm[2][i] = Prim[1][i] * (Prim[2][i] + Prim[3][i]); // u*(P+Et)
 	}
 
 	// Store Roe averaged values
 	std::array<std::vector<double>, 3> U_tild = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
-	double rho_tild, u_tild, h_tild, h_left, h_right;
+	std::vector<double> u_tild = std::vector<double>(nx);
+	double rho_tild, h_tild, h_left, h_right;
 	for(int i = 0; i < nx; i++)
 	{	
 		// Calculate rho averaged density and velocity
 		rho_tild = std::sqrt(Prim[0][i + 1] + Prim[0][i]); 
-		u_tild = (Prim[0][i + 1] * Prim[1][i + 1] + rho_tild * Prim[1][i]) / (Prim[0][i + 1] + rho_tild);
+		u_tild[i] = (Prim[0][i + 1] * Prim[1][i + 1] + rho_tild * Prim[1][i]) / (Prim[0][i + 1] + rho_tild);
 
 		// Calculate enthalpy
 		h_left = Prim[3][i] + Prim[2][i] / Prim[0][i];
@@ -297,41 +314,135 @@ void Roe_flux(std::array<std::vector<double>, 3> &U, std::array<std::vector<doub
 		
 		// Populate Roe averaged solution vector
 		U_tild[0][i] = rho_tild;
-		U_tild[1][i] = rho_tild * u_tild;
+		U_tild[1][i] = rho_tild * u_tild[i];
 		U_tild[2][i] = h_tild;
 	} 
 
 	// Matrices to calculate Roes flux
 	double A_tild[3][3] = {0};
-	double du_dv[3][3] = {0};
-	double XR[3][3] = {0};
+	//double du_dv[3][3] = {0};
+	// double XR[3][3] = {0};
+	double XL[3][3] = {0};
 	double lambda_abs[3][3] = {0};
+	double lam1, lam2, lam3;
 	double dv_du[3][3] = {0};
 
 	// Calculate flux at each cell
 	for(int i = 0; i < nx; i++)
 	{
-		du_dv = {{1, 0, 0},
-		         {U_tild[1][i] / U_tild[0][i], U_tild[0][i], 0}, 
-		         {0.5 * U_tild[1][i] * U_tild[1][i], U_tild[0][i] * U_tild[1][i], gamma - 1}};
+		double du_dv[3][3] = {{1, 0, 0},
+		                      {u_tild[i], U_tild[0][i], 0}, 
+		                      {0.5 * u_tild[i] * u_tild[i], U_tild[0][i] * u_tild[i], gamma - 1}};
 		/*
 				|1     0     0        |
 		du_dv = |u     rho   0        |
 				|u^2/2 rho*u gamma - 1|
 		*/
-		XR = {{U_tild[1][i] / U_tild[0][i], c[i] * ((U_tild[1][i] / U_tild[0][i]) + c[i]) / U_tild[0][i], c[i] * ((c[i] - U_tild[1][i] / U_tild[0][i])) / U_tild[0][i]},
-		      {0, 1, 1},
-		      {0, U_tild[0][i] * c[i], -U_tild[0][i] * c[i]}}
+		double XR[3][3] = {{u_tild[i], c[i] * (u_tild[i] + c[i]) / U_tild[0][i], c[i] * ((c[i] - u_tild[i])) / U_tild[0][i]},
+					       {0, 1, 1},
+					       {0, U_tild[0][i] * c[i], -U_tild[0][i] * c[i]}};
 		/*
 				|u     c(u+c)/rho  c(c-u)/rho|
 		XR =    |0     1           1         |
 				|0     rho*c       -rho*c    |
 		*/
+		 // Values to store the 3 individual eigenvalues
 
-		lambda_abs = 0.5 * {{std::sqrt(epsilon + (0.5 * (U_tild[1][i] / U_tild[0][i])) * (0.5 * (U_tild[1][i + 1] / U_tild[0][i + 1]))), 0, 0},
-		                    {0, std::sqrt(epsilon + (0.5 * ((U_tild[1][i] / U_tild[0][i]) + c[i])) * (0.5 * ((U_tild[1][i + 1] / U_tild[0][i + 1]) + c[i + 1]))), 0},
-		                    {0, 0, std::sqrt(epsilon + (0.5 * ((U_tild[1][i] / U_tild[0][i]) - c[i])) * (0.5 * ((U_tild[1][i + 1] / U_tild[0][i + 1]) - c[i + 1])))}};    
+		lam1 = (0.5 * (u_tild[i] + u_tild[i + 1]));
+		lam2 = (0.5 * (u_tild[i] + c[i] + u_tild[i + 1] + c[i + 1]));
+		lam3 = (0.5 * (u_tild[i] - c[i] + u_tild[i + 1] - c[i + 1]));
+
+		double lambda_abs[3][3] = {{std::sqrt(lam1 * lam1 + epsilon), 0, 0},
+					               {0, std::sqrt(epsilon + lam2 * lam2), 0},
+					               {0, 0, std::sqrt(epsilon + lam3 * lam3)}};
+
+		/*
+				    |(((ui+ui+1)/2)^2+epsilon)^(1/2) 0                                             0                                            |
+		lambda =    |0                               ((((ui+c)+((ui+1)+(ci+1))/2)^2+epsilon)^(1/2) 0                                            |
+				    |0                               0                                             ((((ui+c)+((ui+1)+(ci+1))/2)^2+epsilon)^(1/2)|
+		*/
+
+		double XL[3][3] = {{1, 0, -1/(c[i]*c[i])},
+					       {0, 1/2, 1/(2*U_tild[0][i] * c[i])},
+					       {0, 1/2, -1/(2*U_tild[0][i] * c[i])}};
+
+		/*
+				|1     0             -1/c^2      |
+		XL =    |0     1/2           1/(2(rho*c) |
+				|0     1/2           -1/(2(rho*c)|
+		*/
+
+		double dv_du[3][3] = {{1, 0, 0},
+					          {-u_tild[i] / U_tild[0][i], 1 / U_tild[0][i], 0},
+					          {(gamma - 1) * 0.5 * u_tild[i] *u_tild[i], -(gamma - 1) * u_tild[i], gamma -1}};
+
+		/*
+				|1                0              0        |
+		dv_du = |-u/rho           1/rho          0        |
+				|(gamma-1)u^2/2   -(gamma-1)u    gamma - 1|
+		*/       
+
+		// Now that all the matrices are defined, we can calculate A~
+		// A~ = (du_dv) * XR * lambda_abs * XL * (dv_du)
+		// Intermediate matrices to store values
+		double inter1[3][3] = {0};
+		double inter2[3][3] = {0};
+		// A = du_dv*XR
+		matrix_mult3x3(du_dv, XR, inter1);
+		// B = A * lamda_abs
+		matrix_mult3x3(inter1, lambda_abs, inter2);
+		// Zero inter1, and then C = B * XL
+		for(int k = 0; k < 3; k++)
+			for(int j = 0; j < 3; j++)
+			{
+				inter1[k][j] = 0; 
+			}
+		matrix_mult3x3(inter2, XL, inter1);
+		// Finally, A~ = C * dv_du
+		matrix_mult3x3(inter1, dv_du, A_tild);
+
+		// Now, we know that the flux is equivalent to (1/2)(Fi+Fi+1) - 1/2A~(Ui+1-Ui)
+		// Store values in a double array, to be transferred to the vector later
+		double U_dif[3] = {U[0][i + 1] - U[0][i], U[1][i + 1] - U[1][i], U[2][i + 1] - U[2][i]};
+		double Roe[3] = {0};
+		matrix_vector(A_tild, U_dif, Roe);
+
+		// Calculate total flux
+		// Boundary conditions
+		if(i == 0)
+		{
+			F[0][i] = 0;
+			F[1][i] = init_cond[2];
+			F[2][i] = 0;
+		}
+
+		else if (i == nx - 1)
+		{
+			F[0][i] = 0;
+			F[1][i] = init_cond[5];
+			F[2][i] = 0;
+		}
+
+		else
+		{
+			F[0][i] = 0.5 * (Fnorm[0][i] + Fnorm[0][i + 1]) - 0.5 * Roe[0];
+			F[1][i] = 0.5 * (Fnorm[1][i] + Fnorm[1][i + 1]) - 0.5 * Roe[1];
+			F[2][i] = 0.5 * (Fnorm[2][i] + Fnorm[2][i + 1]) - 0.5 * Roe[2];
+		}
+		// F[0][i] = 0.5 * (Fnorm[0][i] + Fnorm[0][i + 1]) - 0.5 * Roe[0];
+		// F[1][i] = 0.5 * (Fnorm[1][i] + Fnorm[1][i + 1]) - 0.5 * Roe[1];
+		// F[2][i] = 0.5 * (Fnorm[2][i] + Fnorm[2][i + 1]) - 0.5 * Roe[2];
 	}
+}
 
+// Timestepping schemes
+void forward_euler(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 3> &F, double dt, double dx, int nx)
+{
+	for(int i = 0; i < nx; i++)
+	{
+		U[0][i] = U[0][i] - (dt / dx) * (F[0][i] - F[0][i - 1]);
+		U[1][i] = U[1][i] - (dt / dx) * (F[1][i] - F[1][i - 1]);
+		U[2][i] = U[2][i] - (dt / dx) * (F[2][i] - F[2][i - 1]);
+	}
 }
 

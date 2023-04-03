@@ -10,7 +10,7 @@ path = os.getcwd()
 save_path = path + '\Results'
 
 # Initialize variables
-datafile = save_path + '\Init_cond.txt'  # open initial conditions file
+datafile = save_path + '\Final_cond.txt'  # open initial conditions file
 data = np.loadtxt(datafile, dtype=float, skiprows=1, delimiter=' ')
 
 # Organize data

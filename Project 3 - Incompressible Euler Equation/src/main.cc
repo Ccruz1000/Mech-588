@@ -10,7 +10,7 @@
 int main(int argc, char* argv[])
 {
 	// Declare run parameters
-	double CFL, xbegin, xend, dt, dx, gamma;
+	double CFL, xbegin, xend, dt, dx, gamma, t_final;
 	int nx;
 
 	// We will store the initial condition values in an array. The first 3 entries will be for the left side
@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
 	double init_cond[6] = {0};
 
 	// Read input file, or provide default values if none given
-	assign_input(argc, argv, CFL, nx, xbegin, xend, dt, gamma, init_cond);
+	assign_input(argc, argv, CFL, nx, xbegin, xend, dt, gamma, init_cond, t_final);
 
 	// printf("\nCFL: %f xbegin: %f xend: %f dt: %f gamma: %f nx: %d\n", CFL, xbegin, xend, dt, gamma, nx);
 	// printf("\nInitial conditions:\nLeft: rho - %f u - %f P - %f\nRight: rho - %f u - %f P - %f\n", init_cond[0], init_cond[1], init_cond[2], init_cond[3], init_cond[4], init_cond[5]);
@@ -39,16 +39,36 @@ int main(int argc, char* argv[])
 	save_results(fileName, Prim, dx, nx);
 
 	// Create and populate array to store conserved variables. Calculate speed of sound in each cell at the same time
-	std::array<std::vector<double>, 3> U = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
-	std::vector<double> c = std::vector<double>(nx);
+	std::array<std::vector<double>, 3> U = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};  // Solution vector
+	std::array<std::vector<double>, 3> F = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)}; // Flux vector
+	std::vector<double> c = std::vector<double>(nx);  // Speed of sound
+	// Populate solution and sound speed vector using primitives
 	for(int i = 0; i < nx; i++)
 	{
-		U[0][i] = Prim[0][i];
-		U[1][i] = Prim[0][i] * Prim[1][i];
-		U[2][i] = Prim[3][i] * Prim[0][i];
+		U[0][i] = Prim[0][i];  // rho
+		U[1][i] = Prim[0][i] * Prim[1][i];  // rho * u
+		U[2][i] = Prim[3][i]; // Et
 		c[i] = std::sqrt(gamma * Prim[2][i] / Prim[0][i]);
 	}
-	Roe_flux(U, Prim, dx, gamma, c, nx);
+	// Calculate initial flux
+	Roe_flux(U, Prim, F, dx, gamma, c, nx, init_cond);
+
+	// Begin timestepping
+	double t_curr = 0;
+	int itime = 0;
+	while(t_curr < t_final)
+	{
+		Roe_flux(U, Prim, F, dx, gamma, c, nx, init_cond);
+		forward_euler(U, F, dt, dx, nx);
+
+		itime += 1;
+		t_curr += dt;
+
+		printf("Timestep: %i Time: %f\n", itime, t_curr);
+	}
+
+	std::string final_results = "Results/Final_cond.txt";
+	save_results(final_results, Prim, dx, nx);
 
 
 	return 0;
