@@ -316,16 +316,20 @@ void Roe_flux(std::array<std::vector<double>, 3> &U, std::array<std::vector<doub
 		U_tild[0][i] = rho_tild;
 		U_tild[1][i] = rho_tild * u_tild[i];
 		U_tild[2][i] = h_tild;
+
+		double A_tild[3][3] = {{0, 1, 0},
+							   {-0.5 *(u_tild[i] * u_tild[i]) * (3 - gamma), u_tild[i] * (3 - gamma), gamma - 1},
+							   {-gamma * u_tild[i] * U_tild[2][i] / U_tild[0][i] + (gamma - 1) * pow(u_tild[i], 3), gamma * (U_tild[2][i] / U_tild[0][i]) - (3 / 2) * (gamma - 1) * u_tild[i] * u_tild[i], gamma * u_tild[i]}};
 	} 
 
 	// Matrices to calculate Roes flux
-	double A_tild[3][3] = {0};
 	//double du_dv[3][3] = {0};
 	// double XR[3][3] = {0};
 	double XL[3][3] = {0};
 	double lambda_abs[3][3] = {0};
 	double lam1, lam2, lam3;
 	double dv_du[3][3] = {0};
+	double A_tild[3][3] = {0};
 
 	// Calculate flux at each cell
 	for(int i = 0; i < nx; i++)
@@ -399,7 +403,7 @@ void Roe_flux(std::array<std::vector<double>, 3> &U, std::array<std::vector<doub
 			}
 		matrix_mult3x3(inter2, XL, inter1);
 		// Finally, A~ = C * dv_du
-		matrix_mult3x3(inter1, dv_du, A_tild);
+		// matrix_mult3x3(inter1, dv_du, A_tild);
 
 		// Now, we know that the flux is equivalent to (1/2)(Fi+Fi+1) - 1/2A~(Ui+1-Ui)
 		// Store values in a double array, to be transferred to the vector later
