@@ -4,9 +4,9 @@ xbegin: 0
 xend: 1
 dt: 2.5e-4
 gamma: 1.4
-rhol: 1.01
+rhol: 1.0
 ul: 0
-Pl: 1
+Pl: 1.01
 rhor: 1
 ur: 0
 Pr: 1
