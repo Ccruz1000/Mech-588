@@ -203,7 +203,8 @@ void initial_conditions(std::array<std::vector<double>, 4> &Prim, int nx, double
 			Prim[2][i] = init_cond[5];  // Store pressure
 		}
 		// Calculate energy from the assigned initial conditions
-		Prim[3][i] = Prim[2][i] / ((gamma - 1) * Prim[0][i]) + (Prim[1][i] * Prim[1][i] / 2); // Store energy
+		Prim[3][i] = Prim[2][i] / (gamma - 1) + 0.5 * Prim[0][i] * Prim[1][i] * Prim[1][i]; // Store energy
+		// Et = P/(gamma - 1) + rho * u^2 / 2
 	}
 }
 
@@ -255,77 +256,82 @@ void matrix_vector(double A[3][3], double B[3], double C[3])
 }
 
 // The following will compute the flux using the Roe scheme
-void Roe_flux(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 4> &Prim, double dx, double gamma, std::vector<double> c, int nx)
+void Roe_flux(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 4> &Prim, std::array<std::vector<double>, 3> &F, double dx, double gamma, std::vector<double> c, int nx)
 {
 	double epsilon = 1e-8; // Value to smooth out absolute values of eigenvectors near 0
-	std::vector<double> htot = std::vector<double>(nx);
+	std::vector<double> htot = std::vector<double>(nx); // Store enthalpy
 	// Compute the primitive variables from the conserved variables
 	for(int i = 0; i < nx; i++)
 	{
 		Prim[0][i] = U[0][i]; // Density
 		Prim[1][i] = U[1][i] / U[0][i]; // Velocity
-		Prim[3][i] = U[2][i] / U[0][i]; // Energy
-		Prim[2][i] = (gamma - 1) * Prim[0][i] * (Prim[3][i] - 0.5 * Prim[2][i] * Prim[2][i]);  // Pressure (P = (gamma - 1) * rho * (E - 0.5 u^2))
+		Prim[3][i] = U[2][i]; // Energy
+		Prim[2][i] = 0.5 * (1 - gamma) * U[1] * U[1] / U[0] + (gamma - 1) * U[2];  // Pressure (P = 0.5 * (1 - gamma) * U2^2/U1 + (gamma - 1) * U3
 		// calculate enthalpy
 		htot[i] = gamma / (gamma - 1) * Prim[2][i] / Prim[0][i] + 0.5 * Prim[1][i] * Prim[1][i];
 	}
 
-	// Initialize Roe averaged values and Roe flux vector
-	std::array<std::vector<double>, 3> Phi = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
-	double R;  // Quantity inside square root R_j+1/2
-	double rho_hat; 
-	double u_hat;
-	double H_hat;
-	double a_hat;
+	// Store normal flux
+	std::array<std::vector<double>, 3> Fnorm = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)}; 
 
-	// Initialize vectors to store required values for flux calculation
-	double U_diff[3] = {0};
-	double P[3][3] = {0};
-	double lamda_hat[3][3] = {0};
-	double Pinv[3][3] = {0};
-	double A_hat[3][3] = {0};
-	double alpha1, alpha2; // Variables used to compute P and Pinv
+	for(int i = 0; i < nx; i++)
+	{
+		F[0][i] = Prim[0][i] * Prim[1][i]; // rho*u
+		F[1][i] = Prim[0][i] * Prim[1][i] * Prim[1][i] + Prim[2][i]; // rho*u^2 + P
+		F[2][i] = Prim[1][i] * (Prim[2][i] + Prim[3][i]); // u*(P+Et)
+	}
 
-	// // Loop through cells
-	// for(int i = 0; i < nx; i++)
-	// {
-	// 	// Compute Roe averages
-	// 	R = sqrt(Prim[0][i + 1] / Prim[0][i]);
-	// 	rho_hat = R*Prim[0][i];
-	// 	u_hat = R * Prim[1][i + 1] + Prim[1][i] / (1 + R);
-	// 	H_hat[i] = R*htot[i + 1] * htot / (1 + R);
-	// 	a_hat[i] = sqrt((gamma - 1) * (H_hat - 0.5 * Prim[1][i] * Prim[1][i]));
+	// Store Roe averaged values
+	std::array<std::vector<double>, 3> U_tild = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
+	double rho_tild, u_tild, h_tild, h_left, h_right;
+	for(int i = 0; i < nx; i++)
+	{	
+		// Calculate rho averaged density and velocity
+		rho_tild = std::sqrt(Prim[0][i + 1] + Prim[0][i]); 
+		u_tild = (Prim[0][i + 1] * Prim[1][i + 1] + rho_tild * Prim[1][i]) / (Prim[0][i + 1] + rho_tild);
 
-	// 	// Compute alphas o find P and Pinv
-	// 	alpha1 = (gamma - 1) * u_hat * u_hat / (2 * a_hat * a_hat);
-	// 	alpha2 = (gamma - 1) / (a_hat * a_hat);
+		// Calculate enthalpy
+		h_left = Prim[3][i] + Prim[2][i] / Prim[0][i];
+		h_right = Prim[3][i + 1] + Prim[2][i + 1] / Prim[0][i + 1];
+		h_tild = (Prim[0][i + 1] * h_right + rho_tild * h_left) / (Prim[0][i + 1] + rho_tild);
+		
+		// Populate Roe averaged solution vector
+		U_tild[0][i] = rho_tild;
+		U_tild[1][i] = rho_tild * u_tild;
+		U_tild[2][i] = h_tild;
+	} 
 
-	// 	// Compute values for flux calculations 
-	// 	U_diff[0] = = U[0][i + 1] - U[0][i];
-	// 	U_diff[1] = U[1][i + 1] - U[1][i];
-	// 	U_diff[2] = U[2][i + 1] - U[2][i];
+	// Matrices to calculate Roes flux
+	double A_tild[3][3] = {0};
+	double du_dv[3][3] = {0};
+	double XR[3][3] = {0};
+	double lambda_abs[3][3] = {0};
+	double dv_du[3][3] = {0};
 
-	// 	P = {{1, 1, 1}, 
-	// 	    {(u_hat - a_hat), u_hat, u_hat + a_hat}, 
-	// 	    {H_hat - u_hat * a_hat, 0.5 * u_hat * u_hat, H_hat + a_hat * u_hat}};
+	// Calculate flux at each cell
+	for(int i = 0; i < nx; i++)
+	{
+		du_dv = {{1, 0, 0},
+		         {U_tild[1][i] / U_tild[0][i], U_tild[0][i], 0}, 
+		         {0.5 * U_tild[1][i] * U_tild[1][i], U_tild[0][i] * U_tild[1][i], gamma - 1}};
+		/*
+				|1     0     0        |
+		du_dv = |u     rho   0        |
+				|u^2/2 rho*u gamma - 1|
+		*/
+		XR = {{U_tild[1][i] / U_tild[0][i], c[i] * ((U_tild[1][i] / U_tild[0][i]) + c[i]) / U_tild[0][i], c[i] * ((c[i] - U_tild[1][i] / U_tild[0][i])) / U_tild[0][i]},
+		      {0, 1, 1},
+		      {0, U_tild[0][i] * c[i], -U_tild[0][i] * c[i]}}
+		/*
+				|u     c(u+c)/rho  c(c-u)/rho|
+		XR =    |0     1           1         |
+				|0     rho*c       -rho*c    |
+		*/
 
-	// 	Pinv = {{0.5 * (alpha1 + u_hat / a_hat), -0.5 * (alpha2 * u_hat + 1 / a_hat), alpha2 / 2}, 
-	// 	        {1 - alpha1, alpha2 * u_hat, -alpha2},
-	// 	        {0.5 * (alpha1 - u_hat / a_hat), - 0.5 * (alpha2 * u_hat - 1 / a_hat), alpha2 / 2}};
-
-	// 	lambda_hat = {{std::fabs(u_hat - a_hat + epsilon), 0, 0}, 
-	// 				  {0, std::fabs(u_hat), 0},
-	// 				  {0, 0, std::fabs(u_hat + a_hat)}};
-
-	// 	// Compute A_hat Jacobian
-	// 	double intermediate[3][3] = {0}; // Intermediate matrix to store values for matrix multiplication
-	// 	matrix_mult3x3(P, lamda_hat, intermediate);
-	// 	matrix_mult3x3(intermediate, Pinv, A_hat);
-
-
-
-	// }
-
+		lambda_abs = 0.5 * {{std::sqrt(epsilon + (0.5 * (U_tild[1][i] / U_tild[0][i])) * (0.5 * (U_tild[1][i + 1] / U_tild[0][i + 1]))), 0, 0},
+		                    {0, std::sqrt(epsilon + (0.5 * ((U_tild[1][i] / U_tild[0][i]) + c[i])) * (0.5 * ((U_tild[1][i + 1] / U_tild[0][i + 1]) + c[i + 1]))), 0},
+		                    {0, 0, std::sqrt(epsilon + (0.5 * ((U_tild[1][i] / U_tild[0][i]) - c[i])) * (0.5 * ((U_tild[1][i + 1] / U_tild[0][i + 1]) - c[i + 1])))}};    
+	}
 
 }
 

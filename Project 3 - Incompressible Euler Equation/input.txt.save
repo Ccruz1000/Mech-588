@@ -1,0 +1,12 @@
+CFL: 0.4
+nx: 101
+xbegin: 0
+xend: 1
+dt: 2.5e-4
+gamma: 1.4
+rhol: 6
+ul 10
+Pl: 12
+rhor: 1
+ur: -10
+Pr: 1
