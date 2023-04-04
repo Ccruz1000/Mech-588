@@ -182,8 +182,8 @@ void assign_input(int argc, char* argv[], double &CFL, int &nx, double &xbegin, 
 		std::string input_file = argv[1];
 
 		// Inform user that the input file was successfully provided, and let them know which one was provided.
-		std::cout << "\nInput file provided successfully" << std::endl;
-		std::cout << "File given: " << input_file << std::endl;
+		// std::cout << "\nInput file provided successfully" << std::endl;
+		// std::cout << "File given: " << input_file << std::endl;
 		read_input(input_file, CFL, nx, xbegin, xend, dt, gamma, init_cond, t_final);
 	}
 }
@@ -194,7 +194,7 @@ void initial_conditions(std::array<std::vector<double>, 4> &Prim, int nx, double
 	int mid = nx/2; // Point where membrane is contained
 
 	// Assign values to each point
-	for(int i = 1; i < nx - 1; i++)
+	for(int i = 0; i < nx; i++)
 	{
 		// Left hand side if before mid
 		if(i < mid)
@@ -243,6 +243,7 @@ void matrix_mult3x3(double A[3][3], double B[3][3], double C[3][3])
 		{
 			for(int k = 0; k < 3; k++)
 			{
+
 				C[i][j] += A[i][k] * B[k][j];
 			}
 			// C[i][j] = D[i][j];
@@ -294,7 +295,6 @@ void Roe_flux(std::array<std::vector<double>, 3> &U, std::array<std::vector<doub
 			printf("Warning! Negative pressure found.\n");
 		}
 	}
-	printf("rho: %f \n", Prim[0][40]);
 	// Store normal flux
 	std::array<std::vector<double>, 3> Fnorm = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)}; 
 
@@ -339,9 +339,6 @@ void Roe_flux(std::array<std::vector<double>, 3> &U, std::array<std::vector<doub
 		U_tild[0][i] = rho_tild;
 		U_tild[1][i] = rho_tild * u_tild[i];
 		U_tild[2][i] = h_tild;
-
-		// TO FIX - calculate Roe averaged pressure from roe averaged enthalpy, and use that to calcualte
-		// roe averaged speed of sound
 	} 
 
 	// Matrices to calculate Roes flux
@@ -438,9 +435,9 @@ void Roe_flux(std::array<std::vector<double>, 3> &U, std::array<std::vector<doub
 		double Roe[3] = {0};
 		matrix_vector(A_tild, U_dif, Roe);
 
-		F[0][i] = 0.5 * (Fnorm[0][i] + Fnorm[0][i + 1]) - 0.5 * Roe[0];
-		F[1][i] = 0.5 * (Fnorm[1][i] + Fnorm[1][i + 1]) - 0.5 * Roe[1];
-		F[2][i] = 0.5 * (Fnorm[2][i] + Fnorm[2][i + 1]) - 0.5 * Roe[2];
+		F[0][i] = 0.5 * (Fnorm[0][i] + Fnorm[0][i + 1]) + 0.5 * Roe[0];
+		F[1][i] = 0.5 * (Fnorm[1][i] + Fnorm[1][i + 1]) + 0.5 * Roe[1];
+		F[2][i] = 0.5 * (Fnorm[2][i] + Fnorm[2][i + 1]) + 0.5 * Roe[2];
 	}
 }
 
@@ -603,9 +600,9 @@ void forward_euler(std::array<std::vector<double>, 3> &U, std::array<std::vector
 {
 	for(int i = 0; i < nx; i++)
 	{
-		U[0][i] = U[0][i] - (dt / dx) * (F[0][i] - F[0][i - 1]);
-		U[1][i] = U[1][i] - (dt / dx) * (F[1][i] - F[1][i - 1]);
-		U[2][i] = U[2][i] - (dt / dx) * (F[2][i] - F[2][i - 1]);
+		U[0][i] = U[0][i] + (dt / dx) * (F[0][i] - F[0][i - 1]);
+		U[1][i] = U[1][i] + (dt / dx) * (F[1][i] - F[1][i - 1]);
+		U[2][i] = U[2][i] + (dt / dx) * (F[2][i] - F[2][i - 1]);
 	}
 }
 
