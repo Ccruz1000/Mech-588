@@ -41,24 +41,23 @@ int main(int argc, char* argv[])
 	// Create and populate array to store conserved variables. Calculate speed of sound in each cell at the same time
 	std::array<std::vector<double>, 3> U = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};  // Solution vector
 	std::array<std::vector<double>, 3> F = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)}; // Flux vector
-	std::vector<double> c = std::vector<double>(nx);  // Speed of sound
 	// Populate solution and sound speed vector using primitives
 	for(int i = 0; i < nx; i++)
 	{
 		U[0][i] = Prim[0][i];  // rho
 		U[1][i] = Prim[0][i] * Prim[1][i];  // rho * u
 		U[2][i] = Prim[3][i]; // Et
-		c[i] = std::sqrt(gamma * Prim[2][i] / Prim[0][i]);
 	}
+	
 	// Calculate initial flux
-	Roe_flux(U, Prim, F, dx, gamma, c, nx, init_cond);
+	Roe_flux(U, Prim, F, dx, gamma, nx);
 
 	// Begin timestepping
 	double t_curr = 0;
 	int itime = 0;
 	while(t_curr < t_final)
 	{
-		Roe_flux(U, Prim, F, dx, gamma, c, nx, init_cond);
+		Roe_flux(U, Prim, F, dx, gamma, nx);
 		forward_euler(U, F, dt, dx, nx);
 
 		itime += 1;

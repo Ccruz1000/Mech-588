@@ -2,11 +2,11 @@ CFL: 0.4
 nx: 201
 xbegin: 0
 xend: 1
-dt: 2.5e-4
+dt: 2.5e-3
 gamma: 1.4
 rhol: 1.0
 ul: 0
-Pl: 1.01
+Pl: 1.0
 rhor: 1
 ur: 0
 Pr: 1

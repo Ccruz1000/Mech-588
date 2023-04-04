@@ -23,7 +23,8 @@ void initial_conditions(std::array<std::vector<double>, 4> &Prim, int nx, double
 void save_results(std::string fileName, std::array<std::vector<double>, 4> &Prim, double dx, int nx);
 void matrix_mult3x3(double A[3][3], double B[3][3], double C[3][3]);
 void matrix_vector(double A[3][3], double B[3], double C[3]);
-void Roe_flux(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 4> &Prim, std::array<std::vector<double>, 3> &F, double dx, double gamma, std::vector<double> c, int nx, double *init_cond);
+void Roe_flux(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 4> &Prim, std::array<std::vector<double>, 3> &F, double dx, double gamma, int nx);
+void Steger_warming(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 4> &Prim, std::array<std::vector<double>, 3> &F, double dx, double gamma, std::vector<double> c, int nx, double *init_cond);
 void forward_euler(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 3> &F, double dt, double dx, int nx);
 
 
