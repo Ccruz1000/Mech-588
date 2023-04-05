@@ -42,13 +42,14 @@ int main(int argc, char* argv[])
 	std::array<std::vector<double>, 3> U = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};  // Solution vector
 	std::array<std::vector<double>, 3> F = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)}; // Flux vector
 	// Populate solution and sound speed vector using primitives
+	int num_save = 100;
 	for(int i = 0; i < nx; i++)
 	{
 		U[0][i] = Prim[0][i];  // rho
 		U[1][i] = Prim[0][i] * Prim[1][i];  // rho * u
 		U[2][i] = Prim[3][i]; // Et
 	}
-	
+
 	// Calculate initial flux
 	Roe_flux(U, Prim, F, dx, gamma, nx);
 
@@ -62,7 +63,12 @@ int main(int argc, char* argv[])
 
 		itime += 1;
 		t_curr += dt;
-
+		std::string inter_results;
+		inter_results = "Results/inter_" + std::to_string(itime) + ".txt";
+		if (itime % num_save == 0)
+		{
+			save_results(inter_results, Prim, dx, nx);
+		} 
 		printf("Timestep: %i Time: %f\n", itime, t_curr);
 	}
 

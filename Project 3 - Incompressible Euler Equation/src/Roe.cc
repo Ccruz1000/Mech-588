@@ -191,7 +191,7 @@ void assign_input(int argc, char* argv[], double &CFL, int &nx, double &xbegin, 
 // Assign initial conditions based on input values
 void initial_conditions(std::array<std::vector<double>, 4> &Prim, int nx, double *init_cond, double gamma)
 {
-	int mid = nx/2; // Point where membrane is contained
+	int mid = nx / 2; // Point where membrane is contained
 
 	// Assign values to each point
 	for(int i = 0; i < nx; i++)
@@ -203,6 +203,7 @@ void initial_conditions(std::array<std::vector<double>, 4> &Prim, int nx, double
 			Prim[1][i] = init_cond[1];  // Store velocity
 			Prim[2][i] = init_cond[2];  // Store pressure
 		}
+
 		// Right hand side after mid
 		else
 		{
@@ -244,9 +245,9 @@ void matrix_mult3x3(double A[3][3], double B[3][3], double C[3][3])
 			for(int k = 0; k < 3; k++)
 			{
 
-				C[i][j] += A[i][k] * B[k][j];
+				D[i][j] += A[i][k] * B[k][j];
 			}
-			// C[i][j] = D[i][j];
+			C[i][j] = D[i][j];
 		}
 }
 
@@ -346,17 +347,37 @@ void Roe_flux(std::array<std::vector<double>, 3> &U, std::array<std::vector<doub
 	double A_tild[3][3] = {0};
 
 	// Boundary condition
-	F[0][0] = 0; // UPDATE THIS TO BE PROPER VALUE
-	F[1][0] = Prim[2][1]; // UPDATE THIS TO PROPER VALUE
-	F[2][0] = 0; // UPDATE THIS TO PROPER VALUE
+	F[0][0] = 0; 
+	F[1][0] = Prim[2][1]; 
+	F[2][0] = 0; 
 
-	F[0][nx - 1] = 0; // UPDATE THIS TO BE PROPER VALUE
-	F[1][nx - 1] = Prim[2][nx - 2]; // UPDATE THIS TO PROPER VALUE
-	F[2][nx - 1] = 0; // UPDATE THIS TO PROPER VALUE
+	F[0][nx - 1] = 0; 
+	F[1][nx - 1] = Prim[2][nx - 2]; 
+	F[2][nx - 1] = 0;
 
 	// Calculate flux at each cell
 	for(int i = 1; i < nx - 1; i++)
 	{
+		// Assemble matrices to perform calculation of Jacobian matrix
+		double XR[3][3] = { {1.0, U_tild[0][i] / c[i], -U_tild[0][i] / c[i]},
+					        {0, 1.0, 1.0},
+					        {0, U_tild[0][i] * c[i], -U_tild[0][i] * c[i]} };
+		/*
+				|u     rho/c       -rho/c    |
+		XR =    |0     1           1         |
+				|0     rho*c       -rho*c    |
+		*/
+
+		double XL[3][3] = { {1, 0, -1 / (c[i] * c[i])},
+					        {0, 1.0 / 2.0, 1.0 / (2.0 * U_tild[0][i] * c[i])},
+					        {0, 1.0 / 2.0, -1.0 / (2.0 * U_tild[0][i] * c[i])} };
+		        
+		/*
+				|1     0             -1/c^2      |
+		XL =    |0     1/2           1/(2(rho*c) |
+				|0     1/2           -1/(2(rho*c)|
+		*/ 
+
 		double du_dv[3][3] = {{1, 0, 0},
 		                      {u_tild[i], U_tild[0][i], 0}, 
 		                      {0.5 * u_tild[i] * u_tild[i], U_tild[0][i] * u_tild[i], 1.0 / (gamma - 1)}};
@@ -366,14 +387,16 @@ void Roe_flux(std::array<std::vector<double>, 3> &U, std::array<std::vector<doub
 				|u^2/2 rho*u 1 / (gamma - 1)|
 		*/
 
-		double XR[3][3] = {{1.0, U_tild[0][i] / c[i], -U_tild[0][i] / c[i]},
-					       {0, 1, 1},
-					       {0, U_tild[0][i] * c[i], -U_tild[0][i] * c[i]}};
+		double dv_du[3][3] = {{1, 0, 0},
+					          {-u_tild[i] / U_tild[0][i], 1 / U_tild[0][i], 0},
+					          {(gamma - 1) * 0.5 * u_tild[i] * u_tild[i], -(gamma - 1) * u_tild[i], gamma - 1}};
+
 		/*
-				|u     rho/c       -rho/c    |
-		XR =    |0     1           1         |
-				|0     rho*c       -rho*c    |
+				|1                0              0        |
+		dv_du = |-u/rho           1/rho          0        |
+				|(gamma-1)u^2/2   -(gamma-1)u    gamma - 1|
 		*/
+
 		 // Values to store the 3 individual eigenvalues
 
 		lam1 = (0.5 * (u_tild[i] + u_tild[i + 1]));
@@ -388,27 +411,7 @@ void Roe_flux(std::array<std::vector<double>, 3> &U, std::array<std::vector<doub
 				    |(((ui+ui+1)/2)^2+epsilon)^(1/2) 0                                             0                                            |
 		lambda =    |0                               ((((ui+c)+((ui+1)+(ci+1))/2)^2+epsilon)^(1/2) 0                                            |
 				    |0                               0                                             ((((ui+c)+((ui+1)+(ci+1))/2)^2+epsilon)^(1/2)|
-		*/
-
-		double XL[3][3] = {{1, 0, -1/(c[i]*c[i])},
-					       {0, 1/2, 1/(2*U_tild[0][i] * c[i])},
-					       {0, 1/2, -1/(2*U_tild[0][i] * c[i])}};
-
-		/*
-				|1     0             -1/c^2      |
-		XL =    |0     1/2           1/(2(rho*c) |
-				|0     1/2           -1/(2(rho*c)|
-		*/
-
-		double dv_du[3][3] = {{1, 0, 0},
-					          {-u_tild[i] / U_tild[0][i], 1 / U_tild[0][i], 0},
-					          {(gamma - 1) * 0.5 * u_tild[i] *u_tild[i], -(gamma - 1) * u_tild[i], gamma - 1}};
-
-		/*
-				|1                0              0        |
-		dv_du = |-u/rho           1/rho          0        |
-				|(gamma-1)u^2/2   -(gamma-1)u    gamma - 1|
-		*/       
+		*/ 
 
 		// Now that all the matrices are defined, we can calculate A~
 		// A~ = (du_dv) * XR * lambda_abs * XL * (dv_du)
@@ -435,11 +438,157 @@ void Roe_flux(std::array<std::vector<double>, 3> &U, std::array<std::vector<doub
 		double Roe[3] = {0};
 		matrix_vector(A_tild, U_dif, Roe);
 
-		F[0][i] = 0.5 * (Fnorm[0][i] + Fnorm[0][i + 1]) + 0.5 * Roe[0];
-		F[1][i] = 0.5 * (Fnorm[1][i] + Fnorm[1][i + 1]) + 0.5 * Roe[1];
-		F[2][i] = 0.5 * (Fnorm[2][i] + Fnorm[2][i + 1]) + 0.5 * Roe[2];
+		F[0][i] = 0.5 * (Fnorm[0][i] + Fnorm[0][i + 1]) - 0.5 * Roe[0];
+		F[1][i] = 0.5 * (Fnorm[1][i] + Fnorm[1][i + 1]) - 0.5 * Roe[1];
+		F[2][i] = 0.5 * (Fnorm[2][i] + Fnorm[2][i + 1]) - 0.5 * Roe[2];
 	}
 }
+
+// void Roe_flux2(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 4> &Prim, std::array<std::vector<double>, 3> &F, double dx, double gamma, int nx)
+// {
+
+// 	double epsilon = 1e-8; // Value to smooth out absolute values of eigenvectors near 0
+// 	std::vector<double> c = std::vector<double>(nx); // Store speed of sound
+// 	// Compute the primitive variables from the conserved variables
+// 	for(int i = 1; i < nx - 1; i++)
+// 	{
+// 		Prim[0][i] = U[0][i]; // Density
+// 		Prim[1][i] = U[1][i] / U[0][i]; // Velocity
+// 		Prim[3][i] = U[2][i]; // Energy
+// 		Prim[2][i] = 0.5 * (1 - gamma) * U[1][i] * U[1][i] / U[0][i] + (gamma - 1) * U[2][i];  // Pressure (P = 0.5 * (1 - gamma) * U2^2/U1 + (gamma - 1) * U3
+// 		// c[i] = std::sqrt(gamma * Prim[2][i] / Prim[0][i]);
+// 		// calculate enthalpy
+		
+// 		if(Prim[0][i] < 0)
+// 		{
+// 			printf("Warning! Negative density found.\n");
+// 		}
+
+// 		if(Prim[0][i] == 0)
+// 		{
+// 			printf("Warning! Zero density found\n");
+// 		}
+
+// 		if(Prim[2][i] < 0)
+// 		{
+// 			printf("Warning! Negative pressure found.\n");
+// 		}
+// 	}
+// 	// Store normal flux
+// 	std::array<std::vector<double>, 3> Fnorm = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)}; 
+
+// 	for(int i = 1; i < nx - 1; i++)
+// 	{
+// 		Fnorm[0][i] = Prim[0][i] * Prim[1][i]; // rho*u
+// 		Fnorm[1][i] = Prim[0][i] * Prim[1][i] * Prim[1][i] + Prim[2][i]; // rho*u^2 + P
+// 		Fnorm[2][i] = Prim[1][i] * (Prim[2][i] + Prim[3][i]); // u*(P+Et)
+// 	}
+
+// 	// Boundary conditions
+// 	Fnorm[0][0] = 0; // UPDATE THIS TO BE PROPER VALUE
+// 	Fnorm[1][0] = Prim[2][1]; // UPDATE THIS TO PROPER VALUE
+// 	Fnorm[2][0] = 0; // UPDATE THIS TO PROPER VALUE
+
+// 	Fnorm[0][nx - 1] = 0; // UPDATE THIS TO BE PROPER VALUE
+// 	Fnorm[1][nx - 1] = Prim[2][nx - 2]; // UPDATE THIS TO PROPER VALUE
+// 	Fnorm[2][nx - 1] = 0; // UPDATE THIS TO PROPER VALUE
+
+// 	// Store Roe averaged values
+// 	std::array<std::vector<double>, 3> U_tild = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
+// 	std::vector<double> u_tild = std::vector<double>(nx);
+// 	double rho_tild, h_tild, h_left, h_right, P_tild;
+// 	for(int i = 1; i < nx - 1; i++)
+// 	{	
+// 		// Calculate rho averaged density and velocity
+// 		rho_tild = std::sqrt(Prim[0][i + 1] * Prim[0][i]); 
+// 		u_tild[i] = (Prim[0][i + 1] * Prim[1][i + 1] + rho_tild * Prim[1][i]) / (Prim[0][i + 1] + rho_tild);
+
+// 		// Calculate enthalpy
+// 		h_left = (gamma / (gamma - 1)) * (Prim[2][i] / Prim[0][i]);
+// 		h_right = (gamma / (gamma - 1)) * (Prim[2][i + 1] / Prim[0][i + 1]);
+// 		h_tild = (Prim[0][i + 1] * h_right + rho_tild * h_left) / (Prim[0][i + 1] + rho_tild);
+
+// 		// Use Roe averaged enthalpy to find the Roe averaged pressure
+// 		P_tild = rho_tild * h_tild * (gamma - 1) / gamma;
+
+// 		// Use Roe averaged pressure to find Roe averaged speed of sound
+// 		c[i] = std::sqrt(gamma * P_tild / rho_tild);
+		
+// 		// Populate Roe averaged solution vector
+// 		U_tild[0][i] = rho_tild;
+// 		U_tild[1][i] = rho_tild * u_tild[i];
+// 		U_tild[2][i] = h_tild;
+// 	} 
+
+// 	// Matrices to calculate Roes flux
+// 	double lam1, lam2, lam3;
+// 	double A_tild[3][3] = {0};
+
+// 	// Boundary condition
+// 	F[0][0] = 0; // UPDATE THIS TO BE PROPER VALUE
+// 	F[1][0] = Prim[2][1]; // UPDATE THIS TO PROPER VALUE
+// 	F[2][0] = 0; // UPDATE THIS TO PROPER VALUE
+
+// 	F[0][nx - 1] = 0; // UPDATE THIS TO BE PROPER VALUE
+// 	F[1][nx - 1] = Prim[2][nx - 2]; // UPDATE THIS TO PROPER VALUE
+// 	F[2][nx - 1] = 0; // UPDATE THIS TO PROPER VALUE
+
+// 	// Calculate flux at each cell
+// 	for(int i = 1; i < nx - 1; i++)
+// 	{
+// 		// This matrix will store du_dv*XR
+// 		double mat1[3][3] = {{1, U_tild[0][i] / c[i], -U_tild[0][i] / c[i]},
+// 							 {u_tild[i], U_tild[0][i] * (1 + u_tild[i]/c[i]), U_tild[0][i] * (1 - u_tild[i]/c[i])},
+// 							 {u_tild[i] * u_tild[i] / 2, U_tild[0][i] * (u_tild[i] * u_tild[i] / (2 * c[i]) + u_tild[i] + c[i] / (gamma - 1)), U_tild[0][i] * (u_tild[i] - c[i] / (gamma - 1) - u_tild[i] * u_tild[i] / (2 * c[i]))}};
+		
+// 		 // Values to store the 3 individual eigenvalues
+
+// 		lam1 = (0.5 * (u_tild[i] + u_tild[i + 1]));
+// 		lam2 = (0.5 * (u_tild[i] + c[i] + u_tild[i + 1] + c[i + 1]));
+// 		lam3 = (0.5 * (u_tild[i] - c[i] + u_tild[i + 1] - c[i + 1]));
+
+// 		double lambda_abs[3][3] = {{std::sqrt(lam1 * lam1 + epsilon), 0, 0},
+// 					               {0, std::sqrt(epsilon + lam2 * lam2), 0},
+// 					               {0, 0, std::sqrt(epsilon + lam3 * lam3)}};
+
+// 		/*
+// 				    |(((ui+ui+1)/2)^2+epsilon)^(1/2) 0                                             0                                            |
+// 		lambda =    |0                               ((((ui+c)+((ui+1)+(ci+1))/2)^2+epsilon)^(1/2) 0                                            |
+// 				    |0                               0                                             ((((ui+c)+((ui+1)+(ci+1))/2)^2+epsilon)^(1/2)|
+// 		*/
+
+// 		// This matrix will store XL*dv_du
+// 		double mat2[3][3] = {{1 - (gamma - 1) * u_tild[i] * u_tild[i] / (2 * c[i] * c[i]), (gamma - 1) * u_tild[i] / (c[i] * c[i]), -(gamma - 1) / (c[i] * c[i])},
+// 							 {(gamma - 1) * u_tild[i] * u_tild[i] / (4 * U_tild[0][i] * c[i]) - u_tild[i] / (2 * U_tild[0][i]), 1 / (2 * U_tild[0][i]) - (gamma - 1) * u_tild[i] / (2 * U_tild[0][i] * c[i]), (gamma - 1) / (2 * U_tild[0][i] * c[i])},
+// 							 {-u_tild[i] / (2 * U_tild[0][i]) - (gamma - 1) * u_tild[i] * u_tild[i] / (4 * U_tild[0][i] * c[i]), 1 / (2 * U_tild[0][i]) + (gamma - 1) * u_tild[i] / (2 * U_tild[0][i] * c[i]), -(gamma - 1) / (2 * U_tild[0][i] * c[i])}};
+		      
+
+// 		// Now that all the matrices are defined, we can calculate A~
+// 		// A~ = (du_dv) * XR * lambda_abs * XL * (dv_du)
+// 		// Intermediate matrices to store values
+// 		double inter1[3][3] = {0};
+		
+// 		// A = du_dv*XR*lamda
+// 		matrix_mult3x3(mat1, lambda_abs, inter1);
+// 		// B = A * XL*dv_du
+// 		matrix_mult3x3(inter1, mat2, A_tild);
+
+// 		if (i == nx)
+// 		{
+// 			print_matrix
+// 		}
+
+// 		// Now, we know that the flux is equivalent to (1/2)(Fi+Fi+1) - 1/2A~(Ui+1-Ui)
+// 		// Store values in a double array, to be transferred to the vector later
+// 		double U_dif[3] = {U[0][i + 1] - U[0][i], U[1][i + 1] - U[1][i], U[2][i + 1] - U[2][i]};
+// 		double Roe[3] = {0};
+// 		matrix_vector(A_tild, U_dif, Roe);
+
+// 		F[0][i] = 0.5 * (Fnorm[0][i] + Fnorm[0][i + 1]) + 0.5 * Roe[0];
+// 		F[1][i] = 0.5 * (Fnorm[1][i] + Fnorm[1][i + 1]) + 0.5 * Roe[1];
+// 		F[2][i] = 0.5 * (Fnorm[2][i] + Fnorm[2][i + 1]) + 0.5 * Roe[2];
+// 	}
+// }
 
 // // The following will compute the flux using the Steger Warming scheme
 // void Steger_Warming(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 4> &Prim, std::array<std::vector<double>, 3> &F, double dx, double gamma, std::vector<double> c, int nx, double *init_cond)
