@@ -1,11 +1,5 @@
-// Included libraries
-#include <iostream>
-#include <string> 
-#include <fstream>
-#include <vector>
-#include <array>
-#include <cmath>
-#include <time.h>
+// Included libraries and headers
+#include "functions.h"
 
 /**************************************************************************************
 // Compressible Flow Programming Assignment Roe's Flux Difference Splitting File Header
@@ -17,16 +11,6 @@
 
 #define ROE_H
 
-void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, double &xend, double &dt, double &gamma, double *init_cond, double & t_final);
-void assign_input(int argc, char* argv[], double &CFL, int &nx, double &xbegin, double &xend, double &dt, double &gamma, double *init_cond, double &t_final);
-void initial_conditions(std::array<std::vector<double>, 4> &Prim, int nx, double *init_cond, double gamma);
-void save_results(std::string fileName, std::array<std::vector<double>, 4> &Prim, double dx, int nx);
-void matrix_mult3x3(double A[3][3], double B[3][3], double C[3][3]);
-void matrix_vector(double A[3][3], double B[3], double C[3]);
 void Roe_flux(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 4> &Prim, std::array<std::vector<double>, 3> &F, double dx, double gamma, int nx);
-void Roe_flux2(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 4> &Prim, std::array<std::vector<double>, 3> &F, double dx, double gamma, int nx);
-void Steger_warming(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 4> &Prim, std::array<std::vector<double>, 3> &F, double dx, double gamma, std::vector<double> c, int nx, double *init_cond);
-void forward_euler(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 3> &F, double dt, double dx, int nx);
-
 
 #endif

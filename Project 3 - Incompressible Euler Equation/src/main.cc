@@ -1,4 +1,6 @@
 // Included header files
+#include "functions.h"
+#include "Steger.h"
 #include "Roe.h"
 
 /********************************************************************
@@ -52,6 +54,7 @@ int main(int argc, char* argv[])
 
 	// Calculate initial flux
 	Roe_flux(U, Prim, F, dx, gamma, nx);
+	Steger_warming(U, Prim, F, dx, gamma, nx);
 
 	// Begin timestepping
 	double t_curr = 0;

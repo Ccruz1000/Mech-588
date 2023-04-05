@@ -1,5 +1,7 @@
 // Included headers
-#include "test.h"
+#include "functions.h"
+#include "Steger.h"
+#include "Roe.h"
 
 /********************************************************************
 // Compressible Flow Programming Assignment Test File
