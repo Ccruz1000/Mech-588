@@ -1,6 +1,3 @@
-// Included libraries and headers
-#include "functions.h"
-
 /**************************************************************************************
 // Compressible Flow Programming Assignment Roe's Flux Difference Splitting File Header
 // Mech 588 - Advanced CFD UBC Mechanical Engineering Winter 2023
@@ -10,6 +7,8 @@
 #ifndef ROE_H
 
 #define ROE_H
+// Included libraries and headers
+#include "functions.h"
 
 void Roe_flux(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 4> &Prim, std::array<std::vector<double>, 3> &F, double dx, double gamma, int nx);
 

@@ -10,7 +10,7 @@
 ***************************************************************************************/
 
 // Read input values from input file
-void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, double &xend, double &dt, double &gamma, double *init_cond, double &t_final)
+void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, double &xend, double &gamma, double *init_cond, double &t_final, int &num_save, int &timescheme)
 {
 	/*
 		This function will read the input file, which will be used to select the 
@@ -26,7 +26,6 @@ void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, do
 		nx = 201;
 		xbegin = 0;
 		xend = 1;
-		dt = 2.5e-3;
 		gamma = 1.4;
 		init_cond[0] = 1.01; // left density
 		init_cond[1] = 0; // left velocity
@@ -35,6 +34,8 @@ void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, do
 		init_cond[4] = 0; // right velocity
 		init_cond[5] = 1; // right pressure
 		t_final = 0.15;
+		num_save = 20;
+		timescheme = 0; // Roe default
 	}
 
 	// If input file is properly provided, try to read values from it
@@ -86,12 +87,6 @@ void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, do
 					numval += 1;				
 				}
 
-				else if(var == "dt:")
-				{
-					dt = std::stod(val);
-					numval += 1;					
-				}
-
 				else if (var == "gamma:")
 				{
 					gamma = std::stod(val);	
@@ -140,6 +135,18 @@ void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, do
 					numval += 1;
 				}
 
+				if (var == "num_save:")
+				{
+					num_save = std::stoi(val);
+					numval += 1;
+				}
+
+				if (var == "timescheme:")
+				{
+					timescheme = std::stoi(val);
+					numval += 1;
+				}
+
 				numline += 1;
 			}
 
@@ -164,7 +171,7 @@ void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, do
 }
 
 // Assign values from input, based on whether input file is given
-void assign_input(int argc, char* argv[], double &CFL, int &nx, double &xbegin, double &xend, double &dt, double &gamma, double *init_cond, double &t_final)
+void assign_input(int argc, char* argv[], double &CFL, int &nx, double &xbegin, double &xend, double &gamma, double *init_cond, double &t_final, int &num_save, int &timescheme)
 {
 	// Check if input file was supplied
 	if(argc < 2)
@@ -172,7 +179,7 @@ void assign_input(int argc, char* argv[], double &CFL, int &nx, double &xbegin, 
 		printf("\nNo input file was provided. Please check.\nDefault parameters will be assigned to all input parameters.\n");
 		
 		std::string input_file = "Null";
-		read_input(input_file, CFL, nx, xbegin, xend, dt, gamma, init_cond, t_final);
+		read_input(input_file, CFL, nx, xbegin, xend, gamma, init_cond, t_final, num_save, timescheme);
 	}
 
 	// Let user know that input was successfully provided
@@ -184,7 +191,7 @@ void assign_input(int argc, char* argv[], double &CFL, int &nx, double &xbegin, 
 		// Inform user that the input file was successfully provided, and let them know which one was provided.
 		// std::cout << "\nInput file provided successfully" << std::endl;
 		// std::cout << "File given: " << input_file << std::endl;
-		read_input(input_file, CFL, nx, xbegin, xend, dt, gamma, init_cond, t_final);
+		read_input(input_file, CFL, nx, xbegin, xend, gamma, init_cond, t_final, num_save, timescheme);
 	}
 }
 
@@ -215,6 +222,181 @@ void initial_conditions(std::array<std::vector<double>, 4> &Prim, int nx, double
 		Prim[3][i] = Prim[2][i] / (gamma - 1) + 0.5 * Prim[0][i] * Prim[1][i] * Prim[1][i]; // Store energy
 		// Et = P/(gamma - 1) + rho * u^2 / 2
 	}
+}
+
+// The following function will run the simulation
+void run_sim(int argc, char* argv[], int scheme)
+{
+	// Declare run parameters
+	double CFL, xbegin, xend, dx, dt, gamma, t_final;
+	int nx, num_save, timescheme;
+	std::string title; // Save initial and final data
+	std::string savepath; // Save timestep data
+
+	// We will store the initial condition values in an array. The first 3 entries will be for the left side
+	// and will represent rho, u, and P in that order. The next 3 entries will be for the right side, and will 
+	// represent rho, u, and P in that order
+
+	double init_cond[6] = {0};
+
+	// Read input file, or provide default values if none given
+	assign_input(argc, argv, CFL, nx, xbegin, xend, gamma, init_cond, t_final, num_save, timescheme);
+	std::cout << timescheme << std::endl;
+	// Calculate the spatial step
+	dx = (xend - xbegin) / (nx - 1);
+
+	// Create array to store primitives. Prim[0][i] is rho, Prim[1][i] is velocity, Prim[2][i] is pressure, and Prim[3][i] is energy
+	std::array<std::vector<double>, 4> Prim = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
+
+	// Assign initial condition values
+	initial_conditions(Prim, nx, init_cond, gamma);
+
+	// Calculate maximum initial timestep
+	calc_timestep(Prim, dt, gamma, nx, CFL, dx);
+
+	// Create and populate array to store conserved variables. Calculate speed of sound in each cell at the same time
+	std::array<std::vector<double>, 3> U = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};  // Solution vector
+	std::array<std::vector<double>, 3> F = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)}; // Flux vector
+
+
+	// Populate solution and sound speed vector using primitives
+	for(int i = 0; i < nx; i++)
+	{
+		U[0][i] = Prim[0][i];  // rho
+		U[1][i] = Prim[0][i] * Prim[1][i];  // rho * u
+		U[2][i] = Prim[3][i]; // Et
+	}
+
+	// Select title to save files with
+	switch(scheme)
+	{
+		case 0:
+		{
+			printf("Roe's flux difference splitting scheme slected.\n");
+			title = "_Roe_";
+			savepath = "RoeTimesteps/inter_";
+			break;
+		}
+
+		case 1:
+		{
+			printf("Steger-Warming flux vector splitting scheme selected.\n");
+			title = "_Steger_";
+			savepath = "StegerTimesteps/inter_";
+			break;
+
+		default:
+			printf("Invalid scheme selected.\nFor Roe enter 0, for Steger-Warming enter 1.\nExiting.\n");
+			exit(1);
+		}
+	}
+
+	switch(timescheme)
+	{
+		case 0:
+		{
+			printf("Forward Euler timestepping scheme selected\n");
+			break;
+		}
+
+		case 1:
+		{
+			printf("RK2 timestepping scheme selected\n");
+			break;
+		}
+
+		case 2:	
+		{
+			printf("Midpoint timestepping scheme selected\n");
+			break;
+		}
+
+		default:
+		{
+			printf("Invalid timescheme selected.\nFor forward Euler, use 0.\nFor RK2, use 1.\nFor midpoint use 2.\nExiting\n");
+			exit(1);
+		}
+	}
+
+	// Calculate initial flux
+	switch(scheme)
+	{
+		case 0:
+		{	Roe_flux(U, Prim, F, dx, gamma, nx);
+			break;
+		}
+
+		case 1:
+		{
+			Steger_warming(U, Prim, F, dx, gamma, nx);
+			break;
+		}
+	}
+
+	// Save initial condition results
+	std::string fileName = "Results/Init" + title + "cond.txt";
+	save_results(fileName, Prim, dx, nx);
+	
+	// Begin timestepping
+	double t_curr = 0;
+	int itime = 0;
+	while(t_curr < t_final)
+	{
+		switch(scheme)
+		{
+			case 0:
+			{
+				Roe_flux(U, Prim, F, dx, gamma, nx);
+				break;
+			}
+			case 1:
+			{	
+				Steger_warming(U, Prim, F, dx, gamma, nx);
+				break;
+			}
+		}
+
+		switch(timescheme)
+		{
+			case 0:
+			{
+				forward_euler(U, F, dt, dx, nx);
+				break;
+			}
+
+			case 1:
+			{
+				RK2(U, F, dt, dx, nx, gamma);
+				break;
+			}
+
+			case 2:
+			{
+				midpoint(U, F, dt, dx, nx, gamma);
+				break;
+			}
+		}
+
+		// Update primitives
+		calc_Prim(U, Prim, gamma, nx);
+
+		// Calculate maximum stable timestep
+		calc_timestep(Prim, dt, gamma, nx, CFL, dx);
+
+
+		itime += 1;
+		t_curr += dt;
+		std::string inter_results;
+		inter_results = savepath + std::to_string(itime) + ".txt";
+		if (itime % num_save == 0)
+		{
+			save_results(inter_results, Prim, dx, nx);
+		} 
+		printf("Timestep: %i Time: %f\n", itime, t_curr);
+	}
+
+	std::string final_results = "Results/Final" + title + "cond.txt";
+	save_results(final_results, Prim, dx, nx);
 }
 
 // Save solution to file, which can be plotted later using python
@@ -405,13 +587,75 @@ void calc_Jacobian(double du_dv[3][3], double XR[3][3], double lambda[3][3], dou
 	matrix_mult3x3(inter1, dv_du, A);
 }
 
+// This function will calculate the maximum stable timestep given the primitive variables
+void calc_timestep(std::array<std::vector<double>, 4> Prim, double &dt, double gamma, int nx, double CFL, double dx)
+{
+	// Calculate maximum stable timestep
+	// The below is used to help find the maximum of the absolute value of u + c, since we do
+	// not know c at every point
+	std::vector<double> tot_u = std::vector<double>(nx); 
+	for(int i = 0; i < nx; i++)
+	{
+		tot_u[i] = std::fabs(Prim[1][i] + std::sqrt(gamma * Prim[2][i] / Prim[0][i]));
+	}
+	// find maximum velocity used to find maximum stable timestep
+	double maxvel = *std::max_element(tot_u.begin(), tot_u.end());
+	dt = CFL * dx / maxvel;
+}
+
 // Timestepping schemes
 void forward_euler(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 3> &F, double dt, double dx, int nx)
 {
 	for(int i = 0; i < nx; i++)
 	{
-		U[0][i] = U[0][i] + (dt / dx) * (F[0][i] - F[0][i - 1]);
-		U[1][i] = U[1][i] + (dt / dx) * (F[1][i] - F[1][i - 1]);
-		U[2][i] = U[2][i] + (dt / dx) * (F[2][i] - F[2][i - 1]);
+		U[0][i] = U[0][i] - (dt / dx) * (F[0][i] - F[0][i - 1]);
+		U[1][i] = U[1][i] - (dt / dx) * (F[1][i] - F[1][i - 1]);
+		U[2][i] = U[2][i] - (dt / dx) * (F[2][i] - F[2][i - 1]);
 	}
+}
+
+void RK2(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 3> F, double dt, double dx, int nx, double gamma)
+{
+	// Store intermediate step
+	std::array<std::vector<double>, 3> U_int = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
+	std::array<std::vector<double>, 3> F_int = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
+	std::array<std::vector<double>, 4> Prim_int = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
+	for(int i = 0; i < nx; i++)
+		for(int j = 0; j < 3; j++)
+		{
+			U_int[j][i] = U[j][i] + (dt / dx) * (F[j][i] - F[j][i - 1]);
+		}
+
+	// Calculate interediate flux based on above values
+	Steger_warming(U_int, Prim_int, F_int, dx, gamma, nx);
+
+	// Calculate U at next timestep
+	for(int i = 0; i < nx; i++)
+		for(int j = 0; j < 3; j++)
+		{
+			U[j][i] = U[j][i] + (F[j][i] - F[j][i - 1] + F_int[j][i] - F_int[j][i - 1]) * (dt / (2.0 * dx));
+		}
+}
+
+void midpoint(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 3> F, double dt, double dx, int nx, double gamma)
+{
+	// Store intermediate step
+	std::array<std::vector<double>, 3> U_int = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
+	std::array<std::vector<double>, 3> F_int = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
+	std::array<std::vector<double>, 4> Prim_int = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
+	for(int i = 0; i < nx; i++)
+		for(int j = 0; j < 3; j++)
+		{
+			U_int[j][i] = U[j][i] + (dt / 2.0) * (F[j][i] - F[j][i - 1]) / dx;
+		}
+
+	// Calculate interediate flux based on above values
+	Steger_warming(U_int, Prim_int, F_int, dx, gamma, nx);
+
+	// Calculate U at next timestep
+	for(int i = 0; i < nx; i++)
+		for(int j = 0; j < 3; j++)
+		{
+			U[j][i] = U[j][i] + dt * (F_int[j][i] - F_int[j][i - 1]) / dx;
+		}
 }

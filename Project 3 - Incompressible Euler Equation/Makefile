@@ -33,3 +33,6 @@ src/functions.o: src/functions.cc src/Steger.h
 
 clean:
 	rm src/*.o run test
+
+clearresults:
+	rm Results/* RoeTimesteps/* StegerTimesteps/*

@@ -468,6 +468,44 @@ void test_total_jacobian(std::array<std::vector<double>, 3> U, std::array<std::v
 	}
 }
 
+// This function will make sure the maximum stable timestep is being found
+void test_stable_dt()
+{
+	double tol = 1e-15;
+	double gamma = 1.0;
+	double CFL = 1.0;
+	double dx = 1.0; 
+	// This function will work by first defining a primitive vector that has data for 4 cells
+	// We will set rho to 1, and gamma to 1. We also set the (absolute) velocity to be the highest in the third cell
+	// We need to find the maximum absolute value, and the index of this cell to calculate the local speed of sound
+	// In this case, the highest velocity is 1.0 in cell 3. Here we have P = 4, rho = 1. c = sqrt(gamma*P/rho) = sqrt(4) = 2
+	// Our cfl is 1, dx is 1, so we expect to find a value for the CFL of dt = CFL * dx / max(abs(u) + c) which gives
+	// dt = 1 * 1 / (1. + 2) = 1/3
+	std::vector<double> rho = {1, 1, 1, 1};
+	std::vector<double> u = {0.9, 0.6, -1.0, 0.8};
+	std::vector<double> P = {1, 1, 4, 1};
+	std::vector<double> E = {1, 1, 1, 1};
+
+	std::array<std::vector<double>, 4> Prim = {rho, u, P, E};
+
+	std::vector<double> tot_u = std::vector<double>(4);
+	for(int i = 0; i < 4; i++)
+	{
+		tot_u[i] = std::fabs(Prim[1][i]) + std::sqrt(gamma * Prim[2][i] / Prim[0][i]);
+	}
+	double maxvel = *std::max_element(tot_u.begin(), tot_u.end());
+	double dt = CFL * dx / maxvel;
+	
+	if(dt != 1.0 / 3.0)
+	{
+		printf("Maximum stable time step test failed\n");
+		tests_failed += 1;
+		return;
+	}
+
+	printf("Maximum stable time step test passed\n");
+}
+
 
 /*
 Enter the values in Wolfram Alpha
@@ -497,8 +535,8 @@ XL*dv_du
 int main(int argc, char *argv[])
 {
 	// Declare run parameters
-	double CFL, xbegin, xend, dt, dx, gamma, t_final;
-	int nx;
+	double CFL, xbegin, xend, dx, gamma, t_final;
+	int nx, num_save, timescheme;
 
 	// We will store the initial condition values in an array. The first 3 entries will be for the left side
 	// and will represent rho, u, and P in that order. The next 3 entries will be for the right side, and will 
@@ -506,7 +544,7 @@ int main(int argc, char *argv[])
 	double init_cond[6] = {0};
 
 	// Read input file, or provide default values if none given
-	assign_input(argc, argv, CFL, nx, xbegin, xend, dt, gamma, init_cond, t_final);
+	assign_input(argc, argv, CFL, nx, xbegin, xend, gamma, init_cond, t_final, num_save, timescheme);
 
 	// printf("\nCFL: %f xbegin: %f xend: %f dt: %f gamma: %f nx: %d\n", CFL, xbegin, xend, dt, gamma, nx);
 	// printf("\nInitial conditions:\nLeft: rho - %f u - %f P - %f\nRight: rho - %f u - %f P - %f\n", init_cond[0], init_cond[1], init_cond[2], init_cond[3], init_cond[4], init_cond[5]);
@@ -537,11 +575,9 @@ int main(int argc, char *argv[])
 	// Run tests
 	test_matrix_mult();
 	test_mat_vec_mult();
-	// test_du_dv(U, Prim, gamma, nx);
-	// test_XR_XL(U, Prim, gamma, nx);
-	// test_A_calc(U, Prim, gamma, nx);
-	// test_jacobian(U, Prim, gamma, nx);
 	test_total_jacobian(U, Prim, gamma, nx);
+	test_stable_dt();
+
 	// Let user know if testing failed or passed
 	if(tests_failed == 0)
 	{

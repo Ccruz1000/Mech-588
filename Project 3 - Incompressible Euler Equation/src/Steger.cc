@@ -41,14 +41,13 @@ void Steger_warming(std::array<std::vector<double>, 3> &U, std::array<std::vecto
 	double A_minus[3][3] = {0}; // Store Jacobian 
 	double lambda_minus[3][3]; // Store matrix of eigenvalues
 	double lam_minus1, lam_minus2, lam_minus3; // Store positive eigenvalues 
-	
-	// printf("Here\n");
+
 	// Calculate flux at each cell
 	for(int i = 1; i < nx - 1; i++)
 	{
-		// Store solution vector at current cell in double array to allow for calculation
-		// of F
+		// Store solution vector at current cell in double array to allow for calculation of F
 		double U_cell[3] = {U[0][i], U[1][i], U[2][i]};
+
 		// Initialize and assemble matrices
 		double du_dv[3][3], XR[3][3], lambda_plus[3][3], lambda_minus[3][3], XL[3][3], dv_du[3][3];
 		assemble_matrices(Prim[0][i], Prim[1][i], c[i], gamma, du_dv, XR, XL, dv_du);
@@ -95,6 +94,11 @@ void Steger_warming(std::array<std::vector<double>, 3> &U, std::array<std::vecto
 	for(int i = 1; i < nx - 1; i++)
 		for(int j = 0; j < 3; j++)
 		{
-			F[j][i] = F_plus[j][i] + F_minus[j][i + 1];
-		}	
+			F[j][i] = F_plus[j][i] + F_minus[j][i];
+		}
+
+	// apply boundary conditions to the positive, negative, and final flux vectors
+	calc_bound(F, Prim, nx);
+	calc_bound(F_plus, Prim, nx);
+	calc_bound(F_minus, Prim, nx);	
 }
