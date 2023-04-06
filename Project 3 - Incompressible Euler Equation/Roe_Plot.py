@@ -179,7 +179,8 @@ Plot_Single(finaldata, "Final Conditions")
 files = glob.glob(timepath + '\*.txt')
 i = 0 # Select how often to plot
 numplot = 5  # Choose how many timesteps to plot
-plotcheck = int(len(files) / numplot)
+# plotcheck = int(len(files) / numplot)
+plotcheck = 1
 
 for file in files:
     if (i % plotcheck == 0):
