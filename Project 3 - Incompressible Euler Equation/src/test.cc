@@ -22,6 +22,14 @@ void print_matrix(double A[3][3])
 	}
 }
 
+void print_vector(double A[3])
+{
+	for(int i = 0; i < 3; i++)
+	{
+		printf("%f\n", A[i]);
+	}
+}
+
 void test_matrix_mult()
 {
 	double tol = 1e-14; // Tolerance for round off errors from copy and pasting values out of matlab
