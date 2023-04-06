@@ -15,7 +15,6 @@ void Steger_warming(std::array<std::vector<double>, 3> &U, std::array<std::vecto
 	std::vector<double> c = std::vector<double>(nx); // Store speed of sound
 	std::array<std::vector<double>, 3> F_plus = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
 	std::array<std::vector<double>, 3> F_minus = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
-
 	double lam1, lam2, lam3; // Store eigenvalues
 	
 	// calculate primitive variables from conserved variables
@@ -31,20 +30,16 @@ void Steger_warming(std::array<std::vector<double>, 3> &U, std::array<std::vecto
 	calc_bound(F, Prim, nx);
 	calc_bound(F_plus, Prim, nx);
 	calc_bound(F_minus, Prim, nx);
-
-	// We will start by calculating F+
-	double A_plus[3][3] = {0}; // Store Jacobian 
-	double lambda_plus[3][3]; // Store matrix of eigenvalues
-	double lam_plus1, lam_plus2, lam_plus3; // Store positive eigenvalues
-	
-	// Then we will calculate F-
-	double A_minus[3][3] = {0}; // Store Jacobian 
-	double lambda_minus[3][3]; // Store matrix of eigenvalues
-	double lam_minus1, lam_minus2, lam_minus3; // Store positive eigenvalues 
+ 
 
 	// Calculate flux at each cell
 	for(int i = 1; i < nx - 1; i++)
 	{
+		// We will start by calculating F+
+		double A_plus[3][3] = {0}; // Store Jacobian 
+		double lambda_plus[3][3]; // Store matrix of eigenvalues
+		double lam_plus1, lam_plus2, lam_plus3; // Store positive eigenvalues
+
 		// Store solution vector at current cell in double array to allow for calculation of F
 		double U_cell[3] = {U[0][i], U[1][i], U[2][i]};
 
@@ -72,6 +67,11 @@ void Steger_warming(std::array<std::vector<double>, 3> &U, std::array<std::vecto
 		F_plus[0][i] = TempF_plus[0];
 		F_plus[1][i] = TempF_plus[1];
 		F_plus[2][i] = TempF_plus[2];
+
+		// Then we will calculate F-
+		double A_minus[3][3] = {0}; // Store Jacobian 
+		double lambda_minus[3][3]; // Store matrix of eigenvalues
+		double lam_minus1, lam_minus2, lam_minus3; // Store positive eigenvalues
 
 		// Assemble Lambda-
 		lam_minus1 = 0.5 * (lam1 - std::sqrt(lam1 * lam1 + epsilon));
