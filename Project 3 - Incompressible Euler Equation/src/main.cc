@@ -45,6 +45,7 @@ int main(int argc, char* argv[])
 	std::array<std::vector<double>, 3> F = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)}; // Flux vector
 	// Populate solution and sound speed vector using primitives
 	int num_save = 100;
+
 	for(int i = 0; i < nx; i++)
 	{
 		U[0][i] = Prim[0][i];  // rho
@@ -53,15 +54,17 @@ int main(int argc, char* argv[])
 	}
 
 	// Calculate initial flux
-	Roe_flux(U, Prim, F, dx, gamma, nx);
+	// Roe_flux(U, Prim, F, dx, gamma, nx);
 	Steger_warming(U, Prim, F, dx, gamma, nx);
+	printf("Here\n");
 
 	// Begin timestepping
 	double t_curr = 0;
 	int itime = 0;
 	while(t_curr < t_final)
 	{
-		Roe_flux(U, Prim, F, dx, gamma, nx);
+		// Roe_flux(U, Prim, F, dx, gamma, nx);
+		Steger_warming(U, Prim, F, dx, gamma, nx);
 		forward_euler(U, F, dt, dx, nx);
 
 		itime += 1;
