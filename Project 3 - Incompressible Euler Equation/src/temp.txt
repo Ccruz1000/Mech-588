@@ -301,3 +301,515 @@ void Roe_flux2(std::array<std::vector<double>, 3> &U, std::array<std::vector<dou
 // 		// F[2][i] = 0.5 * (Fnorm[2][i] + Fnorm[2][i + 1]) - 0.5 * Roe[2];
 // 	}
 // }
+
+/ This function will test to check if du_dv and dv_du are properly assembled. If they are, we should get an identity matrix 
+// when we multiply them.
+void test_du_dv(std::array<std::vector<double>, 3> U, std::array<std::vector<double>, 4> Prim, double gamma, int nx)
+{
+	double tol;
+	// std::array<std::vector<double>, 4> Prim = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
+	double epsilon = 1e-8; // Value to smooth out absolute values of eigenvectors near 0
+	std::vector<double> c = std::vector<double>(nx); // Store speed of sound
+	// Compute the primitive variables from the conserved variables
+	for(int i = 0; i < nx; i++)
+	{
+		Prim[0][i] = U[0][i]; // Density
+		Prim[1][i] = U[1][i] / U[0][i]; // Velocity
+		Prim[3][i] = U[2][i]; // Energy
+		Prim[2][i] = 0.5 * (1 - gamma) * U[1][i] * U[1][i] / U[0][i] + (gamma - 1) * U[2][i];  // Pressure (P = 0.5 * (1 - gamma) * U2^2/U1 + (gamma - 1) * U3
+		
+		// Warn user if negative pressure or density is found
+		if(Prim[0][i] < 0)
+		{
+			printf("Warning! Negative density found.\n");
+		}
+
+		if(Prim[0][i] == 0)
+		{
+			printf("Warning! Zero density found\n");
+		}
+
+		if(Prim[2][i] < 0)
+		{
+			printf("Warning! Negative pressure found.\n");
+		}
+	}
+
+	// Store Roe averaged values
+	std::array<std::vector<double>, 3> U_tild = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
+	std::vector<double> u_tild = std::vector<double>(nx);
+	double rho_tild, h_tild, h_left, h_right, P_tild;
+	for(int i = 1; i < nx - 1; i++)
+	{	
+		// Calculate rho averaged density and velocity
+		rho_tild = std::sqrt(Prim[0][i + 1] * Prim[0][i]);
+		// printf("Cell %i rho_tild: %f\n", i, rho_tild);
+		u_tild[i] = (Prim[0][i + 1] * Prim[1][i + 1] + rho_tild * Prim[1][i]) / (Prim[0][i + 1] + rho_tild);
+
+		// Calculate enthalpy
+		h_left = (gamma / (gamma - 1)) * (Prim[2][i] / Prim[0][i]);
+		h_right = (gamma / (gamma - 1)) * (Prim[2][i + 1] / Prim[0][i + 1]);
+		h_tild = (Prim[0][i + 1] * h_right + rho_tild * h_left) / (Prim[0][i + 1] + rho_tild);
+
+		// Use Roe averaged enthalpy to find the Roe averaged pressure
+		P_tild = rho_tild * h_tild * (gamma - 1) / gamma;
+
+		// Use Roe averaged pressure to find Roe averaged speed of sound
+		c[i] = std::sqrt(gamma * P_tild / rho_tild);
+
+		// Populate Roe averaged solution vector
+		U_tild[0][i] = rho_tild;
+		U_tild[1][i] = rho_tild * u_tild[i];
+		U_tild[2][i] = h_tild;
+	} 
+
+	double lam1, lam2, lam3;
+
+	// Calculate flux at each cell
+	for(int i = 1; i < nx - 1; i++)
+	{
+		double du_dv[3][3] = {{1, 0, 0},
+		                      {u_tild[i], U_tild[0][i], 0}, 
+		                      {0.5 * u_tild[i] * u_tild[i], U_tild[0][i] * u_tild[i], 1.0 / (gamma - 1)}};
+		/*
+				|1     0     0              |
+		du_dv = |u     rho   0              |
+				|u^2/2 rho*u 1 / (gamma - 1)|
+		*/
+
+		double dv_du[3][3] = {{1, 0, 0},
+					          {-u_tild[i] / U_tild[0][i], 1 / U_tild[0][i], 0},
+					          {(gamma - 1) * 0.5 * u_tild[i] * u_tild[i], -(gamma - 1) * u_tild[i], gamma - 1}};
+
+		/*
+				|1                0              0        |
+		dv_du = |-u/rho           1/rho          0        |
+				|(gamma-1)u^2/2   -(gamma-1)u    gamma - 1|
+		*/       
+
+		double inter1[3][3] = {0};
+
+		// For the first test, we will check that du_dv gives us an identity matrix
+		matrix_mult3x3(du_dv, dv_du, inter1);
+		
+		for(int ii = 0; ii < 3; ii++)
+			for(int j = 0; j < 3; j++)
+			{
+				if(ii == j)
+				{
+					if(std::fabs(inter1[ii][j] - 1.0) > tol)
+					{
+						printf("Matrix multiplication does not give an identity matrix for du_dv * dv_du at cell %i\n", i);
+						print_matrix(inter1);
+						tests_failed += 1;
+						return;
+					}
+				}
+
+				else
+				{
+					if(std::fabs(inter1[ii][j] - 0.0) > tol)
+					{
+						printf("Matrix multiplication does not give an identity matrix for du_dv * dv_du at cell %i\n", i);
+						print_matrix(inter1);
+						tests_failed += 1;
+						return;
+					}
+				}
+			}
+	}	
+	printf("du_dv test passed\n");
+}
+
+// This function will test to check if XR and XL are properly assembled. If they are, we should get an identity matrix 
+// when we multiply them. 
+void test_XR_XL(std::array<std::vector<double>, 3> U, std::array<std::vector<double>, 4> Prim, double gamma, int nx)
+{
+	double tol = 1e-14;
+	// std::array<std::vector<double>, 4> Prim = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
+	double epsilon = 1e-8; // Value to smooth out absolute values of eigenvectors near 0
+	std::vector<double> c = std::vector<double>(nx); // Store speed of sound
+	// Compute the primitive variables from the conserved variables
+	for(int i = 1; i < nx - 1; i++)
+	{
+		Prim[0][i] = U[0][i]; // Density
+		Prim[1][i] = U[1][i] / U[0][i]; // Velocity
+		Prim[3][i] = U[2][i]; // Energy
+		// Prim[2][i] = 0.5 * (1 - gamma) * U[1][i] * U[1][i] / U[0][i] + (gamma - 1) * U[2][i];  // Pressure (P = 0.5 * (1 - gamma) * U2^2/U1 + (gamma - 1) * U3
+		Prim[2][i] = (gamma - 1) * (Prim[3][i] - 0.5 * Prim[0][i] * Prim[1][i] * Prim[1][i]);
+		// Warn user if negative pressure or density is found
+		if(Prim[0][i] < 0)
+		{
+			printf("Warning! Negative density found.\n");
+		}
+
+		if(Prim[0][i] == 0)
+		{
+			printf("Warning! Zero density found\n");
+		}
+
+		if(Prim[2][i] < 0)
+		{
+			printf("Warning! Negative pressure found.\n");
+		}
+	}
+
+	// Store Roe averaged values
+	std::array<std::vector<double>, 3> U_tild = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
+	std::vector<double> u_tild = std::vector<double>(nx);
+	double rho_tild, h_tild, h_left, h_right, P_tild;
+	for(int i = 1; i < nx - 1; i++)
+	{	
+		// Calculate rho averaged density and velocity
+		rho_tild = std::sqrt(Prim[0][i + 1] * Prim[0][i]);
+		u_tild[i] = (Prim[0][i + 1] * Prim[1][i + 1] + rho_tild * Prim[1][i]) / (Prim[0][i + 1] + rho_tild);
+
+		// Calculate enthalpy
+		h_left = (gamma / (gamma - 1)) * (Prim[2][i] / Prim[0][i]);
+		h_right = (gamma / (gamma - 1)) * (Prim[2][i + 1] / Prim[0][i + 1]);
+		h_tild = (Prim[0][i + 1] * h_right + rho_tild * h_left) / (Prim[0][i + 1] + rho_tild);
+
+		// Use Roe averaged enthalpy to find the Roe averaged pressure
+		P_tild = rho_tild * h_tild * (gamma - 1) / gamma;
+
+		// Use Roe averaged pressure to find Roe averaged speed of sound
+		c[i] = std::sqrt(gamma * P_tild / rho_tild);
+
+		// Populate Roe averaged solution vector
+		U_tild[0][i] = rho_tild;
+		U_tild[1][i] = rho_tild * u_tild[i];
+		U_tild[2][i] = h_tild;
+	} 
+
+	// Calculate flux at each cell
+	for(int i = 1; i < nx - 1; i++)
+	{
+		double XR[3][3] = { {1.0, U_tild[0][i] / c[i], -U_tild[0][i] / c[i]},
+					        {0, 1.0, 1.0},
+					        {0, U_tild[0][i] * c[i], -U_tild[0][i] * c[i]} };
+		/*
+				|u     rho/c       -rho/c    |
+		XR =    |0     1           1         |
+				|0     rho*c       -rho*c    |
+		*/
+
+		double XL[3][3] = { {1, 0, -1 / (c[i] * c[i])},
+					        {0, 1.0 / 2.0, 1.0 / (2.0 * U_tild[0][i] * c[i])},
+					        {0, 1.0 / 2.0, -1.0 / (2.0 * U_tild[0][i] * c[i])} };
+		        
+		/*
+				|1     0             -1/c^2      |
+		XL =    |0     1/2           1/(2(rho*c) |
+				|0     1/2           -1/(2(rho*c)|
+		*/ 
+
+		double inter1[3][3] = {0};
+
+		// For the second test, we will check that XR*XL gives us an identity matrix
+		matrix_mult3x3(XR, XL, inter1);
+		
+		for(int ii = 0; ii < 3; ii++)
+			for(int j = 0; j < 3; j++)
+			{
+				if(ii == j)
+				{
+					if(std::fabs(inter1[ii][j] - 1.0) > tol)
+					{
+						printf("Matrix multiplication does not give an identity matrix for XR*XL at cell %i\n", i);
+						print_matrix(inter1);
+						tests_failed += 1;
+						return;
+					}
+				}
+
+				else
+				{
+					if(std::fabs(inter1[ii][j] - 0.0) > tol)
+					{
+						printf("Matrix multiplication does not give an identity matrix for XR*XL at cell %i\n", i);
+						print_matrix(inter1);
+						tests_failed += 1;
+						return;
+					}
+				}
+			}
+	}	
+	printf("XR*XL test passed passed\n");
+}
+
+// This function will test to check that the entire multiplication process for calculating A is properly performed. 
+// If it is, and we replace lambda with an identity matrix, we should be returned an identity matrix. 
+void test_A_calc(std::array<std::vector<double>, 3> U, std::array<std::vector<double>, 4> Prim, double gamma, int nx)
+{
+	double tol = 1e-14;
+	// std::array<std::vector<double>, 4> Prim = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
+	double epsilon = 1e-8; // Value to smooth out absolute values of eigenvectors near 0
+	std::vector<double> c = std::vector<double>(nx); // Store speed of sound
+	// Compute the primitive variables from the conserved variables
+	for(int i = 1; i < nx - 1; i++)
+	{
+		Prim[0][i] = U[0][i]; // Density
+		Prim[1][i] = U[1][i] / U[0][i]; // Velocity
+		Prim[3][i] = U[2][i]; // Energy
+		// Prim[2][i] = 0.5 * (1 - gamma) * U[1][i] * U[1][i] / U[0][i] + (gamma - 1) * U[2][i];  // Pressure (P = 0.5 * (1 - gamma) * U2^2/U1 + (gamma - 1) * U3
+		Prim[2][i] = (gamma - 1) * (Prim[3][i] - 0.5 * Prim[0][i] * Prim[1][i] * Prim[1][i]);
+		// Warn user if negative pressure or density is found
+		if(Prim[0][i] < 0)
+		{
+			printf("Warning! Negative density found.\n");
+		}
+
+		if(Prim[0][i] == 0)
+		{
+			printf("Warning! Zero density found\n");
+		}
+
+		if(Prim[2][i] < 0)
+		{
+			printf("Warning! Negative pressure found.\n");
+		}
+	}
+
+	// Store Roe averaged values
+	std::array<std::vector<double>, 3> U_tild = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
+	std::vector<double> u_tild = std::vector<double>(nx);
+	double rho_tild, h_tild, h_left, h_right, P_tild;
+	for(int i = 1; i < nx - 1; i++)
+	{	
+		// Calculate rho averaged density and velocity
+		rho_tild = std::sqrt(Prim[0][i + 1] * Prim[0][i]);
+		u_tild[i] = (Prim[0][i + 1] * Prim[1][i + 1] + rho_tild * Prim[1][i]) / (Prim[0][i + 1] + rho_tild);
+
+		// Calculate enthalpy
+		h_left = (gamma / (gamma - 1)) * (Prim[2][i] / Prim[0][i]);
+		h_right = (gamma / (gamma - 1)) * (Prim[2][i + 1] / Prim[0][i + 1]);
+		h_tild = (Prim[0][i + 1] * h_right + rho_tild * h_left) / (Prim[0][i + 1] + rho_tild);
+
+		// Use Roe averaged enthalpy to find the Roe averaged pressure
+		P_tild = rho_tild * h_tild * (gamma - 1) / gamma;
+
+		// Use Roe averaged pressure to find Roe averaged speed of sound
+		c[i] = std::sqrt(gamma * P_tild / rho_tild);
+
+		// Populate Roe averaged solution vector
+		U_tild[0][i] = rho_tild;
+		U_tild[1][i] = rho_tild * u_tild[i];
+		U_tild[2][i] = h_tild;
+	} 
+
+	// Calculate flux at each cell
+	for(int i = 1; i < nx - 1; i++)
+	{
+		double XR[3][3] = { {1.0, U_tild[0][i] / c[i], -U_tild[0][i] / c[i]},
+					        {0, 1.0, 1.0},
+					        {0, U_tild[0][i] * c[i], -U_tild[0][i] * c[i]} };
+		/*
+				|u     rho/c       -rho/c    |
+		XR =    |0     1           1         |
+				|0     rho*c       -rho*c    |
+		*/
+
+		double XL[3][3] = { {1, 0, -1 / (c[i] * c[i])},
+					        {0, 1.0 / 2.0, 1.0 / (2.0 * U_tild[0][i] * c[i])},
+					        {0, 1.0 / 2.0, -1.0 / (2.0 * U_tild[0][i] * c[i])} };
+		        
+		/*
+				|1     0             -1/c^2      |
+		XL =    |0     1/2           1/(2(rho*c) |
+				|0     1/2           -1/(2(rho*c)|
+		*/ 
+
+		double du_dv[3][3] = {{1, 0, 0},
+		                      {u_tild[i], U_tild[0][i], 0}, 
+		                      {0.5 * u_tild[i] * u_tild[i], U_tild[0][i] * u_tild[i], 1.0 / (gamma - 1)}};
+		/*
+				|1     0     0              |
+		du_dv = |u     rho   0              |
+				|u^2/2 rho*u 1 / (gamma - 1)|
+		*/
+
+		double dv_du[3][3] = {{1, 0, 0},
+					          {-u_tild[i] / U_tild[0][i], 1 / U_tild[0][i], 0},
+					          {(gamma - 1) * 0.5 * u_tild[i] * u_tild[i], -(gamma - 1) * u_tild[i], gamma - 1}};
+
+		/*
+				|1                0              0        |
+		dv_du = |-u/rho           1/rho          0        |
+				|(gamma-1)u^2/2   -(gamma-1)u    gamma - 1|
+		*/
+
+		double I[3][3] {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+
+		double inter1[3][3] = {0};
+		double inter2[3][3] = {0};
+		double result[3][3] = {0};
+
+		// For the third test we will check that du_dv*XR*I*XL*dv_du gives us an identity matrix
+		matrix_mult3x3(du_dv, XR, inter1);
+		matrix_mult3x3(inter1, I, inter2);
+		// Zero inter1
+		for(int k = 0; k < 3; k++)
+			for(int j = 0; j < 3; j++)
+			{
+				inter1[k][j] = 0.0;
+			}
+		matrix_mult3x3(inter2, XL, inter1);
+		matrix_mult3x3(inter1, dv_du, result);
+		
+		for(int ii = 0; ii < 3; ii++)
+			for(int j = 0; j < 3; j++)
+			{
+				if(ii == j)
+				{
+					if(std::fabs(result[ii][j] - 1.0) > tol)
+					{
+						printf("Matrix multiplication does not give an identity matrix for A calculation at cell %i\n", i);
+						print_matrix(inter1);
+						tests_failed += 1;
+						return;
+					}
+				}
+
+				else
+				{
+					if(std::fabs(result[ii][j] - 0.0) > tol)
+					{
+						printf("Matrix multiplication does not give an identity matrix for A calculation at cell %i\n", i);
+						print_matrix(inter1);
+						tests_failed += 1;
+						return;
+					}
+				}
+			}
+	}	
+	printf("A calculation test passed passed\n");
+}
+
+// This function will test to check that the Jacobian is properly assembled. If it is, we should be able to calculate 
+// the analytical flux of F(U + du) - F(U) = Adu
+void test_jacobian(std::array<std::vector<double>, 3> U, std::array<std::vector<double>, 4> Prim, double gamma, int nx)
+{
+	double tol = 1e-14;
+	double epsilon = 1e-8; // Value to smooth out absolute values of eigenvectors near 0
+	std::vector<double> c = std::vector<double>(nx); // Store speed of sound
+	std::array<std::vector<double>, 3> F = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
+	std::array<std::vector<double>, 3> du = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)}; // Store du
+	std::array<std::vector<double>, 3> Fdu = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)}; // Store F(U+du)
+	double del = 1e-6;
+	// Compute the primitive variables from the conserved variables
+	for(int i = 1; i < nx - 1; i++)
+	{
+		Prim[0][i] = U[0][i]; // Density
+		Prim[1][i] = U[1][i] / U[0][i]; // Velocity
+		Prim[3][i] = U[2][i]; // Energy
+		Prim[2][i] = (gamma - 1) * (Prim[3][i] - 0.5 * Prim[0][i] * Prim[1][i] * Prim[1][i]); // Pressure
+		c[i] = std::sqrt(gamma * Prim[2][i] / Prim[0][i]); // Calculate speed of sound
+
+		// Store du
+		du[0][i] = del * U[0][i];
+		du[1][i] = del * U[1][i];
+		du[2][i] = del * U[2][i];
+
+		// Calculate analytical flux
+		F[0][i] = U[1][i]; // Density * velocity
+		F[1][i] = 0.5 * (3 - gamma) * U[1][i] * U[1][i] / U[0][i] + (gamma - 1) * U[2][i]; // (rho*u^2 + P)
+		F[2][i] = gamma * (U[1][i] * U[2][i] / U[0][i]) + 0.5 * (gamma - 1) * (U[1][i] * U[1][i] * U[1][i]) / (U[0][i] * U[0][i]); // Energy
+
+		// Calculate flux of U + du
+		Fdu[0][i] = U[1][i] + du[1][i]; // Density * velocity
+		Fdu[1][i] = 0.5 * (3 - gamma) * U[1][i] * U[1][i] / U[0][i] + (gamma - 1) * U[2][i] + 0.5 * (3 - gamma) * du[1][i] * du[1][i] / du[0][i] + (gamma - 1) * du[2][i]; // (rho*u^2 + P)
+		Fdu[2][i] = gamma * (U[1][i] * U[2][i] / U[0][i]) + 0.5 * (gamma - 1) * (U[1][i] * U[1][i] * U[1][i]) / (U[0][i] * U[0][i]) + gamma * (du[1][i] * du[2][i] / du[0][i]) + 0.5 * (gamma - 1) * (du[1][i] * du[1][i] * du[1][i]) / (du[0][i] * du[0][i]); // Energy
+
+		// Warn user if negative pressure or density is found
+		if(Prim[0][i] < 0)
+		{
+			printf("Warning! Negative density found.\n");
+		}
+
+		if(Prim[0][i] == 0)
+		{
+			printf("Warning! Zero density found\n");
+		}
+
+		if(Prim[2][i] < 0)
+		{
+			printf("Warning! Negative pressure found.\n");
+		}
+	}
+
+	// Calculate flux at each cell
+	for(int i = 1; i < nx - 1; i++)
+	{
+		double XR[3][3] = { {1.0, Prim[0][i] / c[i], -Prim[0][i] / c[i]},
+					        {0, 1.0, 1.0},
+					        {0, Prim[0][i] * c[i], -Prim[0][i] * c[i]} };
+		/*
+				|u     rho/c       -rho/c    |
+		XR =    |0     1           1         |
+				|0     rho*c       -rho*c    |
+		*/
+
+		double XL[3][3] = { {1, 0, -1 / (c[i] * c[i])},
+					        {0, 1.0 / 2.0, 1.0 / (2.0 * Prim[0][i] * c[i])},
+					        {0, 1.0 / 2.0, -1.0 / (2.0 * Prim[0][i] * c[i])} };
+		        
+		/*
+				|1     0             -1/c^2      |
+		XL =    |0     1/2           1/(2(rho*c) |
+				|0     1/2           -1/(2(rho*c)|
+		*/ 
+
+		double du_dv[3][3] = {{1, 0, 0},
+		                      {Prim[1][i], Prim[0][i], 0}, 
+		                      {0.5 * Prim[1][i] * Prim[1][i], Prim[0][i] * Prim[1][i], 1.0 / (gamma - 1)}};
+		/*
+				|1     0     0              |
+		du_dv = |u     rho   0              |
+				|u^2/2 rho*u 1 / (gamma - 1)|
+		*/
+
+		double dv_du[3][3] = {{1, 0, 0},
+					          {-Prim[1][i] / Prim[0][i], 1 / Prim[0][i], 0},
+					          {(gamma - 1) * 0.5 * Prim[1][i] * Prim[1][i], -(gamma - 1) * Prim[1][i], gamma - 1}};
+
+		/*
+				|1                0              0        |
+		dv_du = |-u/rho           1/rho          0        |
+				|(gamma-1)u^2/2   -(gamma-1)u    gamma - 1|
+		*/
+
+		double lam[3][3] {{Prim[1][i], 0, 0}, {0, Prim[1][i] + c[i], 0}, {0, 0, Prim[1][i] - c[i]}};
+
+		double inter1[3][3] = {0};
+		double inter2[3][3] = {0};
+		double A[3][3] = {0};
+
+		// For the third test we will check that du_dv*XR*I*XL*dv_du gives us an identity matrix
+		matrix_mult3x3(du_dv, XR, inter1);
+		matrix_mult3x3(inter1, lam, inter2);
+		// Zero inter1
+		for(int k = 0; k < 3; k++)
+			for(int j = 0; j < 3; j++)
+			{
+				inter1[k][j] = 0.0;
+			}
+		matrix_mult3x3(inter2, XL, inter1);
+		matrix_mult3x3(inter1, dv_du, A);
+
+		double store[3] = {du[0][i], du[1][i], du[2][i]}; // Store du as an array of doubles
+		double check[3] = {0}; // Store Adu
+		matrix_vector(A, store, check);
+
+		// Check that they are equivalent everywhere
+		for(int l = 0; l < 3; l++)
+		{
+			if(std::fabs(Fdu[l][i] - F[l][i] - check[l]) > tol)
+			{
+				printf("Jacobian matrix test failed for cell %d at F[%d]\n", i, l);
+				tests_failed += 1;
+				return;
+			}
+		}	
+	}
+	printf("Jacobian test passed.\n");
+}

@@ -32,7 +32,6 @@ void Steger_warming(std::array<std::vector<double>, 3> &U, std::array<std::vecto
 	calc_bound(Fminus, Prim, nx);
 
 	// Matrices to calculate Roes flux
-	double lam1, lam2, lam3; // Store eigenvalues
 	// double lambda_plus[3][3]; // Store positive eigen value matrix
 	// double lamda_minus[3][3]; // Store negative eigenvalue matrix
 	// double A_plus[3][3] = {0}; // Store Jacobian matrix based on positive eigenvalues
