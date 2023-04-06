@@ -3,9 +3,9 @@ nx: 601
 xbegin: 0
 xend: 6
 gamma: 1.4
-rhol: 6.0
+rhol: 1.01
 ul: 0
-Pl: 12.0
+Pl: 1.0
 rhor: 1.0
 ur: 0
 Pr: 1.0

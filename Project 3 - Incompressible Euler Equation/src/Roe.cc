@@ -24,13 +24,13 @@ void calc_Roe_avg(const std::array<std::vector<double>, 4> Prim, std::vector<dou
 		// Calculate enthalpy
 		h_left = (gamma / (gamma - 1)) * (Prim[2][i] / Prim[0][i]);
 		h_right = (gamma / (gamma - 1)) * (Prim[2][i + 1] / Prim[0][i + 1]);
-		h_tild = (Prim[0][i + 1] * h_right + rho_tild * h_left) / (Prim[0][i + 1] + rho_tild); 
+		h_tild = (Prim[0][i + 1] * h_right + rho_tild[i] * h_left) / (Prim[0][i + 1] + rho_tild[i]); 
 
 		//Calculate Roe averaged pressure from Roe avereaged enthalpy
 		P_tild = rho_tild[i] * h_tild * (gamma - 1) / gamma;
 
 		// Use Roe averaged pressure to find Roe averaged speed of sound
-		c[i] = std::sqrt(gamma * P_tild / rho_tild[i]);
+		c_tild[i] = std::sqrt(gamma * P_tild / rho_tild[i]);
 	}
 }
 
@@ -218,7 +218,7 @@ void Roe_flux(std::array<std::vector<double>, 3> &U, std::array<std::vector<doub
 {
 	// Initialize all required variables, vectors and arrays
 	double epsilon = 1e-8; // Value to smooth out absolute values of eigenvectors near 0
-	std::vector<double> c = std::vetor<double>(nx) // Store speed of sound
+	std::vector<double> c = std::vector<double>(nx); // Store speed of sound
 	std::array<std::vector<double>, 3> F_roe = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)}; // Store Roe's flux
 	std::array<std::vector<double>, 3> F_norm = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)}; // Store analytical Euler flux
 	double lam1, lam2, lam3; // Store eigenvalues

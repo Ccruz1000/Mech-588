@@ -37,7 +37,6 @@ void Steger_warming(std::array<std::vector<double>, 3> &U, std::array<std::vecto
 	{
 		// We will start by calculating F+
 		double A_plus[3][3] = {0}; // Store Jacobian 
-		double lambda_plus[3][3]; // Store matrix of eigenvalues
 		double lam_plus1, lam_plus2, lam_plus3; // Store positive eigenvalues
 
 		// Store solution vector at current cell in double array to allow for calculation of F
@@ -70,7 +69,6 @@ void Steger_warming(std::array<std::vector<double>, 3> &U, std::array<std::vecto
 
 		// Then we will calculate F-
 		double A_minus[3][3] = {0}; // Store Jacobian 
-		double lambda_minus[3][3]; // Store matrix of eigenvalues
 		double lam_minus1, lam_minus2, lam_minus3; // Store positive eigenvalues
 
 		// Assemble Lambda-
