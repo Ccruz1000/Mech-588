@@ -239,16 +239,60 @@ void Roe_flux(std::array<std::vector<double>, 3> &U, std::array<std::vector<doub
 	calc_Roe_avg(Prim, rho_tild, u_tild, c_tild, gamma, nx);
 
 	// Check that values were updated
-	for(int i = 0; i < nx; i++)
-	{
-		printf("Cell: %d Rho~: %f u~: %f c~: %f]\n", i, rho_tild[i], u_tild[i], c_tild[i]);
-	}
+	// for(int i = 0; i < nx; i++)
+	// {
+	// 	printf("Cell: %d P: %f Rho~: %f u~: %f c~: %f]\n", i, Prim[2][i], rho_tild[i], u_tild[i], c_tild[i]);
+	// }
 
 	// Loop through cells
 	for(int i = 1; i < nx - 1; i++)
 	{
 		// Initialize matrices for Roe flux calculation
-		double du_dv[3][3];
-	}
+		double du_dv[3][3], XR[3][3], lambda_abs[3][3], XL[3][3], dv_du[3][3], Atild[3][3];
+		assemble_matrices(Prim[0][i], Prim[1][i], c_tild[i], gamma, du_dv, XR, XL, dv_du);
+			
+		// Calculate eigenvalues
+		lam1 = 0.5 * (u_tild[i] + u_tild[i + 1]);
+		lam2 = 0.5 * (u_tild[i] + c_tild[i] + u_tild[i + 1] + c_tild[i + 1]);
+		lam3 = 0.5 * (u_tild[i] - c_tild[i] + u_tild[i + 1] - c_tild[i + 1]);
 
+		// Assemble lambda
+		abslam1 = std::sqrt(lam1 * lam1 + epsilon);
+		abslam2 = std::sqrt(lam2 * lam2 + epsilon);
+		abslam3 = std::sqrt(lam3 * lam3 + epsilon);
+		assemble_lambda(abslam1, abslam2, abslam3, lambda_abs);
+
+		// Compute A~
+		calc_Jacobian(du_dv, XR, lambda_abs, XL, dv_du, Atild);
+
+		// Compute Euler and Roe fluxes
+		F_norm[0][i] = Prim[0][i] * Prim[1][i]; // rho*u
+		F_norm[1][i] = Prim[0][i] * Prim[1][i] * Prim[1][i] + Prim[2][i]; // rho*u^2 + P
+		F_norm[2][i] = Prim[1][i] * (Prim[2][i] + Prim[3][i]); // u*(P+Et)
+
+		double tempF_Roe[3] = {0}; // Temporary vector to store Roe flux
+		double U_cell[3]; // Temporary solution vector to store solution at cell
+
+		// Populate U_cell
+		for(int j = 0; j < 3; j++)
+		{
+			U_cell[j] = U[j][i];
+		}
+
+		// Compute Roe flux
+		matrix_vector(Atild, U_cell, tempF_Roe);
+
+		// Populate Roe flux
+		for(int j = 0; j < 3; j++)
+		{
+			F_roe[j][i] = tempF_Roe[j];
+		}
+	}
+	
+	// Populate flux vector
+	for(int i = 1; i < nx - 1; i++)
+		for(int j = 0; j < 3; j++)
+		{
+			F[j][i] = 0.5 * (F_norm[j][i + 1] + F_norm[j][i]) - 0.5 * (F_roe[j][i + 1] - F_roe[j][i]);
+		}
 }

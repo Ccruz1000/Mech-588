@@ -31,14 +31,14 @@ void save_results(std::string fileName, std::array<std::vector<double>, 4> &Prim
 void matrix_mult3x3(double A[3][3], double B[3][3], double C[3][3]);
 void matrix_vector(double A[3][3], double B[3], double C[3]);
 void calc_Prim(const std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 4> &Prim, double gamma, double nx);
-void calc_bound(std::array<std::vector<double>, 3> &F, const std::array<std::vector<double>, 4> Prim, double nx);
+void calc_bound(std::array<std::vector<double>, 3> &F, const std::array<std::vector<double>, 4> &Prim, double nx);
 void assemble_matrices(double rho, double u, double c, double gamma, double du_dv[3][3], double XR[3][3], double XL[3][3], double dv_du[3][3]);
 void assemble_lambda(double lam1, double lam2, double lam3, double lambda[3][3]);
 void calc_Jacobian(double du_dv[3][3], double XR[3][3], double lambda[3][3], double XL[3][3], double dv_du[3][3], double A[3][3]);
 void calc_timestep(std::array<std::vector<double>, 4> Prim, double &dt, double gamma, int nx, double CFL, double dx);
 void forward_euler(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 3> &F, double dt, double dx, int nx);
-void RK2(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 3> F, double dt, double dx, int nx, double gamma);
-void midpoint(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 3> F, double dt, double dx, int nx, double gamma);
+void RK2(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 3> &F, double dt, double dx, int nx, double gamma, int scheme);
+void midpoint(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 3> &F, double dt, double dx, int nx, double gamma, int scheme);
 
 
 #endif

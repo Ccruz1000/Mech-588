@@ -241,7 +241,7 @@ void run_sim(int argc, char* argv[], int scheme)
 
 	// Read input file, or provide default values if none given
 	assign_input(argc, argv, CFL, nx, xbegin, xend, gamma, init_cond, t_final, num_save, timescheme);
-	std::cout << timescheme << std::endl;
+
 	// Calculate the spatial step
 	dx = (xend - xbegin) / (nx - 1);
 
@@ -366,13 +366,13 @@ void run_sim(int argc, char* argv[], int scheme)
 
 			case 1:
 			{
-				RK2(U, F, dt, dx, nx, gamma);
+				RK2(U, F, dt, dx, nx, gamma, scheme);
 				break;
 			}
 
 			case 2:
 			{
-				midpoint(U, F, dt, dx, nx, gamma);
+				midpoint(U, F, dt, dx, nx, gamma, scheme);
 				break;
 			}
 		}
@@ -451,7 +451,7 @@ void matrix_vector(double A[3][3], double B[3], double C[3])
 void calc_Prim(const std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 4> &Prim, double gamma, double nx)
 {
 		// Compute the primitive variables from the conserved variables
-	for(int i = 1; i < nx - 1; i++)
+	for(int i =0; i < nx; i++)
 	{
 		Prim[0][i] = U[0][i]; // Density
 		Prim[1][i] = U[1][i] / U[0][i]; // Velocity
@@ -476,7 +476,7 @@ void calc_Prim(const std::array<std::vector<double>, 3> &U, std::array<std::vect
 }
 
 // This function will set the boundary conditions of the problem
-void calc_bound(std::array<std::vector<double>, 3> &F, const std::array<std::vector<double>, 4> Prim, double nx)
+void calc_bound(std::array<std::vector<double>, 3> &F, const std::array<std::vector<double>, 4> &Prim, double nx)
 {
 	// Boundary condition
 	F[0][0] = 0; 
@@ -614,7 +614,7 @@ void forward_euler(std::array<std::vector<double>, 3> &U, std::array<std::vector
 	}
 }
 
-void RK2(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 3> F, double dt, double dx, int nx, double gamma)
+void RK2(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 3> &F, double dt, double dx, int nx, double gamma, int scheme)
 {
 	// Store intermediate step
 	std::array<std::vector<double>, 3> U_int = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
@@ -627,7 +627,19 @@ void RK2(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 
 		}
 
 	// Calculate interediate flux based on above values
-	Steger_warming(U_int, Prim_int, F_int, dx, gamma, nx);
+	switch(scheme)
+		{
+			case 0:
+			{
+				Roe_flux(U, Prim_int, F, dx, gamma, nx);
+				break;
+			}
+			case 1:
+			{	
+				Steger_warming(U, Prim_int, F, dx, gamma, nx);
+				break;
+			}
+		}
 
 	// Calculate U at next timestep
 	for(int i = 0; i < nx; i++)
@@ -637,8 +649,10 @@ void RK2(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 
 		}
 }
 
-void midpoint(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 3> F, double dt, double dx, int nx, double gamma)
+void midpoint(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 3> &F, double dt, double dx, int nx, double gamma, int scheme)
 {
+	int u1 = nx/3; int u2 = nx / 3; int u3 = 2 * nx / 3;
+	printf("Entering\n U[1/3]: %f U[1/2]: %f U[2/3]: %f\n", U[2][u1], U[2][u2], U[2][u3]);
 	// Store intermediate step
 	std::array<std::vector<double>, 3> U_int = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
 	std::array<std::vector<double>, 3> F_int = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
@@ -650,7 +664,19 @@ void midpoint(std::array<std::vector<double>, 3> &U, std::array<std::vector<doub
 		}
 
 	// Calculate interediate flux based on above values
-	Steger_warming(U_int, Prim_int, F_int, dx, gamma, nx);
+	switch(scheme)
+		{
+			case 0:
+			{
+				Roe_flux(U, Prim_int, F, dx, gamma, nx);
+				break;
+			}
+			case 1:
+			{	
+				Steger_warming(U, Prim_int, F, dx, gamma, nx);
+				break;
+			}
+		}
 
 	// Calculate U at next timestep
 	for(int i = 0; i < nx; i++)
@@ -658,4 +684,6 @@ void midpoint(std::array<std::vector<double>, 3> &U, std::array<std::vector<doub
 		{
 			U[j][i] = U[j][i] + dt * (F_int[j][i] - F_int[j][i - 1]) / dx;
 		}
+	printf("Exiting\n U[1/3]: %f U[1/2]: %f U[2/3]: %f\n", U[2][u1], U[2][u2], U[2][u3]);
+	
 }

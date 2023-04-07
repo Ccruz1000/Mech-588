@@ -542,6 +542,9 @@ XL*dv_du
 
 int main(int argc, char *argv[])
 {
+	// Calculate runtime
+	clock_t tstart = clock();
+	
 	// Declare run parameters
 	double CFL, xbegin, xend, dx, gamma, t_final;
 	int nx, num_save, timescheme;
@@ -576,8 +579,6 @@ int main(int argc, char *argv[])
 		U[2][i] = Prim[3][i]; // Et
 	}
 
-	// Calculate runtime
-	clock_t tstart = clock();
 	printf("\n\n*******************************************\n           TESTING\n*******************************************\n\n");
 
 	// Run tests
