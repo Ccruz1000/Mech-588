@@ -264,6 +264,8 @@ void Roe_flux(std::array<std::vector<double>, 3> &U, std::array<std::vector<doub
 
 		// Compute A~
 		calc_Jacobian(du_dv, XR, lambda_abs, XL, dv_du, Atild);
+		printf("Cell %d\n", i);
+		print_matrix(Atild);
 
 		// Compute Euler and Roe fluxes
 		F_norm[0][i] = Prim[0][i] * Prim[1][i]; // rho*u

@@ -433,6 +433,22 @@ void matrix_mult3x3(double A[3][3], double B[3][3], double C[3][3])
 		}
 }
 
+// Format printing a matrix out
+void print_matrix(double A[3][3])
+{
+	printf("\n");
+	for(int i = 0; i < 3; i++)
+	{
+		for(int j = 0; j < 3; j++)
+		{
+			printf("%16.16e ", A[i][j]); 
+		}
+		std::cout << std::endl;
+	}
+	printf("\n");
+}
+
+
 // The following will compute a matrix vector multiplication of a 3x3 matrix, and a 3x1 vector
 void matrix_vector(double A[3][3], double B[3], double C[3])
 {
@@ -651,8 +667,6 @@ void RK2(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 
 
 void midpoint(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 3> &F, double dt, double dx, int nx, double gamma, int scheme)
 {
-	int u1 = nx/3; int u2 = nx / 3; int u3 = 2 * nx / 3;
-	printf("Entering\n U[1/3]: %f U[1/2]: %f U[2/3]: %f\n", U[2][u1], U[2][u2], U[2][u3]);
 	// Store intermediate step
 	std::array<std::vector<double>, 3> U_int = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
 	std::array<std::vector<double>, 3> F_int = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
@@ -684,6 +698,4 @@ void midpoint(std::array<std::vector<double>, 3> &U, std::array<std::vector<doub
 		{
 			U[j][i] = U[j][i] + dt * (F_int[j][i] - F_int[j][i - 1]) / dx;
 		}
-	printf("Exiting\n U[1/3]: %f U[1/2]: %f U[2/3]: %f\n", U[2][u1], U[2][u2], U[2][u3]);
-	
 }

@@ -10,18 +10,6 @@
 *********************************************************************/
 int tests_failed = 0; 
 
-void print_matrix(double A[3][3])
-{
-	for(int i = 0; i < 3; i++)
-	{
-		for(int j = 0; j < 3; j++)
-		{
-			printf("%16.16e ", A[i][j]); 
-		}
-		std::cout << std::endl;
-	}
-}
-
 void print_vector(double A[3])
 {
 	for(int i = 0; i < 3; i++)

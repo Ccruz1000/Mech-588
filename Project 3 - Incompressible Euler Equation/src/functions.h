@@ -29,6 +29,7 @@ void initial_conditions(std::array<std::vector<double>, 4> &Prim, int nx, double
 void run_sim(int argc, char* argv[], int scheme);
 void save_results(std::string fileName, std::array<std::vector<double>, 4> &Prim, double dx, int nx);
 void matrix_mult3x3(double A[3][3], double B[3][3], double C[3][3]);
+void print_matrix(double A[3][3]);
 void matrix_vector(double A[3][3], double B[3], double C[3]);
 void calc_Prim(const std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 4> &Prim, double gamma, double nx);
 void calc_bound(std::array<std::vector<double>, 3> &F, const std::array<std::vector<double>, 4> &Prim, double nx);
