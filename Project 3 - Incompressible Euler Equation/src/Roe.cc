@@ -52,7 +52,7 @@ void Roe_flux(const std::array<std::vector<double>, 3> &U, std::array<std::vecto
 	// Calculate Roe Averaged values
 	calc_Roe_avg(Prim, rho_tild, u_tild, c_tild, gamma, nx);
 
-	// Loop through cells
+	// Loop through interal wall edges
 	for(int i = 1; i < nx; i++)
 	{
 		// Intialize arrays to calculate flux 
@@ -105,7 +105,8 @@ void Roe_flux(const std::array<std::vector<double>, 3> &U, std::array<std::vecto
 		{
 			F[j][i] = 0.5 * (F_normL[j] + F_normR[j]) - 0.5 * F_roe[j]; 
 		}
-
-		calc_bound(F, Prim, nx);
 	}
+
+	// Apply boundary conditions to wall edges missed by this loop
+	calc_bound(F, Prim, nx);
 }

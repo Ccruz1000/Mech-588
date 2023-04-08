@@ -1,5 +1,5 @@
-CFL: 0.6
-nx: 201
+CFL: 0.95
+nx: 401
 xbegin: 0
 xend: 1
 gamma: 1.4
@@ -10,5 +10,5 @@ rhor: 1.0
 ur: 0
 Pr: 1.0
 tfinal: 0.15
-num_save: 1
+num_save: 10
 timescheme: 2

@@ -10,6 +10,7 @@
 // Included libraries and headers
 #include "functions.h"
 
+void calc_Steger_flux(double rho, double u, double c, double gamma, double lam[3], double (&F)[3]);
 void Steger_warming(const std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 4> &Prim, std::array<std::vector<double>, 3> &F, double dx, double gamma, int nx);
 
 #endif

@@ -29,13 +29,13 @@ void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, do
 		gamma = 1.4;
 		init_cond[0] = 1.01; // left density
 		init_cond[1] = 0; // left velocity
-		init_cond[2] = 1; // left pressure
-		init_cond[3] = 1; // right density
+		init_cond[2] = 1.0; // left pressure
+		init_cond[3] = 1.0; // right density
 		init_cond[4] = 0; // right velocity
-		init_cond[5] = 1; // right pressure
+		init_cond[5] = 1.0; // right pressure
 		t_final = 0.15;
 		num_save = 20;
-		timescheme = 0; // Roe default
+		timescheme = 2; // Midpoint default
 	}
 
 	// If input file is properly provided, try to read values from it
@@ -273,7 +273,7 @@ void run_sim(int argc, char* argv[], int scheme)
 	{
 		case 0:
 		{
-			printf("\n*********************************************\n");
+			printf("\n*******************************************************\n");
 			printf("Roe's flux difference splitting scheme slected.\n");
 			title = "_Roe_";
 			savepath = "RoeTimesteps/inter_";
@@ -282,7 +282,7 @@ void run_sim(int argc, char* argv[], int scheme)
 
 		case 1:
 		{
-			printf("\n*********************************************\n");
+			printf("\n*******************************************************\n");
 			printf("Steger-Warming flux vector splitting scheme selected.\n");
 			title = "_Steger_";
 			savepath = "StegerTimesteps/inter_";
@@ -298,29 +298,29 @@ void run_sim(int argc, char* argv[], int scheme)
 	{
 		case 0:
 		{
-			printf("Forward Euler timestepping scheme selected\n");
-			printf("*********************************************\n\n");
+			printf("Forward Euler timestepping scheme selected.\n");
+			printf("*******************************************************\n\n");
 			break;
 		}
 
 		case 1:
 		{
-			printf("RK2 timestepping scheme selected\n");
-			printf("*********************************************\n\n");
+			printf("RK2 timestepping scheme selected.\n");
+			printf("*******************************************************\n\n");
 			break;
 		}
 
 		case 2:	
 		{
-			printf("Midpoint timestepping scheme selected\n");
-			printf("*********************************************\n\n");
+			printf("Midpoint timestepping scheme selected.\n");
+			printf("*******************************************************\n\n");
 			break;
 		}
 
 		default:
 		{
 			printf("Invalid timescheme selected.\nFor forward Euler, use 0.\nFor RK2, use 1.\nFor midpoint use 2.\nExiting\n");
-			printf("*********************************************\n");
+			printf("*******************************************************\n");
 			exit(1);
 		}
 	}
@@ -637,7 +637,7 @@ void forward_euler(std::array<std::vector<double>, 3> &U, const std::array<std::
 	}
 }
 
-// Not sure if this works
+
 void RK2(std::array<std::vector<double>, 3> &U, const std::array<std::vector<double>, 3> &F, double dt, double dx, int nx, double gamma, int scheme)
 {
 	// Store intermediate step

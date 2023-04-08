@@ -134,9 +134,6 @@ def Plot_Timesteps(datafile, title):
             plt.close()
         i += 1
 
-
-
-
 # Get path to retrieve data and save results
 
 path = os.getcwd()
@@ -153,14 +150,14 @@ initialRoedata = save_path + '\Init_Roe_cond.txt'  # open initial conditions fil
 finalRoedata = save_path + '\Final_Roe_cond.txt' # Open final conditions file
 
 # # Plot Steger
-# Plot_Single(initialStegerdata, "Steger Initial Conditions")
-# Plot_Single(finalStegerdata, "Steger Final Conditions")
+Plot_Single(initialStegerdata, "Steger Initial Conditions")
+Plot_Single(finalStegerdata, "Steger Final Conditions")
 # Plot_Timesteps(Stegertimepath, "Steger Timestep ")
 
 # Plot Roe
 Plot_Single(initialRoedata, "Roe Initial Conditions")
 Plot_Single(finalRoedata, "Roe Final Conditions")
-Plot_Timesteps(Roetimepath, "Roe Timestep ")
+# Plot_Timesteps(Roetimepath, "Roe Timestep ")
 
 
 

@@ -19,9 +19,9 @@ int main(int argc, char* argv[])
 	run_sim(argc, argv, 0);
 	
 	// // Run Steger-Warming
-	// run_sim(argc, argv, 1);
+	run_sim(argc, argv, 1);
 
 	// Let user know how long testing took
-	printf("\nTests succesfully ran in %6.3e seconds\n", (double)(clock() - tstart)/CLOCKS_PER_SEC);
+	printf("\nCode succesfully ran in %6.3e seconds\n", (double)(clock() - tstart)/CLOCKS_PER_SEC);
 	return 0;
 }

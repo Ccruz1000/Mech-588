@@ -573,25 +573,25 @@ void test_uniform_init()
 	printf("Roe flux integral test passed.\n");
 
 	// Test Steger-Warming Scheme
-	// Steger_warming(U, Prim, F_steger, dx, gamma, nx);
+	Steger_warming(U, Prim, F_steger, dx, gamma, nx);
 
-	// // Calculate flux integral
-	// for(int i = 1; i < nx - 1; i++)
-	// {
-	// 	for(int j = 0; j < 3; j++)
-	// 	{
-	// 		F_cell[j] = -(F_steger[j][i] - F_steger[j][i - 1]);
-	// 		if(fabs(F_cell[j] > tol))
-	// 		{
-	// 			printf("Steger-Warming flux integral failed at cell %d.\nFI[0]: %14.12e FI[1]: %14.12e FI[2]: %14.12e\n", i, F_cell[0], F_cell[1], F_cell[2]);
-	// 			tests_failed += 1;
-	// 			return;
-	// 		}
-	// 	}
-	// }
+	// Calculate flux integral
+	for(int i = 1; i < nx - 1; i++)
+	{
+		for(int j = 0; j < 3; j++)
+		{
+			F_cell[j] = -(F_steger[j][i] - F_steger[j][i - 1]);
+			if(fabs(F_cell[j] > tol))
+			{
+				printf("Steger-Warming flux integral failed at cell %d.\nFI[0]: %14.12e FI[1]: %14.12e FI[2]: %14.12e\n", i, F_cell[0], F_cell[1], F_cell[2]);
+				tests_failed += 1;
+				return;
+			}
+		}
+	}
 
 	// Let user know if Steger-Warming scheme flux integral passes
-	// printf("Steger-Warming flux integral test passed.\n");
+	printf("Steger-Warming flux integral test passed.\n");
 }
 
 
