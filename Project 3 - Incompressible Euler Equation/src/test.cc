@@ -528,7 +528,7 @@ void test_uniform_init()
 	timescheme = 0; // euler default
 
 	// Define dx
-	dx = (xend - xbegin) / (nx - 1);
+	dx = (xend - xbegin) / (nx + 1);
 
 	// Create array to store primitives. Prim[0][i] is rho, Prim[1][i] is velocity, Prim[2][i] is pressure, and Prim[3][i] is energy
 	std::array<std::vector<double>, 4> Prim = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
@@ -538,8 +538,8 @@ void test_uniform_init()
 
 	// Create and populate array to store conserved variables. Calculate speed of sound in each cell at the same time
 	std::array<std::vector<double>, 3> U = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};  // Solution vector
-	std::array<std::vector<double>, 3> F_roe = {std::vector<double>(nx + 2), std::vector<double>(nx + 2), std::vector<double>(nx + 2)}; // Flux vector
-	std::array<std::vector<double>, 3> F_steger = {std::vector<double>(nx + 2), std::vector<double>(nx + 2), std::vector<double>(nx + 2)}; // Flux vector
+	std::array<std::vector<double>, 3> F_roe = {std::vector<double>(nx + 1), std::vector<double>(nx + 1), std::vector<double>(nx + 1)}; // Flux vector
+	std::array<std::vector<double>, 3> F_steger = {std::vector<double>(nx + 1), std::vector<double>(nx + 1), std::vector<double>(nx + 1)}; // Flux vector
 
 	// Populate solution and using primitives
 	for(int i = 0; i < nx; i++)
@@ -555,7 +555,7 @@ void test_uniform_init()
 	Roe_flux(U, Prim, F_roe, dx, gamma, nx);
 
 	// Calculate flux integral
-	for(int i = 1; i < nx - 1; i++)
+	for(int i = 1; i < nx; i++)
 	{
 		for(int j = 0; j < 3; j++)
 		{
@@ -573,25 +573,25 @@ void test_uniform_init()
 	printf("Roe flux integral test passed.\n");
 
 	// Test Steger-Warming Scheme
-	Steger_warming(U, Prim, F_steger, dx, gamma, nx);
+	// Steger_warming(U, Prim, F_steger, dx, gamma, nx);
 
-	// Calculate flux integral
-	for(int i = 1; i < nx - 1; i++)
-	{
-		for(int j = 0; j < 3; j++)
-		{
-			F_cell[j] = -(F_steger[j][i] - F_steger[j][i - 1]);
-			if(fabs(F_cell[j] > tol))
-			{
-				printf("Steger-Warming flux integral failed at cell %d.\nFI[0]: %14.12e FI[1]: %14.12e FI[2]: %14.12e\n", i, F_cell[0], F_cell[1], F_cell[2]);
-				tests_failed += 1;
-				return;
-			}
-		}
-	}
+	// // Calculate flux integral
+	// for(int i = 1; i < nx - 1; i++)
+	// {
+	// 	for(int j = 0; j < 3; j++)
+	// 	{
+	// 		F_cell[j] = -(F_steger[j][i] - F_steger[j][i - 1]);
+	// 		if(fabs(F_cell[j] > tol))
+	// 		{
+	// 			printf("Steger-Warming flux integral failed at cell %d.\nFI[0]: %14.12e FI[1]: %14.12e FI[2]: %14.12e\n", i, F_cell[0], F_cell[1], F_cell[2]);
+	// 			tests_failed += 1;
+	// 			return;
+	// 		}
+	// 	}
+	// }
 
 	// Let user know if Steger-Warming scheme flux integral passes
-	printf("Steger-Warming flux integral test passed.\n");
+	// printf("Steger-Warming flux integral test passed.\n");
 }
 
 

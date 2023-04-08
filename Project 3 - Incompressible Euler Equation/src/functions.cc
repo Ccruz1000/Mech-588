@@ -23,7 +23,7 @@ void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, do
 	{
 		// Assign the default values to provide a contact discontinuity
 		CFL = 0.95;
-		nx = 201;
+		nx = 200; // number of cells
 		xbegin = 0;
 		xend = 1;
 		gamma = 1.4;
@@ -243,7 +243,7 @@ void run_sim(int argc, char* argv[], int scheme)
 	assign_input(argc, argv, CFL, nx, xbegin, xend, gamma, init_cond, t_final, num_save, timescheme);
 
 	// Calculate the spatial step
-	dx = (xend - xbegin) / (nx - 1);
+	dx = (xend - xbegin) / nx;
 
 	// Create array to store primitives. Prim[0][i] is rho, Prim[1][i] is velocity, Prim[2][i] is pressure, and Prim[3][i] is energy
 	std::array<std::vector<double>, 4> Prim = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
@@ -257,7 +257,7 @@ void run_sim(int argc, char* argv[], int scheme)
 	// Create and populate array to store conserved variables and flux. 
 	std::array<std::vector<double>, 3> U = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};  // Solution vector
 	// We will add 2 points tp the flux to allow for ghost cells
-	std::array<std::vector<double>, 3> F = {std::vector<double>(nx + 2), std::vector<double>(nx + 2), std::vector<double>(nx + 2)}; // Flux vector
+	std::array<std::vector<double>, 3> F = {std::vector<double>(nx + 1), std::vector<double>(nx + 1), std::vector<double>(nx + 1)}; // Flux vector
 
 
 	// Populate solution using primitives
@@ -349,20 +349,6 @@ void run_sim(int argc, char* argv[], int scheme)
 	int itime = 0;
 	while(t_curr < t_final)
 	{
-		switch(scheme)
-		{
-			case 0:
-			{
-				Roe_flux(U, Prim, F, dx, gamma, nx);
-				break;
-			}
-			case 1:
-			{	
-				Steger_warming(U, Prim, F, dx, gamma, nx);
-				break;
-			}
-		}
-
 		switch(timescheme)
 		{
 			case 0:
@@ -383,6 +369,21 @@ void run_sim(int argc, char* argv[], int scheme)
 				break;
 			}
 		}
+
+		switch(scheme)
+		{
+			case 0:
+			{
+				Roe_flux(U, Prim, F, dx, gamma, nx);
+				break;
+			}
+			case 1:
+			{	
+				Steger_warming(U, Prim, F, dx, gamma, nx);
+				break;
+			}
+		}
+
 
 		// Update primitives
 		calc_Prim(U, Prim, gamma, nx);
@@ -417,7 +418,7 @@ void save_results(std::string fileName, std::array<std::vector<double>, 4> &Prim
 	fprintf(solutionFile, "X rho u P E\n");
 
 	// Print values
-	for(int i = 1; i < nx - 1; i++)
+	for(int i = 0; i < nx; i++)
 	{
 		fprintf	(solutionFile, "%14.12e %14.12e %14.12e %14.12e %14.12e\n", i * dx, Prim[0][i], Prim[1][i], Prim[2][i], Prim[3][i]);
 	}
@@ -506,9 +507,9 @@ void calc_bound(std::array<std::vector<double>, 3> &F, const std::array<std::vec
 	F[1][0] = Prim[2][0]; 
 	F[2][0] = 0; 
 
-	F[0][nx + 1] = 0; 
-	F[1][nx + 1] = Prim[2][nx - 1]; 
-	F[2][nx + 1] = 0;
+	F[0][nx] = 0; 
+	F[1][nx] = Prim[2][nx - 1]; 
+	F[2][nx] = 0;
 }
 
 // This function will assemble the matrices required to calculate the Jacobian matrix 
@@ -632,7 +633,7 @@ void forward_euler(std::array<std::vector<double>, 3> &U, const std::array<std::
 	for(int i = 0; i < nx; i++)
 		for(int j = 0; j < 3; j++)
 	{
-		U[j][i] = U[j][i] - (dt / dx) * (F[j][i] - F[j][i - 1]);
+		U[j][i] = U[j][i] - (dt / dx) * (F[j][i + 1] - F[j][i]);
 	}
 }
 
@@ -680,7 +681,8 @@ void midpoint(std::array<std::vector<double>, 3> &U, const std::array<std::vecto
 	for(int i = 0; i < nx; i++)
 		for(int j = 0; j < 3; j++)
 		{
-			U_int[j][i] = U[j][i] - (dt / 2.0) * (F[j][i] - F[j][i - 1]) / dx;
+
+			U_int[j][i] = U[j][i] - (dt / 2.0) * (F[j][i + 1] - F[j][i]) / dx;
 		}
 
 	// Calculate interediate flux based on above values
@@ -702,6 +704,11 @@ void midpoint(std::array<std::vector<double>, 3> &U, const std::array<std::vecto
 	for(int i = 0; i < nx; i++)
 		for(int j = 0; j < 3; j++)
 		{
-			U[j][i] = U[j][i] - dt * (F_int[j][i] - F_int[j][i - 1]) / dx;
+			if(j == 1 & (i == 0 || i == nx - 1))
+			{
+				printf("Cell: %d Prim: %f F[1]: %f\n", i, Prim_int[2][i], F_int[j][i + 1]);
+			}
+
+			U[j][i] = U_int[j][i] - dt * (F_int[j][i + 1] - F_int[j][i]) / dx;
 		}
 }
