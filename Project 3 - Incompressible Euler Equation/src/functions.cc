@@ -637,16 +637,17 @@ void forward_euler(std::array<std::vector<double>, 3> &U, const std::array<std::
 	}
 }
 
+// Not sure if this works
 void RK2(std::array<std::vector<double>, 3> &U, const std::array<std::vector<double>, 3> &F, double dt, double dx, int nx, double gamma, int scheme)
 {
 	// Store intermediate step
 	std::array<std::vector<double>, 3> U_int = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
-	std::array<std::vector<double>, 3> F_int = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
+	std::array<std::vector<double>, 3> F_int = {std::vector<double>(nx + 1), std::vector<double>(nx + 1), std::vector<double>(nx + 1)};
 	std::array<std::vector<double>, 4> Prim_int = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
 	for(int i = 0; i < nx; i++)
 		for(int j = 0; j < 3; j++)
 		{
-			U_int[j][i] = U[j][i] + (dt / dx) * (F[j][i] - F[j][i - 1]);
+			U_int[j][i] = U[j][i] - (dt / dx) * (F[j][i + 1] - F[j][i]);
 		}
 
 	// Calculate interediate flux based on above values
@@ -668,7 +669,7 @@ void RK2(std::array<std::vector<double>, 3> &U, const std::array<std::vector<dou
 	for(int i = 0; i < nx; i++)
 		for(int j = 0; j < 3; j++)
 		{
-			U[j][i] = U[j][i] + (F[j][i] - F[j][i - 1] + F_int[j][i] - F_int[j][i - 1]) * (dt / (2.0 * dx));
+			U[j][i] = U[j][i] - (F[j][i + 1] - F[j][i] + F_int[j][i + 1] - F_int[j][i]) * (dt / (2.0 * dx));
 		}
 }
 
@@ -704,11 +705,6 @@ void midpoint(std::array<std::vector<double>, 3> &U, const std::array<std::vecto
 	for(int i = 0; i < nx; i++)
 		for(int j = 0; j < 3; j++)
 		{
-			if(j == 1 & (i == 0 || i == nx - 1))
-			{
-				printf("Cell: %d Prim: %f F[1]: %f\n", i, Prim_int[2][i], F_int[j][i + 1]);
-			}
-
 			U[j][i] = U_int[j][i] - dt * (F_int[j][i + 1] - F_int[j][i]) / dx;
 		}
 }

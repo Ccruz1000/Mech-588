@@ -108,18 +108,4 @@ void Roe_flux(const std::array<std::vector<double>, 3> &U, std::array<std::vecto
 
 		calc_bound(F, Prim, nx);
 	}
-
-	// // Apply boundary conditions to Euler and Roe flux
-	// calc_bound(F_norm, Prim, nx);
-	// calc_bound(F_roe, Prim, nx);
-
-	// // Calculate flux at interior points
-	// for(int i = 1; i < nx - 1; i++)
-	// 	for(int j = 0; j < 3; j++)
-	// 	{
-	// 		F[j][i] = 0.5 * (F_norm[j][i + 1] + F_norm[j][i]) - 0.5 * (F_roe[j][i + 1] - F_roe[j][i]);
-	// 	}
-
-	// // Apply boundary conditions
-	// calc_bound(F, Prim, nx);
 }

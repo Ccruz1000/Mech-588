@@ -3,12 +3,12 @@ nx: 201
 xbegin: 0
 xend: 1
 gamma: 1.4
-rhol: 6
+rhol: 1.0
 ul: 0
-Pl: 12
+Pl: 1.01
 rhor: 1.0
 ur: 0
 Pr: 1.0
 tfinal: 0.15
 num_save: 1
-timescheme: 0
+timescheme: 2

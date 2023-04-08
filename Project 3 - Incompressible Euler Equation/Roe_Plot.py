@@ -160,7 +160,7 @@ finalRoedata = save_path + '\Final_Roe_cond.txt' # Open final conditions file
 # Plot Roe
 Plot_Single(initialRoedata, "Roe Initial Conditions")
 Plot_Single(finalRoedata, "Roe Final Conditions")
-# Plot_Timesteps(Roetimepath, "Roe Timestep ")
+Plot_Timesteps(Roetimepath, "Roe Timestep ")
 
 
 
