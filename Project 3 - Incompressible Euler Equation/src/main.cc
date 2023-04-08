@@ -22,6 +22,6 @@ int main(int argc, char* argv[])
 	run_sim(argc, argv, 1);
 
 	// Let user know how long testing took
-	printf("Tests succesfully ran in %6.3e seconds\n", (double)(clock() - tstart)/CLOCKS_PER_SEC);
+	printf("\nTests succesfully ran in %6.3e seconds\n", (double)(clock() - tstart)/CLOCKS_PER_SEC);
 	return 0;
 }

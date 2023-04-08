@@ -502,6 +502,98 @@ void test_stable_dt()
 	printf("Maximum stable time step test passed\n");
 }
 
+// This function will test that the flux integral is 0 given uniform initial conditions
+void test_uniform_init()
+{
+	double tol = 1e-15; // Tolerance
+	// Initialize variables 
+	double CFL, xbegin, xend, dx, dt, gamma, t_final;
+	int nx, num_save, timescheme;
+	double init_cond[6] = {0};
+
+	// Assign values to provide uniform initial conditions
+	CFL = 0.6;
+	nx = 201;
+	xbegin = 0;
+	xend = 1;
+	gamma = 1.4;
+	init_cond[0] = 1.0; // left density
+	init_cond[1] = 0; // left velocity
+	init_cond[2] = 1.0; // left pressure
+	init_cond[3] = 1.0; // right density
+	init_cond[4] = 0; // right velocity
+	init_cond[5] = 1.0; // right pressure
+	t_final = 0.15;
+	num_save = 20;
+	timescheme = 0; // euler default
+
+	// Define dx
+	dx = (xend - xbegin) / (nx - 1);
+
+	// Create array to store primitives. Prim[0][i] is rho, Prim[1][i] is velocity, Prim[2][i] is pressure, and Prim[3][i] is energy
+	std::array<std::vector<double>, 4> Prim = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
+
+	// Create initial conditions based on uniform input
+	initial_conditions(Prim, nx, init_cond, gamma);
+
+	// Create and populate array to store conserved variables. Calculate speed of sound in each cell at the same time
+	std::array<std::vector<double>, 3> U = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};  // Solution vector
+	std::array<std::vector<double>, 3> F_roe = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)}; // Flux vector
+	std::array<std::vector<double>, 3> F_steger = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)}; // Flux vector
+
+	// Populate solution and using primitives
+	for(int i = 0; i < nx; i++)
+	{
+		U[0][i] = Prim[0][i];  // rho
+		U[1][i] = Prim[0][i] * Prim[1][i];  // rho * u
+		U[2][i] = Prim[3][i]; // Et
+	}
+	
+	double F_cell[3]; // Store flux integral at cell
+
+	// Test Roe Scheme
+	Roe_flux(U, Prim, F_roe, dx, gamma, nx);
+
+	// Calculate flux integral
+	for(int i = 1; i < nx - 1; i++)
+	{
+		for(int j = 0; j < 3; j++)
+		{
+			F_cell[j] = -(F_roe[j][i] - F_roe[j][i - 1]);
+			if(fabs(F_cell[j] > tol))
+			{
+				printf("Roe flux integral failed at cell %d.\nFI[0]: %14.12e FI[1]: %14.12e FI[2]: %14.12e\n", i, F_cell[0], F_cell[1], F_cell[2]);
+				tests_failed += 1;
+				return;
+			}
+		}
+	}
+
+	// Let user know if Roe scheme flux integral passes
+	printf("Roe flux integral test passed.\n");
+
+	// Test Steger-Warming Scheme
+	Steger_warming(U, Prim, F_steger, dx, gamma, nx);
+
+	// Calculate flux integral
+	for(int i = 1; i < nx; i++)
+	{
+		for(int j = 0; j < 3; j++)
+		{
+			F_cell[j] = -(F_steger[j][i] - F_steger[j][i - 1]);
+			if(fabs(F_cell[j] > tol))
+			{
+				printf("Steger-Warming flux integral failed at cell %d.\nFI[0]: %14.12e FI[1]: %14.12e FI[2]: %14.12e\n", i, F_cell[0], F_cell[1], F_cell[2]);
+				tests_failed += 1;
+				return;
+			}
+		}
+	}
+
+	// Let user know if Steger-Warming scheme flux integral passes
+	printf("Steger-Warming flux integral test passed.\n");
+}
+
 
 /*
 Enter the values in Wolfram Alpha
@@ -574,6 +666,7 @@ int main(int argc, char *argv[])
 	test_mat_vec_mult();
 	test_total_jacobian(U, Prim, gamma, nx);
 	test_stable_dt();
+	test_uniform_init();
 
 	// Let user know if testing failed or passed
 	if(tests_failed == 0)

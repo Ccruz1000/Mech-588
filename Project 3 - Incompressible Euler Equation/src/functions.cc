@@ -71,7 +71,7 @@ void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, do
 
 				else if (var == "nx:")
 				{
-					nx = std::stoi(val) + 2; // Add 2 for ghost cells
+					nx = std::stoi(val);
 					numval += 1;					
 				}
 
@@ -254,12 +254,13 @@ void run_sim(int argc, char* argv[], int scheme)
 	// Calculate maximum initial timestep
 	calc_timestep(Prim, dt, gamma, nx, CFL, dx);
 
-	// Create and populate array to store conserved variables. Calculate speed of sound in each cell at the same time
+	// Create and populate array to store conserved variables and flux. 
 	std::array<std::vector<double>, 3> U = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};  // Solution vector
-	std::array<std::vector<double>, 3> F = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)}; // Flux vector
+	// We will add 2 points tp the flux to allow for ghost cells
+	std::array<std::vector<double>, 3> F = {std::vector<double>(nx + 2), std::vector<double>(nx + 2), std::vector<double>(nx + 2)}; // Flux vector
 
 
-	// Populate solution and sound speed vector using primitives
+	// Populate solution using primitives
 	for(int i = 0; i < nx; i++)
 	{
 		U[0][i] = Prim[0][i];  // rho
@@ -272,6 +273,7 @@ void run_sim(int argc, char* argv[], int scheme)
 	{
 		case 0:
 		{
+			printf("\n*********************************************\n");
 			printf("Roe's flux difference splitting scheme slected.\n");
 			title = "_Roe_";
 			savepath = "RoeTimesteps/inter_";
@@ -280,6 +282,7 @@ void run_sim(int argc, char* argv[], int scheme)
 
 		case 1:
 		{
+			printf("\n*********************************************\n");
 			printf("Steger-Warming flux vector splitting scheme selected.\n");
 			title = "_Steger_";
 			savepath = "StegerTimesteps/inter_";
@@ -296,24 +299,28 @@ void run_sim(int argc, char* argv[], int scheme)
 		case 0:
 		{
 			printf("Forward Euler timestepping scheme selected\n");
+			printf("*********************************************\n\n");
 			break;
 		}
 
 		case 1:
 		{
 			printf("RK2 timestepping scheme selected\n");
+			printf("*********************************************\n\n");
 			break;
 		}
 
 		case 2:	
 		{
 			printf("Midpoint timestepping scheme selected\n");
+			printf("*********************************************\n\n");
 			break;
 		}
 
 		default:
 		{
 			printf("Invalid timescheme selected.\nFor forward Euler, use 0.\nFor RK2, use 1.\nFor midpoint use 2.\nExiting\n");
+			printf("*********************************************\n");
 			exit(1);
 		}
 	}
@@ -417,7 +424,7 @@ void save_results(std::string fileName, std::array<std::vector<double>, 4> &Prim
 }
 
 // The following will compute the product of 2 3x3 matrices
-void matrix_mult3x3(double A[3][3], double B[3][3], double C[3][3])
+void matrix_mult3x3(double A[3][3], double B[3][3], double (&C)[3][3])
 {
 	// Empty matrix to store results in
 	double D[3][3] = {{0}};
@@ -450,7 +457,7 @@ void print_matrix(double A[3][3])
 
 
 // The following will compute a matrix vector multiplication of a 3x3 matrix, and a 3x1 vector
-void matrix_vector(double A[3][3], double B[3], double C[3])
+void matrix_vector(double A[3][3], double B[3], double (&C)[3])
 {
 	double D[3] = {0};
 	for(int i = 0; i < 3; i++)
@@ -467,7 +474,7 @@ void matrix_vector(double A[3][3], double B[3], double C[3])
 void calc_Prim(const std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 4> &Prim, double gamma, double nx)
 {
 		// Compute the primitive variables from the conserved variables
-	for(int i =0; i < nx; i++)
+	for(int i = 0; i < nx; i++)
 	{
 		Prim[0][i] = U[0][i]; // Density
 		Prim[1][i] = U[1][i] / U[0][i]; // Velocity
@@ -496,16 +503,16 @@ void calc_bound(std::array<std::vector<double>, 3> &F, const std::array<std::vec
 {
 	// Boundary condition
 	F[0][0] = 0; 
-	F[1][0] = Prim[2][1]; 
+	F[1][0] = Prim[2][0]; 
 	F[2][0] = 0; 
 
-	F[0][nx - 1] = 0; 
-	F[1][nx - 1] = Prim[2][nx - 2]; 
-	F[2][nx - 1] = 0;
+	F[0][nx + 1] = 0; 
+	F[1][nx + 1] = Prim[2][nx - 1]; 
+	F[2][nx + 1] = 0;
 }
 
 // This function will assemble the matrices required to calculate the Jacobian matrix 
-void assemble_matrices(double rho, double u, double c, double gamma, double du_dv[3][3], double XR[3][3], double XL[3][3], double dv_du[3][3])
+void assemble_matrices(double rho, double u, double c, double gamma, double (&du_dv)[3][3], double (&XR)[3][3], double (&XL)[3][3], double (&dv_du)[3][3])
 {
 	// Temporary matrices to allow us to store the expected matrix. We can then assign the values to the 
 	// given matrices to return the assembled matrix. This helps with headaches about matrix initialization
@@ -561,7 +568,7 @@ void assemble_matrices(double rho, double u, double c, double gamma, double du_d
 
 // This function will assemble lambda given the appropriate Eigenvalue functions (for example, in Roe it will need to be given the absolute value of each eigenvalue)
 // but for Steger it will need to give iether the positive or negative eigenvalue 
-void assemble_lambda(double lam1, double lam2, double lam3, double lambda[3][3])
+void assemble_lambda(double lam1, double lam2, double lam3, double (&lambda)[3][3])
 {
 	// We will start by overwriting each value of lambda to be 0
 	for(int i = 0; i < 3; i++)
@@ -570,14 +577,14 @@ void assemble_lambda(double lam1, double lam2, double lam3, double lambda[3][3])
 			lambda[i][j] = 0.0;
 		}
 
-	// Now we will overwrite the diagnol to be the values provided
+	// Now we will overwrite the diagonal to be the values provided
 	lambda[0][0] = lam1;
 	lambda[1][1] = lam2;
 	lambda[2][2] = lam3;
 }
 
 // This function will take in the matrices for du_dv, XR, lambda, XL, and dv_du to calculate the A jacobian matrix
-void calc_Jacobian(double du_dv[3][3], double XR[3][3], double lambda[3][3], double XL[3][3], double dv_du[3][3], double A[3][3])
+void calc_Jacobian(double du_dv[3][3], double XR[3][3], double lambda[3][3], double XL[3][3], double dv_du[3][3], double (&A)[3][3])
 {
 	// Create intermediate matrices to perform matrix multiplication
 	double inter1[3][3] = {0};
@@ -620,7 +627,7 @@ void calc_timestep(std::array<std::vector<double>, 4> Prim, double &dt, double g
 }
 
 // Timestepping schemes
-void forward_euler(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 3> &F, double dt, double dx, int nx)
+void forward_euler(std::array<std::vector<double>, 3> &U, const std::array<std::vector<double>, 3> &F, double dt, double dx, int nx)
 {
 	for(int i = 0; i < nx; i++)
 	{
@@ -630,7 +637,7 @@ void forward_euler(std::array<std::vector<double>, 3> &U, std::array<std::vector
 	}
 }
 
-void RK2(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 3> &F, double dt, double dx, int nx, double gamma, int scheme)
+void RK2(std::array<std::vector<double>, 3> &U, const std::array<std::vector<double>, 3> &F, double dt, double dx, int nx, double gamma, int scheme)
 {
 	// Store intermediate step
 	std::array<std::vector<double>, 3> U_int = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
@@ -647,12 +654,12 @@ void RK2(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 
 		{
 			case 0:
 			{
-				Roe_flux(U, Prim_int, F, dx, gamma, nx);
+				Roe_flux(U_int, Prim_int, F_int, dx, gamma, nx);
 				break;
 			}
 			case 1:
 			{	
-				Steger_warming(U, Prim_int, F, dx, gamma, nx);
+				Steger_warming(U_int, Prim_int, F_int, dx, gamma, nx);
 				break;
 			}
 		}
@@ -665,7 +672,7 @@ void RK2(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 
 		}
 }
 
-void midpoint(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 3> &F, double dt, double dx, int nx, double gamma, int scheme)
+void midpoint(std::array<std::vector<double>, 3> &U, const std::array<std::vector<double>, 3> &F, double dt, double dx, int nx, double gamma, int scheme)
 {
 	// Store intermediate step
 	std::array<std::vector<double>, 3> U_int = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
@@ -674,7 +681,7 @@ void midpoint(std::array<std::vector<double>, 3> &U, std::array<std::vector<doub
 	for(int i = 0; i < nx; i++)
 		for(int j = 0; j < 3; j++)
 		{
-			U_int[j][i] = U[j][i] + (dt / 2.0) * (F[j][i] - F[j][i - 1]) / dx;
+			U_int[j][i] = U[j][i] - (dt / 2.0) * (F[j][i] - F[j][i - 1]) / dx;
 		}
 
 	// Calculate interediate flux based on above values
@@ -682,12 +689,12 @@ void midpoint(std::array<std::vector<double>, 3> &U, std::array<std::vector<doub
 		{
 			case 0:
 			{
-				Roe_flux(U, Prim_int, F, dx, gamma, nx);
+				Roe_flux(U_int, Prim_int, F_int, dx, gamma, nx);
 				break;
 			}
 			case 1:
 			{	
-				Steger_warming(U, Prim_int, F, dx, gamma, nx);
+				Steger_warming(U_int, Prim_int, F_int, dx, gamma, nx);
 				break;
 			}
 		}
@@ -696,6 +703,6 @@ void midpoint(std::array<std::vector<double>, 3> &U, std::array<std::vector<doub
 	for(int i = 0; i < nx; i++)
 		for(int j = 0; j < 3; j++)
 		{
-			U[j][i] = U[j][i] + dt * (F_int[j][i] - F_int[j][i - 1]) / dx;
+			U[j][i] = U[j][i] - dt * (F_int[j][i] - F_int[j][i - 1]) / dx;
 		}
 }

@@ -7,14 +7,16 @@
 // Christian Rowsell (40131393)
 ***************************************************************************************/
 
+// void calc_Steger_flux()
+
 // The following will compute the flux using the Steger-Warming scheme 
-void Steger_warming(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 4> &Prim, std::array<std::vector<double>, 3> &F, double dx, double gamma, int nx)
+void Steger_warming(const std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 4> &Prim, std::array<std::vector<double>, 3> &F, double dx, double gamma, int nx)
 {	
 	// Initialize all required variables, vectors, and arrays
 	double epsilon = 1e-8; // Value to smooth out absolute values of eigenvectors near 0
 	std::vector<double> c = std::vector<double>(nx); // Store speed of sound
-	std::array<std::vector<double>, 3> F_plus = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
-	std::array<std::vector<double>, 3> F_minus = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
+	std::array<std::vector<double>, 3> F_plus = {std::vector<double>(nx + 2), std::vector<double>(nx + 2), std::vector<double>(nx + 2)};
+	std::array<std::vector<double>, 3> F_minus = {std::vector<double>(nx + 2), std::vector<double>(nx + 2), std::vector<double>(nx + 2)};
 	double lam1, lam2, lam3; // Store eigenvalues
 	
 	// calculate primitive variables from conserved variables
@@ -24,16 +26,10 @@ void Steger_warming(std::array<std::vector<double>, 3> &U, std::array<std::vecto
 	for(int i = 0; i < nx; i++)
 	{
 		c[i] = std::sqrt(gamma * Prim[2][i] / Prim[0][i]);
-	}
-
-	// apply boundary conditions to the positive, negative, and final flux vectors
-	calc_bound(F, Prim, nx);
-	calc_bound(F_plus, Prim, nx);
-	calc_bound(F_minus, Prim, nx);
- 
+	} 
 
 	// Calculate flux at each cell
-	for(int i = 1; i < nx - 1; i++)
+	for(int i = 0; i < nx; i++)
 	{
 		// We will start by calculating F+
 		double A_plus[3][3] = {0}; // Store Jacobian 
@@ -48,8 +44,8 @@ void Steger_warming(std::array<std::vector<double>, 3> &U, std::array<std::vecto
 
 		// Calculate Eiegenvalues
 		lam1 = (Prim[1][i] + Prim[1][i +1]) / 2;
-		lam2 = (Prim[1][i] + c[i] + Prim[1][i +1] + c[i]) / 2;
-		lam2 = (Prim[1][i] - c[i] + Prim[1][i +1] - c[i]) / 2;
+		lam2 = (Prim[1][i] + c[i] + Prim[1][i + 1] + c[i + 1]) / 2;
+		lam2 = (Prim[1][i] - c[i] + Prim[1][i + 1] - c[i + 1]) / 2;
 
 		// Assemble Lambda+
 		lam_plus1 = 0.5 * (lam1 + std::sqrt(lam1 * lam1 + epsilon));
@@ -63,9 +59,6 @@ void Steger_warming(std::array<std::vector<double>, 3> &U, std::array<std::vecto
 		// Compute F+
 		double TempF_plus[3] = {0};
 		matrix_vector(A_plus, U_cell, TempF_plus);
-		F_plus[0][i] = TempF_plus[0];
-		F_plus[1][i] = TempF_plus[1];
-		F_plus[2][i] = TempF_plus[2];
 
 		// Then we will calculate F-
 		double A_minus[3][3] = {0}; // Store Jacobian 
@@ -83,9 +76,13 @@ void Steger_warming(std::array<std::vector<double>, 3> &U, std::array<std::vecto
 		// Compute F+
 		double TempF_minus[3] = {0};
 		matrix_vector(A_minus, U_cell, TempF_minus);
-		F_minus[0][i] = TempF_minus[0];
-		F_minus[1][i] = TempF_minus[1];
-		F_minus[2][i] = TempF_minus[2];
+
+		// Assign flux values to F+ and F-
+		for(int j = 0; j < 3; j++)
+		{
+			F_plus[j][i + 1] = TempF_plus[j];
+			F_minus[j][i + 1] = TempF_minus[j];
+		}
 	}
 
 	// Populate flux vector
@@ -93,10 +90,15 @@ void Steger_warming(std::array<std::vector<double>, 3> &U, std::array<std::vecto
 		for(int j = 0; j < 3; j++)
 		{
 			F[j][i] = F_plus[j][i] + F_minus[j][i];
+			calc_bound(F, Prim, nx);
 		}
+	
+	
 
-	// apply boundary conditions to the positive, negative, and final flux vectors
-	calc_bound(F, Prim, nx);
-	calc_bound(F_plus, Prim, nx);
-	calc_bound(F_minus, Prim, nx);	
+
+	// Check that flux is 0 given uniform initial conditions
+	// for(int i = 0; i < nx; i++)
+	// {
+	// 	printf("Cell: %d F[0]: %f F[1]: %f F[2]: %f\n", i, F[0][i], F[1][i], F[2][i]);
+	// }
 }

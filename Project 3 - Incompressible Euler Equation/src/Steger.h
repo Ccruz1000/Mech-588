@@ -10,6 +10,6 @@
 // Included libraries and headers
 #include "functions.h"
 
-void Steger_warming(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 4> &Prim, std::array<std::vector<double>, 3> &F, double dx, double gamma, int nx);
+void Steger_warming(const std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 4> &Prim, std::array<std::vector<double>, 3> &F, double dx, double gamma, int nx);
 
 #endif
