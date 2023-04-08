@@ -102,21 +102,12 @@ void Roe_flux(const std::array<std::vector<double>, 3> &U, std::array<std::vecto
 		}
 	}
 
-	// Populate flux vector
-	calc_bound(F, Prim, nx);
-	calc_bound(F_norm, Prim, nx);
-	calc_bound(F_roe, Prim, nx);
 	
 	for(int i = 1; i < nx - 1; i++)
 		for(int j = 0; j < 3; j++)
 		{
 			F[j][i] = 0.5 * (F_norm[j][i + 1] + F_norm[j][i]) - 0.5 * (F_roe[j][i + 1] - F_roe[j][i]);
 		}
-
-
-	// Check that flux is 0 given uniform initial conditions
-	// for(int i = 0; i < nx; i++)
-	// {
-	// 	printf("Cell: %d F[0]: %f F[1]: %f F[2]: %f\n", i, F_roe[0][i], F_roe[1][i], F_roe[2][i]);
-	// }
+	// Populate flux vector
+	calc_bound(F, Prim, nx);
 }

@@ -18,8 +18,8 @@ int main(int argc, char* argv[])
 	// Need to refactor Roe before I can try running it
 	run_sim(argc, argv, 0);
 	
-	// Run Steger-Warming
-	run_sim(argc, argv, 1);
+	// // Run Steger-Warming
+	// run_sim(argc, argv, 1);
 
 	// Let user know how long testing took
 	printf("\nTests succesfully ran in %6.3e seconds\n", (double)(clock() - tstart)/CLOCKS_PER_SEC);

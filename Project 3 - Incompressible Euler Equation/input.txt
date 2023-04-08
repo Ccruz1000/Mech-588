@@ -10,5 +10,5 @@ rhor: 1.0
 ur: 0
 Pr: 1.0
 tfinal: 0.15
-num_save: 5
+num_save: 1
 timescheme: 0

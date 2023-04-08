@@ -89,9 +89,10 @@ void Steger_warming(const std::array<std::vector<double>, 3> &U, std::array<std:
 	for(int i = 1; i < nx - 1; i++)
 		for(int j = 0; j < 3; j++)
 		{
-			F[j][i] = F_plus[j][i] + F_minus[j][i];
-			calc_bound(F, Prim, nx);
+			F[j][i] = F_plus[j][i] + F_minus[j][i + 1];
 		}
+	
+	calc_bound(F, Prim, nx);
 	
 	
 

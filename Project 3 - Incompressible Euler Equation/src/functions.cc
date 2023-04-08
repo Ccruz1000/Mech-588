@@ -630,10 +630,9 @@ void calc_timestep(std::array<std::vector<double>, 4> Prim, double &dt, double g
 void forward_euler(std::array<std::vector<double>, 3> &U, const std::array<std::vector<double>, 3> &F, double dt, double dx, int nx)
 {
 	for(int i = 0; i < nx; i++)
+		for(int j = 0; j < 3; j++)
 	{
-		U[0][i] = U[0][i] - (dt / dx) * (F[0][i] - F[0][i - 1]);
-		U[1][i] = U[1][i] - (dt / dx) * (F[1][i] - F[1][i - 1]);
-		U[2][i] = U[2][i] - (dt / dx) * (F[2][i] - F[2][i - 1]);
+		U[j][i] = U[j][i] - (dt / dx) * (F[j][i] - F[j][i - 1]);
 	}
 }
 
@@ -681,7 +680,7 @@ void midpoint(std::array<std::vector<double>, 3> &U, const std::array<std::vecto
 	for(int i = 0; i < nx; i++)
 		for(int j = 0; j < 3; j++)
 		{
-			U_int[j][i] = U[j][i] - (dt / 2.0) * (F[j][i] - F[j][i - 1]) / dx;
+			U_int[j][i] = U[j][i] + (dt / 2.0) * (F[j][i] - F[j][i - 1]) / dx;
 		}
 
 	// Calculate interediate flux based on above values
@@ -703,6 +702,6 @@ void midpoint(std::array<std::vector<double>, 3> &U, const std::array<std::vecto
 	for(int i = 0; i < nx; i++)
 		for(int j = 0; j < 3; j++)
 		{
-			U[j][i] = U[j][i] - dt * (F_int[j][i] - F_int[j][i - 1]) / dx;
+			U[j][i] = U[j][i] + dt * (F_int[j][i] - F_int[j][i - 1]) / dx;
 		}
 }
