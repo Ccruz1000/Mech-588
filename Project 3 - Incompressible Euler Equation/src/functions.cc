@@ -675,12 +675,12 @@ void midpoint(std::array<std::vector<double>, 3> &U, const std::array<std::vecto
 {
 	// Store intermediate step
 	std::array<std::vector<double>, 3> U_int = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
-	std::array<std::vector<double>, 3> F_int = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
+	std::array<std::vector<double>, 3> F_int = {std::vector<double>(nx + 2), std::vector<double>(nx + 2), std::vector<double>(nx + 2)};
 	std::array<std::vector<double>, 4> Prim_int = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
 	for(int i = 0; i < nx; i++)
 		for(int j = 0; j < 3; j++)
 		{
-			U_int[j][i] = U[j][i] + (dt / 2.0) * (F[j][i] - F[j][i - 1]) / dx;
+			U_int[j][i] = U[j][i] - (dt / 2.0) * (F[j][i] - F[j][i - 1]) / dx;
 		}
 
 	// Calculate interediate flux based on above values
@@ -702,6 +702,6 @@ void midpoint(std::array<std::vector<double>, 3> &U, const std::array<std::vecto
 	for(int i = 0; i < nx; i++)
 		for(int j = 0; j < 3; j++)
 		{
-			U[j][i] = U[j][i] + dt * (F_int[j][i] - F_int[j][i - 1]) / dx;
+			U[j][i] = U[j][i] - dt * (F_int[j][i] - F_int[j][i - 1]) / dx;
 		}
 }
