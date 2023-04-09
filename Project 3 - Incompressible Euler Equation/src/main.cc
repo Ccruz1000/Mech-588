@@ -15,13 +15,12 @@ int main(int argc, char* argv[])
 	clock_t tstart = clock();
 
 	// Run Roe
-	// Need to refactor Roe before I can try running it
 	run_sim(argc, argv, 0);
 	
 	// // Run Steger-Warming
 	run_sim(argc, argv, 1);
 
-	// Let user know how long testing took
+	// Let user know runtime
 	printf("\nCode succesfully ran in %6.3e seconds\n", (double)(clock() - tstart)/CLOCKS_PER_SEC);
 	return 0;
 }

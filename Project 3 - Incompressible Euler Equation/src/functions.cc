@@ -627,9 +627,62 @@ void calc_timestep(std::array<std::vector<double>, 4> Prim, double &dt, double g
 	dt = CFL * dx / maxvel;
 }
 
+
+// The following function will compute the flux using the 2 step Lax-Friedrichs scheme
+void lax_wendroff(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 4> &Prim, std::array<std::vector<double>, 3> &F, double gamma, double dt, double dx, double nx)
+{
+	/*
+	 This function will compute the flux at the cell faces using the second order Lax-Friedrichs scheme
+	 The flux for this scheme is given as follows:
+	 F_(i+1/2) = 0.5 * (F(U_i) + F(U_(i + 1)) - (dx / (2dt)) *(U_(i + 1) - U_i)
+	*/
+
+	// Calculate primitive variables from solution variables
+	calc_Prim(U, Prim, gamma, nx)
+
+	// Loop through internal faces. This loop is indexed so that i gives the cell to the right of the face
+	for(int i = 1; i < nx; i++)
+	{	
+		// Initialize vectors to store flux and solution from right and left cell
+		double F_left[3], F_right[3], U_left[3], U_right[3];
+		
+		F_left = {Prim[0][i - 1] * Prim[1][i - 1], Prim[0][i - 1] * Prim[1][i - 1] * Prim[1][i - 1] + Prim[2][i - 1], Prim[1][i - 1] * (Prim[2][i - 1] + Prim[3][i - 1])};
+		F_right= {Prim[0][i] * Prim[1][i], Prim[0][i] * Prim[1][i] * Prim[1][i] + Prim[2][i], Prim[1][i] * (Prim[2][i] + Prim[3][i])};
+		U_left = {U[0][i - 1], U[1][i - 1], U[2][i - 1]};
+		U_right = {U[0][i], U[1][i], U[2][i]};
+
+		// Populate flux vector
+		for(int j = 0; j < 3; j++)
+		{
+			F[j][i] = 0.5 * (F_left[j] + F_right[j]) - (dx / (2 * dt)) * (U_right[j] - U_left[j]);
+		}
+	}
+
+	// Apply boundary conditions
+	calc_bound(F, Prim, nx);
+}
+
+// This function will apply the flux limiter to the flux 
+void apply_limiter(std::array<std::vector<double>, 3> &F, std::array<std::vector<double>, 3> &FL, std::array<std::vector<double>, 3> &FH, std::array<std::vector<double>, 3> phi)
+{
+	for(int i = 0; i < nx + 1; i++)
+	{
+		for(int j = 0; j < 3; j++)
+		{
+			F[j][i] = FL[j][i] + phi[j][i] * (FH[j][i] - FL[j][i]);
+		}
+	}
+}
+
 // Timestepping schemes
 void forward_euler(std::array<std::vector<double>, 3> &U, const std::array<std::vector<double>, 3> &F, double dt, double dx, int nx)
 {
+	// Store limiter function
+	std::array<std::vector<double>, 3> phi = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
+
+	// Compute limiter function
+	superbee(U, phi, nx);
+
 	for(int i = 0; i < nx; i++)
 		for(int j = 0; j < 3; j++)
 	{
@@ -708,3 +761,132 @@ void midpoint(std::array<std::vector<double>, 3> &U, const std::array<std::vecto
 			U[j][i] = U_int[j][i] - dt * (F_int[j][i + 1] - F_int[j][i]) / dx;
 		}
 }
+
+// Limiter Schemes
+// void van_leer(std::array<std::vector<double> 3> F, std::vector<double> &phi int nx)
+// {
+// 	// This function will limit the flux based on the van leer method
+// 	// Use this function to get a more diffusive flux. Higher stability, but
+// 	// less resolution at shocks
+// 	printf("van_leer\n");
+// }
+
+void superbee(const std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 3> &phi, int nx)
+{
+	// This function will limit the flux based on the superbee method. 
+	// This will give a sharper resolution than van_leer (I think), but may be less
+	// stable.
+
+	double r[3]; // Store the r value for the cell
+
+	// Loop through cells. 
+	for(int i = 0; i < nx; i++)
+	{
+		for(int j = 0; j < 3; j++)
+		{
+			// Calculate R of the cell
+			if (i == 0)
+			{
+				r[j] = ((U[j][i] - (2.0 * U[j][i] - U[j][i + 1])) / ((U[j][i + 1]) - U[j][i]));
+			}
+
+			else if (i == (nx - 1))
+			{
+				r[j] = (U[j][i] - U[j][i - 1]) / ((2.0 * U[j][i] - U[j][i - 1]) - U[j][i]);
+				printf("cell: %d r[0]: %f r[1]: %f r[2]: %f\n", i, r[0], r[1], r[2]);
+			}
+
+			else
+			{
+				r[j] = (U[j][i] - U[j][i - 1]) / (U[j][i + 1] - U[j][i]);
+			}
+
+			// Populate Phi-vector
+			phi[j][i] = std::max({0.0, std::min({2.0 * r[j], 1.0}), std::min({r[j], 2.0})});
+			if(i == nx - 1)
+			{
+				printf("phi[0]: %f phi[1]: %f phi[2]: %f\n", phi[0][i], phi[1][i], phi[2][i]);
+			}
+
+		}
+	}
+}
+
+// matlab - https://skill-lync.com/student-projects/Interpolation-schemes-and-Flux-limiters-with-MATLAB-code-40868
+ // if i == 1
+ //            r = (temp_old(i) - (2*temp_old(i)-temp_old(i+1))) / (temp_old(i+1) -  temp_old(i));
+ //        else
+ //            if i == n
+ //                r = (temp_old(i) - temp_old(i-1)) / ((2*temp_old(i)-temp_old(i-1)) -  temp_old(i));
+ //            else
+ //                r = (temp_old(i) - temp_old(i-1)) / (temp_old(i+1) -  temp_old(i));
+ //            end
+//	max([0,min(2*r,1),min(r,2)])
+
+
+
+double minmod(double a, double b)
+{
+	if ((fabs(a) < fabs(b)) && ((a * b) > 0.0))
+	{
+		return a;
+	}
+
+	else if ((fabs(b) < fabs(a)) && ((a * b) > 0.0))
+	{
+		return b;
+	}
+
+	else 
+	{
+		return 0.0;
+	}
+}
+
+double maxmod(double a, double b)
+{
+	if ((fabs(a) > fabs(b))  && ((a * b) > 0.0))
+	{
+		return a;
+	}
+
+	else if ((fabs(a) > fabs(b))  && ((a * b) > 0.0))
+	{
+		return b;
+	}
+
+	else
+	{
+		return 0.0;
+	}
+}
+
+/*
+Python script - http://bender.astro.sunysb.edu/classes/numerical_methods/examples/advection/second_order_fv/fv_advection.py
+# superbee limiter
+for i in range(g.ilo-1, g.ihi+2):
+    A = minmod( (g.a[i+1] - g.a[i])/g.dx,
+                2.0*(g.a[i] - g.a[i-1])/g.dx )
+
+    B = minmod( (g.a[i] - g.a[i-1])/g.dx,
+                 2.0*(g.a[i+1] - g.a[i])/g.dx )
+
+    slope[i] = maxmod(A, B
+
+
+def minmod(a, b):
+    if abs(a) < abs(b) and a*b > 0.0:
+        return a
+    elif abs(b) < abs(a) and a*b > 0.0:
+        return b
+    else:
+        return 0.0
+
+def maxmod(a, b):
+    if abs(a) > abs(b) and a*b > 0.0:
+        return a
+    elif abs(b) > abs(a) and a*b > 0.0:
+        return b
+    else:
+        return 0.0
+*/

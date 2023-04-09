@@ -8,8 +8,6 @@
 // Christian Rowsell (40131393)
 ***************************************************************************************/
 
-// Goated video - https://www.youtube.com/watch?v=F_PsFHvt8IU&ab_channel=P.S.Volpiani
-
 // This function will calculate the Roe averaged values
 void calc_Roe_avg(const std::array<std::vector<double>, 4> Prim, double &rho_tild, double &u_tild, double &c_tild, double gamma, int nx)
 {

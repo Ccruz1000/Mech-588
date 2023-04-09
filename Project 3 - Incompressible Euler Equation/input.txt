@@ -11,4 +11,4 @@ ur: 0
 Pr: 1.0
 tfinal: 0.15
 num_save: 10
-timescheme: 2
+timescheme: 0

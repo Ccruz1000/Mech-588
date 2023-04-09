@@ -37,9 +37,10 @@ void assemble_matrices(double rho, double u, double c, double gamma, double (&du
 void assemble_lambda(double lam1, double lam2, double lam3, double (&lambda)[3][3]);
 void calc_Jacobian(double du_dv[3][3], double XR[3][3], double lambda[3][3], double XL[3][3], double dv_du[3][3], double (&A)[3][3]);
 void calc_timestep(std::array<std::vector<double>, 4> Prim, double &dt, double gamma, int nx, double CFL, double dx);
+void lax_wendroff(std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 4> &Prim, std::array<std::vector<double>, 3> &F, double gamma, double dt, double dx, double nx);
 void forward_euler(std::array<std::vector<double>, 3> &U, const std::array<std::vector<double>, 3> &F, double dt, double dx, int nx);
 void RK2(std::array<std::vector<double>, 3> &U, const std::array<std::vector<double>, 3> &F, double dt, double dx, int nx, double gamma, int scheme);
 void midpoint(std::array<std::vector<double>, 3> &U, const std::array<std::vector<double>, 3> &F, double dt, double dx, int nx, double gamma, int scheme);
-
+void superbee(const std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 3> &phi, int nx);
 
 #endif

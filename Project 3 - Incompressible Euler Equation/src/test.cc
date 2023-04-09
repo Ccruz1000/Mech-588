@@ -594,32 +594,6 @@ void test_uniform_init()
 	printf("Steger-Warming flux integral test passed.\n");
 }
 
-
-/*
-Enter the values in Wolfram Alpha
-wolfram alpha 
-dudv
-{{1, 0, 0},{u, r, 0},{u^2/2, r*u, 1/(g-1)}}
-dvdu
-{{1, 0, 0},{-u/r, 1/r, 0},{(g-1)*u^2/2,-(g-1)*u, g-1}}
-XR
-{{1, r/c, -r/c}, {0, 1, 1}, {0, r*c, -r*c}}
-XL
-{{1, 0, -1/c^2},  {0, 1/2, 1/(2*r*c)}, {0, 1/2, -1/(2*r*c)}}
-lamda1
-{{l, 0, 0}, {0, 0, 0}, {0, 0, 0}}
-lamda2
-{{0, 0, 0}, {0, l, 0}, {0, 0, 0}}
-lamda3
-{{0, 0, 0}, {0, 0, 0}, {0, 0, l}}
-du_dv*XR
-{{1, r/c, -r/c}, {u, ru/c+r, r-ru/c}, {u^2/2, ru^2/(2c)+ru, -rc/(g-1)-ru^2/(2c)+ru}}
-
-XL*dv_du
-{{1 - (g-1)u^2/(2c^2), (g-1)u/c, -(g-1)/c^2}, {(g-1)u^2/(4rc), 1/(2r)-(g-1)u/(2rc), (g-1)/(2rc)}, {-(g-1)u^2/(4rc)-u/(2r), (g-1)u/(2rc)+1/(2r), -(g-1)/(2rc)}}
-
-*/
-
 int main(int argc, char *argv[])
 {
 	// Calculate runtime
@@ -636,9 +610,6 @@ int main(int argc, char *argv[])
 
 	// Read input file, or provide default values if none given
 	assign_input(argc, argv, CFL, nx, xbegin, xend, gamma, init_cond, t_final, num_save, timescheme);
-
-	// printf("\nCFL: %f xbegin: %f xend: %f dt: %f gamma: %f nx: %d\n", CFL, xbegin, xend, dt, gamma, nx);
-	// printf("\nInitial conditions:\nLeft: rho - %f u - %f P - %f\nRight: rho - %f u - %f P - %f\n", init_cond[0], init_cond[1], init_cond[2], init_cond[3], init_cond[4], init_cond[5]);
 
 	// Calculate the spatial step
 	dx = (xend - xbegin) / (nx - 1);
