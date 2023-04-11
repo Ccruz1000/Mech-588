@@ -601,7 +601,7 @@ int main(int argc, char *argv[])
 	
 	// Declare run parameters
 	double CFL, xbegin, xend, dx, gamma, t_final;
-	int nx, num_save, timescheme;
+	int nx, num_save, timescheme, limitscheme;
 
 	// We will store the initial condition values in an array. The first 3 entries will be for the left side
 	// and will represent rho, u, and P in that order. The next 3 entries will be for the right side, and will 
@@ -609,7 +609,7 @@ int main(int argc, char *argv[])
 	double init_cond[6] = {0};
 
 	// Read input file, or provide default values if none given
-	assign_input(argc, argv, CFL, nx, xbegin, xend, gamma, init_cond, t_final, num_save, timescheme);
+	assign_input(argc, argv, CFL, nx, xbegin, xend, gamma, init_cond, t_final, num_save, timescheme, limitscheme);
 
 	// Calculate the spatial step
 	dx = (xend - xbegin) / (nx - 1);

@@ -23,8 +23,8 @@
 #include "Roe.h"
 #include "Steger.h"
 
-void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, double &xend, double &gamma, double *init_cond, double & t_final, int &numsave, int &timescheme);
-void assign_input(int argc, char* argv[], double &CFL, int &nx, double &xbegin, double &xend, double &gamma, double *init_cond, double &t_final, int &numsave, int &timescheme);
+void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, double &xend, double &gamma, double *init_cond, double &t_final, int &num_save, int &timescheme, int &limitscheme);
+void assign_input(int argc, char* argv[], double &CFL, int &nx, double &xbegin, double &xend, double &gamma, double *init_cond, double &t_final, int &num_save, int &timescheme, int &limitscheme);
 void initial_conditions(std::array<std::vector<double>, 4> &Prim, int nx, double *init_cond, double gamma);
 void run_sim(int argc, char* argv[], int scheme);
 void save_results(std::string fileName, std::array<std::vector<double>, 4> &Prim, double dx, int nx);
@@ -41,6 +41,9 @@ void lax_wendroff(std::array<std::vector<double>, 3> &U, std::array<std::vector<
 void forward_euler(std::array<std::vector<double>, 3> &U, const std::array<std::vector<double>, 3> &F, double dt, double dx, int nx);
 void RK2(std::array<std::vector<double>, 3> &U, const std::array<std::vector<double>, 3> &F, double dt, double dx, int nx, double gamma, int scheme);
 void midpoint(std::array<std::vector<double>, 3> &U, const std::array<std::vector<double>, 3> &F, double dt, double dx, int nx, double gamma, int scheme);
+void apply_limiter(std::array<std::vector<double>, 3> &F, std::array<std::vector<double>, 3> &FL, std::array<std::vector<double>, 3> &FH, std::array<std::vector<double>, 3> phi, int nx);
+void calc_limiter(const std::array<std::vector<double>, 3> &u, std::array<std::vector<double>, 3> &phi, int nx, int limitscheme);
 void superbee(const std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 3> &phi, int nx);
+void vanleer(const std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 3> &phi, int nx);
 
 #endif

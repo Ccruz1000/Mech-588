@@ -17,8 +17,11 @@ int main(int argc, char* argv[])
 	// Run Roe
 	run_sim(argc, argv, 0);
 	
-	// // Run Steger-Warming
+	// Run Steger-Warming
 	run_sim(argc, argv, 1);
+
+	// Run Lax-Friedrich
+	run_sim(argc, argv, 2);
 
 	// Let user know runtime
 	printf("\nCode succesfully ran in %6.3e seconds\n", (double)(clock() - tstart)/CLOCKS_PER_SEC);

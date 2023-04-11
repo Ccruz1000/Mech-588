@@ -10,7 +10,7 @@
 ***************************************************************************************/
 
 // Read input values from input file
-void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, double &xend, double &gamma, double *init_cond, double &t_final, int &num_save, int &timescheme)
+void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, double &xend, double &gamma, double *init_cond, double &t_final, int &num_save, int &timescheme, int &limitscheme)
 {
 	/*
 		This function will read the input file, which will be used to select the 
@@ -36,6 +36,7 @@ void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, do
 		t_final = 0.15;
 		num_save = 20;
 		timescheme = 2; // Midpoint default
+		limitscheme = 0; // superbee default
 	}
 
 	// If input file is properly provided, try to read values from it
@@ -147,6 +148,12 @@ void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, do
 					numval += 1;
 				}
 
+				if (var == "limitscheme:")
+				{
+					limitscheme = std::stoi(val);
+					numval += 1;
+				}
+
 				numline += 1;
 			}
 
@@ -171,7 +178,7 @@ void read_input(std::string input_file, double &CFL, int &nx, double &xbegin, do
 }
 
 // Assign values from input, based on whether input file is given
-void assign_input(int argc, char* argv[], double &CFL, int &nx, double &xbegin, double &xend, double &gamma, double *init_cond, double &t_final, int &num_save, int &timescheme)
+void assign_input(int argc, char* argv[], double &CFL, int &nx, double &xbegin, double &xend, double &gamma, double *init_cond, double &t_final, int &num_save, int &timescheme, int &limitscheme)
 {
 	// Check if input file was supplied
 	if(argc < 2)
@@ -179,7 +186,7 @@ void assign_input(int argc, char* argv[], double &CFL, int &nx, double &xbegin, 
 		printf("\nNo input file was provided. Please check.\nDefault parameters will be assigned to all input parameters.\n");
 		
 		std::string input_file = "Null";
-		read_input(input_file, CFL, nx, xbegin, xend, gamma, init_cond, t_final, num_save, timescheme);
+		read_input(input_file, CFL, nx, xbegin, xend, gamma, init_cond, t_final, num_save, timescheme, limitscheme);
 	}
 
 	// Let user know that input was successfully provided
@@ -191,7 +198,7 @@ void assign_input(int argc, char* argv[], double &CFL, int &nx, double &xbegin, 
 		// Inform user that the input file was successfully provided, and let them know which one was provided.
 		// std::cout << "\nInput file provided successfully" << std::endl;
 		// std::cout << "File given: " << input_file << std::endl;
-		read_input(input_file, CFL, nx, xbegin, xend, gamma, init_cond, t_final, num_save, timescheme);
+		read_input(input_file, CFL, nx, xbegin, xend, gamma, init_cond, t_final, num_save, timescheme, limitscheme);
 	}
 }
 
@@ -229,7 +236,7 @@ void run_sim(int argc, char* argv[], int scheme)
 {
 	// Declare run parameters
 	double CFL, xbegin, xend, dx, dt, gamma, t_final;
-	int nx, num_save, timescheme;
+	int nx, num_save, timescheme, limitscheme;
 	std::string title; // Save initial and final data
 	std::string savepath; // Save timestep data
 
@@ -240,7 +247,7 @@ void run_sim(int argc, char* argv[], int scheme)
 	double init_cond[6] = {0};
 
 	// Read input file, or provide default values if none given
-	assign_input(argc, argv, CFL, nx, xbegin, xend, gamma, init_cond, t_final, num_save, timescheme);
+	assign_input(argc, argv, CFL, nx, xbegin, xend, gamma, init_cond, t_final, num_save, timescheme, limitscheme);
 
 	// Calculate the spatial step
 	dx = (xend - xbegin) / nx;
@@ -256,9 +263,12 @@ void run_sim(int argc, char* argv[], int scheme)
 
 	// Create and populate array to store conserved variables and flux. 
 	std::array<std::vector<double>, 3> U = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};  // Solution vector
-	// We will add 2 points tp the flux to allow for ghost cells
-	std::array<std::vector<double>, 3> F = {std::vector<double>(nx + 1), std::vector<double>(nx + 1), std::vector<double>(nx + 1)}; // Flux vector
+	std::array<std::vector<double>, 3> FH = {std::vector<double>(nx + 1), std::vector<double>(nx + 1), std::vector<double>(nx + 1)}; // Flux vector for high order scheme
+	std::array<std::vector<double>, 3> FL = {std::vector<double>(nx + 1), std::vector<double>(nx + 1), std::vector<double>(nx + 1)}; // Flux vector for low order scheme
+	std::array<std::vector<double>, 3> F = {std::vector<double>(nx + 1), std::vector<double>(nx + 1), std::vector<double>(nx + 1)}; // Limited flux vector
 
+	// Initialize vector to store limiting function
+	std::array<std::vector<double>, 3> phi = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
 
 	// Populate solution using primitives
 	for(int i = 0; i < nx; i++)
@@ -287,9 +297,20 @@ void run_sim(int argc, char* argv[], int scheme)
 			title = "_Steger_";
 			savepath = "StegerTimesteps/inter_";
 			break;
+		}
+
+		case 2:
+		{
+			printf("\n*******************************************************\n");
+			printf("Lax-Friedrich flux scheme selected.\n");
+			title = "_Lax_";
+			savepath = "LaxTimesteps/inter_";
+			break;
+		}
 
 		default:
-			printf("Invalid scheme selected.\nFor Roe enter 0, for Steger-Warming enter 1.\nExiting.\n");
+		{
+			printf("Invalid scheme selected.\nFor Roe enter 0.\nFor Steger-Warming enter 1.\nFor Lax-Friedrich enter 2.\nExiting.\n");
 			exit(1);
 		}
 	}
@@ -325,17 +346,61 @@ void run_sim(int argc, char* argv[], int scheme)
 		}
 	}
 
-	// Calculate initial flux
-	switch(scheme)
+
+	switch(limitscheme)
 	{
 		case 0:
-		{	Roe_flux(U, Prim, F, dx, gamma, nx);
+		{
+			printf("Superbee flux limiting scheme selected.\n");
+			printf("*******************************************************\n\n");
 			break;
 		}
 
 		case 1:
 		{
+			printf("Van-Leer flux limiting scheme selected.\n");
+			printf("*******************************************************\n\n");
+			break;
+		}
+
+		default:
+		{
+			printf("Invalid flux limiting scheme selected.\nFor Superbee, use 0.\nFor Van-Leer, use 1.\nExiting\n");
+			printf("*******************************************************\n");
+			exit(1);
+		}
+	}
+
+	// Calculate initial flux
+	switch(scheme)
+	{
+		case 0:
+		{	
+			// Start by calculating flux with higher order scheme
+			// lax_wendroff(U, Prim, FH, gamma, dt, dx, nx);
+			// Next calculate flux with lower order scheme
+			Roe_flux(U, Prim, FL, dx, gamma, nx);
+			// // Finally apply the limiter function to the flux to pass to the timestepping
+			// calc_limiter(U, phi, nx, limitscheme);
+			// apply_limiter(F, FL, FH, phi, nx);
+			break;
+		}
+
+		case 1:
+		{
+			// // Start by calculating flux with higher order scheme
+			// lax_wendroff(U, Prim, FH, gamma, dt, dx, nx);
+			// // Next calculate flux with lower order scheme
 			Steger_warming(U, Prim, F, dx, gamma, nx);
+			// Finally apply the limiter function to the flux to pass to the timestepping
+			// calc_limiter(U, phi, nx, limitscheme);
+			// apply_limiter(F, FL, FH, phi, nx);
+			break;
+		}
+
+		case 2:
+		{
+			lax_wendroff(U, Prim, F, gamma, dt, dx, nx);
 			break;
 		}
 	}
@@ -373,14 +438,33 @@ void run_sim(int argc, char* argv[], int scheme)
 		switch(scheme)
 		{
 			case 0:
-			{
-				Roe_flux(U, Prim, F, dx, gamma, nx);
-				break;
-			}
-			case 1:
 			{	
-				Steger_warming(U, Prim, F, dx, gamma, nx);
-				break;
+			// Start by calculating flux with higher order scheme
+			// lax_wendroff(U, Prim, FH, gamma, dt, dx, nx);
+			// Next calculate flux with lower order scheme
+			Roe_flux(U, Prim, FL, dx, gamma, nx);
+			// // Finally apply the limiter function to the flux to pass to the timestepping
+			// calc_limiter(U, phi, nx, limitscheme);
+			// apply_limiter(F, FL, FH, phi, nx);
+			break;
+			}
+
+		case 1:
+			{
+			// // Start by calculating flux with higher order scheme
+			// lax_wendroff(U, Prim, FH, gamma, dt, dx, nx);
+			// // Next calculate flux with lower order scheme
+			Steger_warming(U, Prim, F, dx, gamma, nx);
+			// Finally apply the limiter function to the flux to pass to the timestepping
+			// calc_limiter(U, phi, nx, limitscheme);
+			// apply_limiter(F, FL, FH, phi, nx);
+			break;
+			}
+
+		case 2:
+			{
+			lax_wendroff(U, Prim, F, gamma, dt, dx, nx);
+			break;
 			}
 		}
 
@@ -638,18 +722,34 @@ void lax_wendroff(std::array<std::vector<double>, 3> &U, std::array<std::vector<
 	*/
 
 	// Calculate primitive variables from solution variables
-	calc_Prim(U, Prim, gamma, nx)
+	calc_Prim(U, Prim, gamma, nx);
 
 	// Loop through internal faces. This loop is indexed so that i gives the cell to the right of the face
 	for(int i = 1; i < nx; i++)
 	{	
 		// Initialize vectors to store flux and solution from right and left cell
-		double F_left[3], F_right[3], U_left[3], U_right[3];
+		double F_left[3] = {0};
+		double F_right[3] = {0};
+		double U_left[3] = {0};
+		double U_right[3] = {0};
+
+		// Populate flux from left and right cell
+		F_left[0] = Prim[0][i - 1] * Prim[1][i - 1];
+		F_left[1] = Prim[0][i - 1] * Prim[1][i - 1] * Prim[1][i - 1] + Prim[2][i - 1];
+		F_left[2] = Prim[1][i - 1] * (Prim[2][i - 1] + Prim[3][i - 1]);
 		
-		F_left = {Prim[0][i - 1] * Prim[1][i - 1], Prim[0][i - 1] * Prim[1][i - 1] * Prim[1][i - 1] + Prim[2][i - 1], Prim[1][i - 1] * (Prim[2][i - 1] + Prim[3][i - 1])};
-		F_right= {Prim[0][i] * Prim[1][i], Prim[0][i] * Prim[1][i] * Prim[1][i] + Prim[2][i], Prim[1][i] * (Prim[2][i] + Prim[3][i])};
-		U_left = {U[0][i - 1], U[1][i - 1], U[2][i - 1]};
-		U_right = {U[0][i], U[1][i], U[2][i]};
+		F_right[0] = Prim[0][i] * Prim[1][i];
+		F_right[1] = Prim[0][i] * Prim[1][i] * Prim[1][i] + Prim[2][i];
+		F_right[2] = Prim[1][i] * (Prim[2][i] + Prim[3][i]);
+
+		// Populate solution from left and right cell
+		U_left[0] = U[0][i - 1];
+		U_left[1] = U[1][i - 1];
+		U_left[2] = U[2][i - 1];
+
+		U_right[0] = U[0][i];
+		U_right[1] = U[1][i];
+		U_right[2] = U[2][i];
 
 		// Populate flux vector
 		for(int j = 0; j < 3; j++)
@@ -662,27 +762,10 @@ void lax_wendroff(std::array<std::vector<double>, 3> &U, std::array<std::vector<
 	calc_bound(F, Prim, nx);
 }
 
-// This function will apply the flux limiter to the flux 
-void apply_limiter(std::array<std::vector<double>, 3> &F, std::array<std::vector<double>, 3> &FL, std::array<std::vector<double>, 3> &FH, std::array<std::vector<double>, 3> phi)
-{
-	for(int i = 0; i < nx + 1; i++)
-	{
-		for(int j = 0; j < 3; j++)
-		{
-			F[j][i] = FL[j][i] + phi[j][i] * (FH[j][i] - FL[j][i]);
-		}
-	}
-}
 
 // Timestepping schemes
 void forward_euler(std::array<std::vector<double>, 3> &U, const std::array<std::vector<double>, 3> &F, double dt, double dx, int nx)
 {
-	// Store limiter function
-	std::array<std::vector<double>, 3> phi = {std::vector<double>(nx), std::vector<double>(nx), std::vector<double>(nx)};
-
-	// Compute limiter function
-	superbee(U, phi, nx);
-
 	for(int i = 0; i < nx; i++)
 		for(int j = 0; j < 3; j++)
 	{
@@ -762,14 +845,37 @@ void midpoint(std::array<std::vector<double>, 3> &U, const std::array<std::vecto
 		}
 }
 
-// Limiter Schemes
-// void van_leer(std::array<std::vector<double> 3> F, std::vector<double> &phi int nx)
-// {
-// 	// This function will limit the flux based on the van leer method
-// 	// Use this function to get a more diffusive flux. Higher stability, but
-// 	// less resolution at shocks
-// 	printf("van_leer\n");
-// }
+// This function will apply the flux limiter to the flux 
+void apply_limiter(std::array<std::vector<double>, 3> &F, std::array<std::vector<double>, 3> &FL, std::array<std::vector<double>, 3> &FH, std::array<std::vector<double>, 3> phi, int nx)
+{
+	for(int i = 0; i < nx + 1; i++)
+	{
+		for(int j = 0; j < 3; j++)
+		{
+			F[j][i] = FL[j][i] + phi[j][i] * (FH[j][i] - FL[j][i]);
+		}
+	}
+}
+
+// This function will compute the flux limiter vector based on selected flux limiting scheme
+void calc_limiter(const std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 3> &phi, int nx, int limitscheme)
+{
+	switch(limitscheme)
+	{
+		case 0:
+			{
+				superbee(U, phi, nx);
+				break;
+			}
+
+		case 1:
+			{
+				vanleer(U, phi, nx);
+				break;
+			}
+	}
+}
+
 
 void superbee(const std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 3> &phi, int nx)
 {
@@ -782,48 +888,44 @@ void superbee(const std::array<std::vector<double>, 3> &U, std::array<std::vecto
 	// Loop through cells. 
 	for(int i = 0; i < nx; i++)
 	{
+		// for(int j = 0; j < 3; j++)
+		// {
+		// 	// Calculate R of the cell
+		// 	if (i == 0)
+		// 	{
+		// 		r[j] = ((U[j][i] - (2.0 * U[j][i] - U[j][i + 1])) / ((U[j][i + 1]) - U[j][i]));
+		// 	}
+
+		// 	else if (i == (nx - 1))
+		// 	{
+		// 		r[j] = (U[j][i] - U[j][i - 1]) / ((2.0 * U[j][i] - U[j][i - 1]) - U[j][i]);
+		// 		printf("cell: %d r[0]: %f r[1]: %f r[2]: %f\n", i, r[0], r[1], r[2]);
+		// 	}
+
+		// 	else
+		// 	{
+		// 		r[j] = (U[j][i] - U[j][i - 1]) / (U[j][i + 1] - U[j][i]);
+		// 	}
+
+		// 	// Populate Phi-vector
+		// 	phi[j][i] = std::max({0.0, std::min({2.0 * r[j], 1.0}), std::min({r[j], 2.0})});
+		// 	if(i == nx - 1)
+		// 	{
+		// 		printf("phi[0]: %f phi[1]: %f phi[2]: %f\n", phi[0][i], phi[1][i], phi[2][i]);
+		// 	}
+
+		// }
 		for(int j = 0; j < 3; j++)
 		{
-			// Calculate R of the cell
-			if (i == 0)
-			{
-				r[j] = ((U[j][i] - (2.0 * U[j][i] - U[j][i + 1])) / ((U[j][i + 1]) - U[j][i]));
-			}
-
-			else if (i == (nx - 1))
-			{
-				r[j] = (U[j][i] - U[j][i - 1]) / ((2.0 * U[j][i] - U[j][i - 1]) - U[j][i]);
-				printf("cell: %d r[0]: %f r[1]: %f r[2]: %f\n", i, r[0], r[1], r[2]);
-			}
-
-			else
-			{
-				r[j] = (U[j][i] - U[j][i - 1]) / (U[j][i + 1] - U[j][i]);
-			}
-
-			// Populate Phi-vector
-			phi[j][i] = std::max({0.0, std::min({2.0 * r[j], 1.0}), std::min({r[j], 2.0})});
-			if(i == nx - 1)
-			{
-				printf("phi[0]: %f phi[1]: %f phi[2]: %f\n", phi[0][i], phi[1][i], phi[2][i]);
-			}
-
+			phi[j][i] = 0.0;
 		}
 	}
 }
 
-// matlab - https://skill-lync.com/student-projects/Interpolation-schemes-and-Flux-limiters-with-MATLAB-code-40868
- // if i == 1
- //            r = (temp_old(i) - (2*temp_old(i)-temp_old(i+1))) / (temp_old(i+1) -  temp_old(i));
- //        else
- //            if i == n
- //                r = (temp_old(i) - temp_old(i-1)) / ((2*temp_old(i)-temp_old(i-1)) -  temp_old(i));
- //            else
- //                r = (temp_old(i) - temp_old(i-1)) / (temp_old(i+1) -  temp_old(i));
- //            end
-//	max([0,min(2*r,1),min(r,2)])
-
-
+void vanleer(const std::array<std::vector<double>, 3> &U, std::array<std::vector<double>, 3> &phi, int nx)
+{
+	printf("vanleer\n");
+}
 
 double minmod(double a, double b)
 {
@@ -860,33 +962,3 @@ double maxmod(double a, double b)
 		return 0.0;
 	}
 }
-
-/*
-Python script - http://bender.astro.sunysb.edu/classes/numerical_methods/examples/advection/second_order_fv/fv_advection.py
-# superbee limiter
-for i in range(g.ilo-1, g.ihi+2):
-    A = minmod( (g.a[i+1] - g.a[i])/g.dx,
-                2.0*(g.a[i] - g.a[i-1])/g.dx )
-
-    B = minmod( (g.a[i] - g.a[i-1])/g.dx,
-                 2.0*(g.a[i+1] - g.a[i])/g.dx )
-
-    slope[i] = maxmod(A, B
-
-
-def minmod(a, b):
-    if abs(a) < abs(b) and a*b > 0.0:
-        return a
-    elif abs(b) < abs(a) and a*b > 0.0:
-        return b
-    else:
-        return 0.0
-
-def maxmod(a, b):
-    if abs(a) > abs(b) and a*b > 0.0:
-        return a
-    elif abs(b) > abs(a) and a*b > 0.0:
-        return b
-    else:
-        return 0.0
-*/
