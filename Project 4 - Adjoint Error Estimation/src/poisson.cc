@@ -35,8 +35,12 @@ void vApplyBC(double a2dPrimal[IMAX+2][JMAX+2])
   for (i = 1; i <= IMAX; i++) 
   {
     dX = (i-0.5)*dDX;
-    a2dPrimal[i][0] = 2 * dExact(dX, 0) - a2dPrimal[i][1]; // Bottom boundary
-    a2dPrimal[i][JMAX+1] = 2 * dExact(dX, 1) - a2dPrimal[i][JMAX]; // Top boundary
+    // a2dPrimal[i][0] = 2 * dExact(dX, 0) - a2dPrimal[i][1]; // Bottom boundary
+    // a2dPrimal[i][JMAX+1] = 2 * dExact(dX, 1) - a2dPrimal[i][JMAX]; // Top boundary
+    // Below we will set the boundary conditions based on problem 1. Here we have 
+    // all boundary conditions set to be 0, as they are homogenous on all sides
+    a2dPrimal[i][0] = -a2dPrimal[i][1];
+    a2dPrimal[i][JMAX + 1] = -a2dPrimal[i][JMAX];
   }
    
   // Fixed temperature at x = 0 and x = 1
@@ -44,8 +48,12 @@ void vApplyBC(double a2dPrimal[IMAX+2][JMAX+2])
   for (j = 1; j <= JMAX; j++) 
   {
     dY = (j-0.5)*dDY;
-    a2dPrimal[0][j] = 2 * dExact(0, dY) - a2dPrimal[1][j]; // Left boundary
-    a2dPrimal[IMAX+1][j] = 2 * dExact(1, dY) - a2dPrimal[IMAX][j]; // Right boundary
+    // a2dPrimal[0][j] = 2 * dExact(0, dY) - a2dPrimal[1][j]; // Left boundary
+    // a2dPrimal[IMAX+1][j] = 2 * dExact(1, dY) - a2dPrimal[IMAX][j]; // Right boundary
+    // Below we will set the boundary conditions based on problem 1. Here we have 
+    // all boundary conditions set to be 0, as they are homogenous on all sides
+    a2dPrimal[0][j] = -a2dPrimal[1][j];
+    a2dPrimal[IMAX + 1][j] = -a2dPrimal[IMAX][j];
   }
 }
 
@@ -114,10 +122,10 @@ double dPointJacUpdate(double a2dT[IMAX+2][JMAX+2], double a2dSource[IMAX+2][JMA
 
 double dSource(const double dX, const double dY)
 {
-  // static const double dVal = -M_PI*M_PI*M_PI/4; // Primal
-  static const double dVal = (M_PI*M_PI*M_PI*M_PI*M_PI/2);
-  //return  dVal * sin(M_PI*dX) * sin(M_PI*dY);
-  return dVal * dX * (1 - dX) * dY * (1 - dY);
+  static const double dVal = -M_PI*M_PI*M_PI/4; // Primal
+  return  dVal * sin(M_PI*dX) * sin(M_PI*dY);
+  // static const double dVal = (M_PI*M_PI*M_PI*M_PI*M_PI/2); // Dual
+  // return dVal * dX * (1 - dX) * dY * (1 - dY);
 }
 
 
