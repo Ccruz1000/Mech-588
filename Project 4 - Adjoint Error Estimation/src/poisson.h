@@ -37,9 +37,10 @@ double dTInit(const int i, const int j);
 void vApplyBC(double a2dPrimal[IMAX+2][JMAX+2]);
 double dPointGSUpdate(double a2dSoln[IMAX+2][JMAX+2], double a2dSource[IMAX+2][JMAX+2], void (*vApplyBC)(double [IMAX+2][JMAX+2]), const double dOmega);
 double dPointJacUpdate(double a2dT[IMAX+2][JMAX+2], double a2dSource[IMAX+2][JMAX+2], void (*vApplyBC)(double [IMAX+2][JMAX+2]), const double dOmega);
-double dSource(const double dX, const double dY);
-
-
+double Primal_Source(const double dX, const double dY);
+double Dual_Source(const double dX, const double dY);
+void run_Poisson(void (*vApplyBC)(double [IMAX+2][JMAX+2]), double (*dSource)(const double dX, const double dY), double (&a2dSoln)[IMAX + 2][JMAX + 2], double (&a2dSource)[IMAX+2][JMAX+2]);
+// double (&)a2dSoln[IMAX+2][JMAX+2], 
 // Included classes and objects 
 
 #endif
