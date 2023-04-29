@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <time.h>
 
 /**************************************************************************************
 // Adjoint Methods Programming Assignment Poisson Solver File Header
@@ -19,7 +20,7 @@
 // Include user created header files here to avoid them being called multiple times 
 
 // Define number of points to be used
-#define IMAX 40
+#define IMAX 160
 #define JMAX IMAX
 #define MAX(a,b) ((a) > (b) ? (a) : (b)) // Return max of two numbers 
 
@@ -34,13 +35,15 @@ const double dA = 1.; // Area for unit square
 // Included functions
 double dExact(const double dX, const double dY);
 double dTInit(const int i, const int j);
-void vApplyBC(double a2dPrimal[IMAX+2][JMAX+2]);
+void vApplyHomoBC(double a2dPrimal[IMAX+2][JMAX+2]);
 double dPointGSUpdate(double a2dSoln[IMAX+2][JMAX+2], double a2dSource[IMAX+2][JMAX+2], void (*vApplyBC)(double [IMAX+2][JMAX+2]), const double dOmega);
 double dPointJacUpdate(double a2dT[IMAX+2][JMAX+2], double a2dSource[IMAX+2][JMAX+2], void (*vApplyBC)(double [IMAX+2][JMAX+2]), const double dOmega);
 double Primal_Source(const double dX, const double dY);
 double Dual_Source(const double dX, const double dY);
 void run_Poisson(void (*vApplyBC)(double [IMAX+2][JMAX+2]), double (*dSource)(const double dX, const double dY), double (&a2dSoln)[IMAX + 2][JMAX + 2], double (&a2dSource)[IMAX+2][JMAX+2]);
-// double (&)a2dSoln[IMAX+2][JMAX+2], 
+double calc_grad(double u_1, double u_2, double dDX);
+double calc_L2Norm(double a2dVec[IMAX + 2][JMAX + 2]);
+void calc_functional(double a2dSoln[IMAX+2][JMAX+2], double a2dSource[IMAX + 2][JMAX + 2], double (&a2dFunctional));
 // Included classes and objects 
 
 #endif

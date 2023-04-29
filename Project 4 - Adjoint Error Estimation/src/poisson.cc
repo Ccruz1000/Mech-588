@@ -8,13 +8,13 @@
 // Christian Rowsell (40131393)
 ***************************************************************************************/
 
-// Define exact solution
+// Define exact solution <- NOT FOR THE RIGHT PROBLEM
 double dExact(const double dX, const double dY)
 {
-  return (sin(M_PI*dX) * sin(M_PI*dY));
+  return (sin(M_PI*dX) * sin(M_PI*dY)); // Would need to calculate this
 }
 
-// Define initial condition 
+// Define initial condition <- STEADY STATE SO IRRELEVANT
 double dTInit(const int i, const int j)
 {
   double dX = (i-0.5)*dDX;
@@ -22,9 +22,9 @@ double dTInit(const int i, const int j)
   return 0;
 }
 
-// Apply boundary conditions
+// Apply homogenous boundary conditions
 // 2 extra points for ghost cells at boundary
-void vApplyBC(double a2dPrimal[IMAX+2][JMAX+2])
+void vApplyHomoBC(double a2dPrimal[IMAX+2][JMAX+2])
 {
   int i, j;
   double dX;
@@ -65,8 +65,8 @@ double dPointGSUpdate(double a2dSoln[IMAX+2][JMAX+2], double a2dSource[IMAX+2][J
   double dMaxChange = 0;
   int i, j;
   
-/*   for (j = JMAX; j >= 1; j --) { */
-/*     for (i = IMAX; i >= 1; i --) { */
+  //for (j = JMAX; j >= 1; j --) {
+  //  for (i = IMAX; i >= 1; i --) {
   for (i = 1; i <= IMAX; i ++) 
   {
     for (j = 1; j <= JMAX; j ++) 
@@ -123,17 +123,18 @@ double dPointJacUpdate(double a2dT[IMAX+2][JMAX+2], double a2dSource[IMAX+2][JMA
 // source term for primal function
 double Primal_Source(const double dX, const double dY)
 {
-  static const double dVal = -M_PI*M_PI*M_PI/4; // Primal
+  static const double dVal = -M_PI*M_PI*M_PI / 4.0; // Primal
   return  dVal * sin(M_PI*dX) * sin(M_PI*dY);
 }
 
 double Dual_Source(const double dX, const double dY)
 {
-  static const double dVal = (M_PI*M_PI*M_PI*M_PI*M_PI/2); // Dual
+  static const double dVal = (M_PI*M_PI*M_PI*M_PI*M_PI / 2.0); // Dual
   return dVal * dX * (1 - dX) * dY * (1 - dY);
 }
 
 // double (&)a2dSoln[IMAX+2][JMAX+2],
+// Used to run the poisson solver given the different test cases
 void run_Poisson(void (*vApplyBC)(double [IMAX+2][JMAX+2]), double (*dSource)(const double dX, const double dY), double (&a2dSoln)[IMAX + 2][JMAX + 2], double (&a2dSource)[IMAX+2][JMAX+2])
 {
   // double a2dSoln[IMAX+2][JMAX+2];
@@ -193,10 +194,80 @@ void run_Poisson(void (*vApplyBC)(double [IMAX+2][JMAX+2]), double (*dSource)(co
 
   dL2 = sqrt(dL2 / (IMAX*JMAX));
   dAve /= (IMAX*JMAX);
-  fprintf(stderr, "L2 error norm: %12.5G\n", dL2);
+  // fprintf(stderr, "L2 error norm: %12.5G\n", dL2);
   fprintf(stderr, "Average temp: %12.10G\n", dAve);
   fprintf(stderr, "Temp at center: %12.10G\n",
           0.25*(a2dSoln[IMAX/2][JMAX/2] + a2dSoln[IMAX/2][JMAX/2+1] +
-          a2dSoln[IMAX/2+1][JMAX/2] + a2dSoln[IMAX/2+1][JMAX/2+1]));
-  
+          a2dSoln[IMAX/2+1][JMAX/2] + a2dSoln[IMAX/2+1][JMAX/2+1])); 
+}
+
+// This function will calculate the gradient of the solution at the cell center
+double calc_grad(double u_1, double u_2, double dDx)
+{
+  // u_1 will be the solution at the +1 increment, while u_2 will be the 
+  // solution at the -1 increment. For example, if we are calculating the gradient
+  // with respect to x, u_1 will be the cell averaged solution for the cell i+1, and 
+  // u_2 will be the cell averaged solution for the cell i-1. 
+  return (u_1 - u_2) / (2 * dDx);
+}
+
+// This function will calculate the L2Norm of a 2D varray
+double calc_L2Norm(double a2dVec[IMAX + 2][JMAX + 2])
+{
+  double L2Norm = 0.0; // Store L2Norm of vector
+  // Loop over interior points 
+  for(int i = 1; i <= IMAX; i++)
+  {
+    for(int j = 1; j <= JMAX; j++)
+    {
+    L2Norm += a2dVec[i][j] * a2dVec[i][j];      
+    }
+  }
+  return sqrt(L2Norm);
+}
+
+// This function will calculate the functional, given a solution term and a source term
+// In our case, the functional is J=(u, g)=(v, f)
+void calc_functional(double a2dSoln[IMAX + 2][JMAX + 2], double a2dSource[IMAX + 2][JMAX + 2], double (&a2dFunctional))
+{
+  // We have already computed the Gauss quadrature integration for our solution. As such, we do not
+  // need to compute this again.
+
+  // Start by looping over the cells internal cells
+  for(int i = 1; i <= IMAX; i++)
+  {
+    for(int j = 1; j <= JMAX; j++)
+    {
+      // To start we will compute the gradient of the solution within the cell
+      double grad_x = calc_grad(a2dSoln[i + 1][j], a2dSoln[i - 1][j], dDX);
+      double grad_y = calc_grad(a2dSoln[i][j + 1], a2dSoln[i][j - 1], dDY);
+
+      /*
+        Now we can compute the temperature at the Gauss quadrature points.
+        ----------------
+        |              |
+        |   1     2    |
+        |      c       |
+        |   3     4    |
+        |              |
+        ----------------
+        Above, we can see our Gauss-quadrature points. We can call the centroid XC and YC. Point 1
+        would be at (XC-dx/sqrt(12), YC+dx/sqrt(12)), point 2 would be at (XC+dx/sqrt(12), YC+dx/sqrt(12))
+        point 3 would be at (XC-dx/sqrt(12), YC-dx/sqrt(12)) and point 4 would be at
+        (XC+dx/sqrt(12), YC-dx/sqrt(12)). Since it is all relative, we can just use dx/sqrt(12), 
+        -dx/sqrt(12), dy/sqrt(12), -dy/sqrt(12).
+      */
+      double GCellSoln1 = a2dSoln[i][j] - grad_x * (dDX/sqrt(12)) + grad_y * (dDY/sqrt(12));
+      double GCellSoln2 = a2dSoln[i][j] + grad_x * (dDX/sqrt(12)) + grad_y * (dDY/sqrt(12));
+      double GCellSoln3 = a2dSoln[i][j] - grad_x * (dDX/sqrt(12)) - grad_y * (dDY/sqrt(12));
+      double GCellSoln4 = a2dSoln[i][j] - grad_x * (dDX/sqrt(12)) - grad_y * (dDY/sqrt(12));
+      double GCellSolnTot = 0.25 * (GCellSoln1 + GCellSoln2 + GCellSoln3 + GCellSoln4);
+
+      // Now we can compute the functional at the cell by multiplying the 
+      // gauss integral of the solution in the cell with the source term in the cell
+      // Remember we have to multiply by the cell area as well. 
+      a2dFunctional += a2dSource[i][j] * GCellSolnTot * dDX * dDY;
+    }
+  }
+
 }
