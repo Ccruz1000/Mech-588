@@ -145,3 +145,36 @@ double dPointGSUpdate_4thOrder(double a2dSoln[IMAX+4][JMAX+4], double a2dSource[
   vApplyBC(a2dSoln);
   return (dMaxChange);
 }
+
+
+void storeVTKSolution_4thOrder(double a2dSoln[IMAX + 4][JMAX + 4], std::string fileName)
+{
+  const char * fileChar = fileName.c_str();
+  FILE *vtkFile;
+  vtkFile = fopen(fileChar, "w");
+  unsigned long i, j;
+  fprintf(vtkFile, "# vtk DataFile Version 2.0\n");
+  fprintf(vtkFile,"TITLE = \"Quad data\"\n");
+  fprintf(vtkFile,"ASCII\n");
+  fprintf(vtkFile,"DATASET STRUCTURED_GRID\n");
+  fprintf(vtkFile,"DIMENSIONS %d %d %d\n", IMAX + 1, JMAX + 1, 1);
+  fprintf(vtkFile,"POINTS %d DOUBLE\n", (IMAX + 1) * (JMAX + 1));
+  // Write point data. Indexed so that i and j sit on the i - 0.5 face. 
+  for(int i = 2; i <= IMAX + 2; i++)
+    for(int j = 2; j <= JMAX + 2; j++)
+    {
+      double dX = (i - 2.0) * dDX;
+      double dY = (j - 2.0) * dDY;
+      fprintf(vtkFile, "%16.16e %1.16e %1.16e\n", dX, dY, 0.0);
+    }
+    // Cell data. indexed at current cell
+  fprintf(vtkFile,"CELL_DATA %d\n", IMAX * JMAX);
+  fprintf(vtkFile,"SCALARS temperature DOUBLE 1\n");
+  fprintf(vtkFile,"LOOKUP_TABLE default\n");
+  for(int i = 2; i <= IMAX + 1; i++)
+    for(int j = 2; j <= JMAX + 1; j++)
+    {
+      fprintf(vtkFile, "%1.16e\n", a2dSoln[i][j]);
+    }
+  fclose(vtkFile);
+}

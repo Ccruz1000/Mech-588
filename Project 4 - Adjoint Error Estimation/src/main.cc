@@ -40,6 +40,11 @@ int main()
 	calc_functional(u, g, functional1);
 	calc_functional(v, f, functional2);
 
+	std::string u_4 = "Results/u_4th.vtk";
+	std::string u_save = "Results/u.vtk";
+	storeVTKSolution(u, u_save);
+	storeVTKSolution_4thOrder(u_4thOrder, u_4);
+
 	// Print L2Norms
 	printf("Using %d points\nJ=(u,g) functional: %1.16e\nJ=(v,f) functional:%1.16e\n", IMAX, functional1, functional2);
 	printf("J=(u,g) error: %1.16e\nJ=(v,f) error: %1.16e\n", 1.0 - functional1, 1.0 - functional2);

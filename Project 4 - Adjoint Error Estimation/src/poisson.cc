@@ -148,11 +148,12 @@ void run_Poisson(void (*vApplyBC)(double [IMAX+2][JMAX+2]), double (*dSource)(co
   {
     for (j = 0; j <= JMAX+1; j++)
     {
-     // dX and dY represent the current X and Y coordinate, at the 
-     // left and bottom cell face. 
+     // Indexed so that i and j represent the current face i+1/2, j+1/2. i+1/2 - 0.5 would give the 
+     // position at the cell center.
+
      double dX = (i-0.5) * dDX;
      double dY = (j-0.5) * dDY;
-     a2dSoln[i][j] = 0; // Initialize solution to be 0
+     a2dSoln[i][j] = 0.0; // Initialize solution to be 0
      /* Let's try a bit of integration here, four-point Gauss quadrature... */
      a2dSource[i][j] = 0.25* (dSource(dX + dDX/sqrt(12), dY + dDY/sqrt(12)) +
                             dSource(dX + dDX/sqrt(12), dY - dDY/sqrt(12)) +
@@ -197,7 +198,7 @@ void run_Poisson(void (*vApplyBC)(double [IMAX+2][JMAX+2]), double (*dSource)(co
 
   dL2 = sqrt(dL2 / (IMAX*JMAX));
   dAve /= (IMAX*JMAX);
-  fprintf(stderr, "L2 error norm: %12.5G\n", dL2);
+  fprintf(stderr, "L2 error norm: %1.16e\n", dL2);
   // fprintf(stderr, "Average temp: %12.10G\n", dAve);
   // fprintf(stderr, "Temp at center: %12.10G\n",
   //        0.25*(a2dSoln[IMAX/2][JMAX/2] + a2dSoln[IMAX/2][JMAX/2+1] +
@@ -272,4 +273,36 @@ void calc_functional(double a2dSoln[IMAX + 2][JMAX + 2], double a2dSource[IMAX +
       a2dFunctional += a2dSource[i][j] * GCellSolnTot * dDX * dDY;
     }
   }
+}
+
+void storeVTKSolution(double a2dSoln[IMAX + 2][JMAX + 2], std::string fileName)
+{
+  const char * fileChar = fileName.c_str();
+  FILE *vtkFile;
+  vtkFile = fopen(fileChar, "w");
+  unsigned long i, j;
+  fprintf(vtkFile, "# vtk DataFile Version 2.0\n");
+  fprintf(vtkFile,"TITLE = \"Quad data\"\n");
+  fprintf(vtkFile,"ASCII\n");
+  fprintf(vtkFile,"DATASET STRUCTURED_GRID\n");
+  fprintf(vtkFile,"DIMENSIONS %d %d %d\n", IMAX + 1, JMAX + 1, 1);
+  fprintf(vtkFile,"POINTS %d DOUBLE\n", (IMAX + 1) * (JMAX + 1));
+  // Write point data. Indexed so that i and j sit on the i - 0.5 face. 
+  for(int i = 1; i <= IMAX + 1; i++)
+    for(int j = 1; j <= JMAX + 1; j++)
+    {
+      double dX = (i - 1.0) * dDX;
+      double dY = (j - 1.0) * dDY;
+      fprintf(vtkFile, "%16.16e %1.16e %1.16e\n", dX, dY, 0.0);
+    }
+    // Cell data. indexed at current cell
+  fprintf(vtkFile,"CELL_DATA %d\n", IMAX * JMAX);
+  fprintf(vtkFile,"SCALARS temperature DOUBLE 1\n");
+  fprintf(vtkFile,"LOOKUP_TABLE default\n");
+  for(int i = 1; i <= IMAX; i++)
+    for(int j = 1; j <= JMAX; j++)
+    {
+      fprintf(vtkFile, "%1.16e\n", a2dSoln[i][j]);
+    }
+  fclose(vtkFile);
 }
