@@ -1,4 +1,4 @@
-CFL: 0.05
+CFL: 0.15
 nx: 801
 xbegin: 0
 xend: 2

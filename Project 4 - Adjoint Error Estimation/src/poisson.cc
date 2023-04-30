@@ -1,7 +1,7 @@
 #include "poisson.h"
 
 /**************************************************************************************
-// Adjoint Methods Programming Assignment Poisson Solver File Header
+// Adjoint Methods Programming Assignment Poisson Solver File 
 // Code for Poisson solver provided by Dr. Carl Olivier-Gooch, modified to work with 
 // adjoint methods for error estimation.
 // Mech 588 - Advanced CFD UBC Mechanical Engineering Winter 2023
@@ -11,7 +11,7 @@
 // Define exact solution <- NOT FOR THE RIGHT PROBLEM
 double dExact(const double dX, const double dY)
 {
-  return (sin(M_PI*dX) * sin(M_PI*dY)); // Would need to calculate this
+  return (M_PI/8)*(sin(M_PI*dX) * sin(M_PI*dY)); // Would need to calculate this
 }
 
 // Define initial condition <- STEADY STATE SO IRRELEVANT
@@ -76,6 +76,10 @@ double dPointGSUpdate(double a2dSoln[IMAX+2][JMAX+2], double a2dSource[IMAX+2][J
 		                   dDX2*dDY2 * a2dSource[i][j]) / 
 	                     (2 * (dDX2 + dDY2)) - a2dSoln[i][j];
 
+                       /* 
+                       [(u_(i, j+1) + u_(i, j-1))/dx^2 + (u_(i+1,j) + u_(i-1,j))/dy^2 - u_(i, j) / (dx^2*dy^2)] / (2 * dx^2 * dy^2) - u_(i, j)
+                       */ 
+
       a2dSoln[i][j] += dDeltaT * dOmega;
       // printf("%2d %2d %10f %10f\n", i, j, dDeltaT, dMaxChange);
       dMaxChange = MAX(dMaxChange, fabs(dDeltaT * dOmega));
@@ -133,7 +137,6 @@ double Dual_Source(const double dX, const double dY)
   return dVal * dX * (1 - dX) * dY * (1 - dY);
 }
 
-// double (&)a2dSoln[IMAX+2][JMAX+2],
 // Used to run the poisson solver given the different test cases
 void run_Poisson(void (*vApplyBC)(double [IMAX+2][JMAX+2]), double (*dSource)(const double dX, const double dY), double (&a2dSoln)[IMAX + 2][JMAX + 2], double (&a2dSource)[IMAX+2][JMAX+2])
 {
@@ -185,7 +188,7 @@ void run_Poisson(void (*vApplyBC)(double [IMAX+2][JMAX+2]), double (*dSource)(co
   {
     for (j = 1; j <= JMAX; j++) 
     {
-      double dExactCV = a2dSource[i][j] / (-2*M_PI*M_PI);
+      double dExactCV = dExact((i - 0.5) * dDX, (j - 0.5) * dDY);
       double dErr = dExactCV - a2dSoln[i][j];
         dL2 += dErr*dErr; // Used to compute the L2Norm of the vector
         dAve += a2dSoln[i][j]; // Average solution temperature
@@ -194,11 +197,11 @@ void run_Poisson(void (*vApplyBC)(double [IMAX+2][JMAX+2]), double (*dSource)(co
 
   dL2 = sqrt(dL2 / (IMAX*JMAX));
   dAve /= (IMAX*JMAX);
-  // fprintf(stderr, "L2 error norm: %12.5G\n", dL2);
-  fprintf(stderr, "Average temp: %12.10G\n", dAve);
-  fprintf(stderr, "Temp at center: %12.10G\n",
-          0.25*(a2dSoln[IMAX/2][JMAX/2] + a2dSoln[IMAX/2][JMAX/2+1] +
-          a2dSoln[IMAX/2+1][JMAX/2] + a2dSoln[IMAX/2+1][JMAX/2+1])); 
+  fprintf(stderr, "L2 error norm: %12.5G\n", dL2);
+  // fprintf(stderr, "Average temp: %12.10G\n", dAve);
+  // fprintf(stderr, "Temp at center: %12.10G\n",
+  //        0.25*(a2dSoln[IMAX/2][JMAX/2] + a2dSoln[IMAX/2][JMAX/2+1] +
+  //        a2dSoln[IMAX/2+1][JMAX/2] + a2dSoln[IMAX/2+1][JMAX/2+1])); 
 }
 
 // This function will calculate the gradient of the solution at the cell center
@@ -269,5 +272,4 @@ void calc_functional(double a2dSoln[IMAX + 2][JMAX + 2], double a2dSource[IMAX +
       a2dFunctional += a2dSource[i][j] * GCellSolnTot * dDX * dDY;
     }
   }
-
 }

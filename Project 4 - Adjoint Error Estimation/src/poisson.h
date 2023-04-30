@@ -20,7 +20,7 @@
 // Include user created header files here to avoid them being called multiple times 
 
 // Define number of points to be used
-#define IMAX 160
+#define IMAX 40
 #define JMAX IMAX
 #define MAX(a,b) ((a) > (b) ? (a) : (b)) // Return max of two numbers 
 
