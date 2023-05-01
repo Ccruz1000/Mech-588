@@ -111,7 +111,7 @@ void run_Poisson_4thOrder(void (*vApplyBC)(double [IMAX+4][JMAX+4]), double (*dS
 
   dL2 = sqrt(dL2 / (IMAX*JMAX));
   dAve /= (IMAX*JMAX);
-  fprintf(stderr, "L2 error norm: %12.5G\n", dL2);
+  fprintf(stderr, "L2 error norm: %1.16e\n", dL2);
   // fprintf(stderr, "Average temp: %12.10G\n", dAve);
   // fprintf(stderr, "Temp at center: %12.10G\n",
   //         0.25*(a2dSoln[IMAX/2][JMAX/2] + a2dSoln[IMAX/2][JMAX/2+2] +
