@@ -24,10 +24,17 @@ void vApplyHomoBC_4thOrder(double a2dPrimal[IMAX+4][JMAX+4])
     dX = (i-0.5)*dDX;
     // Below we will set the boundary conditions based on problem 1. Here we have 
     // all boundary conditions set to be 0, as they are homogenous on all sides
-    a2dPrimal[i][0] = -a2dPrimal[i][3];
+
     a2dPrimal[i][1] = -a2dPrimal[i][2];
+    a2dPrimal[i][0] = -a2dPrimal[i][3];
     a2dPrimal[i][JMAX + 2] = -a2dPrimal[i][JMAX + 1];
     a2dPrimal[i][JMAX + 3] = -a2dPrimal[i][JMAX];
+
+    // These dont work, did some math
+    // a2dPrimal[i][0] = -a2dPrimal[i][3];
+    // a2dPrimal[i][1] = -a2dPrimal[i][2];
+    // a2dPrimal[i][JMAX + 2] = -a2dPrimal[i][JMAX + 1];
+    // a2dPrimal[i][JMAX + 3] = -a2dPrimal[i][JMAX];
   }
    
   // Fixed temperature at x = 0 and x = 1
@@ -37,10 +44,17 @@ void vApplyHomoBC_4thOrder(double a2dPrimal[IMAX+4][JMAX+4])
     dY = (j-0.5)*dDY;
     // Below we will set the boundary conditions based on problem 1. Here we have 
     // all boundary conditions set to be 0, as they are homogenous on all sides
-    a2dPrimal[0][j] = -a2dPrimal[3][j];
+    
     a2dPrimal[1][j] = -a2dPrimal[2][j];
+    a2dPrimal[0][j] = -a2dPrimal[3][j];
     a2dPrimal[IMAX + 2][j] = -a2dPrimal[IMAX + 1][j];
     a2dPrimal[IMAX + 3][j] = -a2dPrimal[IMAX][j];
+
+    // These dont work
+    // a2dPrimal[0][j] = -a2dPrimal[3][j];
+    // a2dPrimal[1][j] = -a2dPrimal[2][j];
+    // a2dPrimal[IMAX + 2][j] = -a2dPrimal[IMAX + 1][j];
+    // a2dPrimal[IMAX + 3][j] = -a2dPrimal[IMAX][j];
   }
 }
 
@@ -128,14 +142,19 @@ double dPointGSUpdate_4thOrder(double a2dSoln[IMAX+4][JMAX+4], double a2dSource[
   {
     for (j = 2; j <= JMAX + 1; j ++) 
     {
-      double dDeltaT = (dDY2 * (a2dSoln[i+1][j] + a2dSoln[i-1][j]) +
-			                 dDX2 * (a2dSoln[i][j+1] + a2dSoln[i][j-1]) -
-		                   dDX2*dDY2 * a2dSource[i][j]) / 
-	                     (2 * (dDX2 + dDY2)) - a2dSoln[i][j];
+      // SECOND ORDER DISCRETIZATION
+      // double dDeltaT = (dDY2 * (a2dSoln[i+1][j] + a2dSoln[i-1][j]) +
+			//                  dDX2 * (a2dSoln[i][j+1] + a2dSoln[i][j-1]) -
+		  //                  dDX2*dDY2 * a2dSource[i][j]) / 
+	    //                  (2 * (dDX2 + dDY2)) - a2dSoln[i][j];
 
-                       /* 
-                       [(u_(i, j+1) + u_(i, j-1))/dx^2 + (u_(i+1,j) + u_(i-1,j))/dy^2 - u_(i, j) / (dx^2*dy^2)] / (2 * dx^2 * dy^2) - u_(i, j)
-                       */ 
+      // double dDeltaT = (4.0 * dDX2 / 3.0) * (a2dSoln[i + 1][j] - 2.0 * a2dSoln[i][j] + a2dSoln[i - 1][j]) +
+      //                  (4.0 * dDY2 / 3.0) * (a2dSoln[i][j + 1] - 2.0 * a2dSoln[i][j] + a2dSoln[i][j - 1]) -
+      //                  (dDX2 / 12.0) * (a2dSoln[i + 2][j] - 2.0 * a2dSoln[i][j] - a2dSoln[i - 2][j]) - 
+      //                  (dDY2 / 12.0) * (a2dSoln[i][j + 2] - 2.0 * a2dSoln[i][j] - a2dSoln[i][j - 2]);
+
+      double dDeltaT = (dDX2 / 12.0) *  (-a2dSoln[i + 2][j] - 16.0 * a2dSoln[i + 1][j] - 30.0 * a2dSoln[i][j] + 16.0 * a2dSoln[i - 1][j] - a2dSoln[i - 2][j]) +
+                       (dDY2 / 12.0) * (-a2dSoln[i][j + 2] - 16.0 * a2dSoln[i][j + 1] - 30.0 * a2dSoln[i][j] + 16.0 * a2dSoln[i][j - 1] - a2dSoln[i][j - 2]);
 
       a2dSoln[i][j] += dDeltaT * dOmega;
       // printf("%2d %2d %10f %10f\n", i, j, dDeltaT, dMaxChange);
