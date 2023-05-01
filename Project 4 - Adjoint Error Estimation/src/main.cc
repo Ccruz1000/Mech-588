@@ -22,8 +22,10 @@ int main()
 	printf("\n************************************************\n               PRIMAL FUNCTIONS\n************************************************\n");
 	printf("Running Primal\n");
 	run_Poisson(vApplyHomoBC, Primal_Source, u, f);
+	printf("2nd Order L2 - %f\n", calc_L2Norm(u));
 	printf("Running 4th Order Primal\n");
 	run_Poisson_4thOrder(vApplyHomoBC_4thOrder, Primal_Source, u_4thOrder, f_4thOrder);
+		printf("4th Order L2 - %f\n", calc_L2Norm_4thOrder(u_4thOrder));
 	printf("************************************************\n");
 
 	printf("\n************************************************\n               DUAL FUNCTIONS\n************************************************\n");

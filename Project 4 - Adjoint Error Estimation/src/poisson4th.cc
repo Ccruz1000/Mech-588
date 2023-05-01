@@ -19,7 +19,7 @@ void vApplyHomoBC_4thOrder(double a2dPrimal[IMAX+4][JMAX+4])
   
   // Fixed temperature at y = 0 and y = 1
   // Top and bottom boundary
-  for (i = 2; i <= IMAX + 2; i++) 
+  for (i = 2; i <= IMAX + 1; i++) 
   {
     dX = (i-0.5)*dDX;
     // Below we will set the boundary conditions based on problem 1. Here we have 
@@ -32,7 +32,7 @@ void vApplyHomoBC_4thOrder(double a2dPrimal[IMAX+4][JMAX+4])
    
   // Fixed temperature at x = 0 and x = 1
   // Left and right boundary
-  for (j = 2; j <= JMAX + 2; j++) 
+  for (j = 2; j <= JMAX + 1; j++) 
   {
     dY = (j-0.5)*dDY;
     // Below we will set the boundary conditions based on problem 1. Here we have 
@@ -64,8 +64,8 @@ void run_Poisson_4thOrder(void (*vApplyBC)(double [IMAX+4][JMAX+4]), double (*dS
     {
      // dX and dY represent the current X and Y coordinate, at the 
      // left and bottom cell face. 
-     double dX = (i-0.5) * dDX;
-     double dY = (j-0.5) * dDY;
+     double dX = (i - 1.5) * dDX;
+     double dY = (j - 1.5) * dDY; // We have a -1.5 here to account for the two ghost cells.
      a2dSoln[i][j] = 0; // Initialize solution to be 0
      /* Let's try a bit of integration here, four-point Gauss quadrature... */
      a2dSource[i][j] = 0.25* (dSource(dX + dDX/sqrt(12), dY + dDY/sqrt(12)) +
@@ -102,7 +102,7 @@ void run_Poisson_4thOrder(void (*vApplyBC)(double [IMAX+4][JMAX+4]), double (*dS
   {
     for (j = 2; j <= JMAX + 1; j++) 
     {
-      double dExactCV = dExact((i - 0.5) * dDX, (j - 0.5) * dDY);
+      double dExactCV = dExact((i - 1.5) * dDX, (j - 1.5) * dDY);
       double dErr = dExactCV - a2dSoln[i][j];
         dL2 += dErr*dErr; // Used to compute the L2Norm of the vector
         dAve += a2dSoln[i][j]; // Average solution temperature
@@ -177,4 +177,18 @@ void storeVTKSolution_4thOrder(double a2dSoln[IMAX + 4][JMAX + 4], std::string f
       fprintf(vtkFile, "%1.16e\n", a2dSoln[i][j]);
     }
   fclose(vtkFile);
+}
+
+double calc_L2Norm_4thOrder(double a2dVec[IMAX + 4][JMAX + 4])
+{
+  double L2Norm = 0.0; // Store L2Norm of vector
+  // Loop over interior points 
+  for(int i = 2; i <= IMAX + 1; i++)
+  {
+    for(int j = 2; j <= JMAX + 1; j++)
+    {
+    L2Norm += a2dVec[i][j] * a2dVec[i][j];      
+    }
+  }
+  return sqrt(L2Norm);
 }
