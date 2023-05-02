@@ -73,7 +73,7 @@ double dPointGSUpdate(double a2dSoln[IMAX+2][JMAX+2], double a2dSource[IMAX+2][J
     {
       double dDeltaT = (dDY2 * (a2dSoln[i+1][j] + a2dSoln[i-1][j]) +
 			                 dDX2 * (a2dSoln[i][j+1] + a2dSoln[i][j-1]) -
-		                   dDX2*dDY2 * a2dSource[i][j]) / 
+		                   dDX2 * dDY2 * a2dSource[i][j]) / 
 	                     (2 * (dDX2 + dDY2)) - a2dSoln[i][j];
 
                        /* 
@@ -129,6 +129,7 @@ double Primal_Source(const double dX, const double dY)
 {
   static const double dVal = -M_PI*M_PI*M_PI / 4.0; // Primal
   return  dVal * sin(M_PI*dX) * sin(M_PI*dY);
+  // return 0.0;
 }
 
 double Dual_Source(const double dX, const double dY)

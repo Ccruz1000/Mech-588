@@ -14,47 +14,48 @@
 void vApplyHomoBC_4thOrder(double a2dPrimal[IMAX+4][JMAX+4])
 {
   int i, j;
-  double dX;
-  double dY = (j-0.5)*dDY;
+
   
   // Fixed temperature at y = 0 and y = 1
   // Top and bottom boundary
   for (i = 2; i <= IMAX + 1; i++) 
   {
-    dX = (i-0.5)*dDX;
     // Below we will set the boundary conditions based on problem 1. Here we have 
     // all boundary conditions set to be 0, as they are homogenous on all sides
+    // 5th Order Interpolation
+    a2dPrimal[i][0] = (1.0 / 12.0) * (-505.0 * a2dPrimal[i][2] + 335.0 * a2dPrimal[i][3] - 145.0 * a2dPrimal[i][4] + 27.0 * a2dPrimal[i][5]);
+    a2dPrimal[i][1] = (1.0 / 12.0) * (-77.0 * a2dPrimal[i][2] + 43.0 * a2dPrimal[i][3] - 17.0 * a2dPrimal[i][4] + 3.0 * a2dPrimal[i][5]);
+    a2dPrimal[i][JMAX + 2] = (1.0 / 12.0) * (-77.0 * a2dPrimal[i][JMAX + 1] + 43.0 * a2dPrimal[i][JMAX] - 17.0 * a2dPrimal[i][JMAX - 1] + 3.0 * a2dPrimal[i][JMAX - 2]);
+    a2dPrimal[i][JMAX + 3] = (1.0 / 12.0) * (-505.0 * a2dPrimal[i][JMAX + 1] + 335.0 * a2dPrimal[i][JMAX] - 145.0 * a2dPrimal[i][JMAX - 1] + 27.0 * a2dPrimal[i][JMAX - 2]);
 
-    a2dPrimal[i][1] = -a2dPrimal[i][2];
-    a2dPrimal[i][0] = -a2dPrimal[i][3];
-    a2dPrimal[i][JMAX + 2] = -a2dPrimal[i][JMAX + 1];
-    a2dPrimal[i][JMAX + 3] = -a2dPrimal[i][JMAX];
 
-    // These dont work, did some math
-    // a2dPrimal[i][0] = -a2dPrimal[i][3];
-    // a2dPrimal[i][1] = -a2dPrimal[i][2];
-    // a2dPrimal[i][JMAX + 2] = -a2dPrimal[i][JMAX + 1];
-    // a2dPrimal[i][JMAX + 3] = -a2dPrimal[i][JMAX];
+
+    // Fourth Order interpolation
+    // a2dPrimal[i][0] = (1.0 / 3.0) * (-70.0 * a2dPrimal[i][2] + 32.0 * a2dPrimal[i][3] - 7.0 * a2dPrimal[i][4]);
+    // a2dPrimal[i][1] = (1.0 / 3.0) * (-13.0 * a2dPrimal[i][2] + 5.0 * a2dPrimal[i][3] - a2dPrimal[i][4]);
+    // a2dPrimal[i][JMAX + 2] = (1.0 / 3.0) * (-13.0 * a2dPrimal[i][JMAX + 1] + 5.0 * a2dPrimal[i][JMAX] - a2dPrimal[i][JMAX - 1]);
+    // a2dPrimal[i][JMAX + 3] = (1.0 / 3.0) * (-70.0 * a2dPrimal[i][JMAX + 1] + 32.0 * a2dPrimal[i][JMAX] - 7.0 * a2dPrimal[i][JMAX - 1]);
   }
    
   // Fixed temperature at x = 0 and x = 1
   // Left and right boundary
   for (j = 2; j <= JMAX + 1; j++) 
   {
-    dY = (j-0.5)*dDY;
+
     // Below we will set the boundary conditions based on problem 1. Here we have 
     // all boundary conditions set to be 0, as they are homogenous on all sides
     
-    a2dPrimal[1][j] = -a2dPrimal[2][j];
-    a2dPrimal[0][j] = -a2dPrimal[3][j];
-    a2dPrimal[IMAX + 2][j] = -a2dPrimal[IMAX + 1][j];
-    a2dPrimal[IMAX + 3][j] = -a2dPrimal[IMAX][j];
-
-    // These dont work
-    // a2dPrimal[0][j] = -a2dPrimal[3][j];
-    // a2dPrimal[1][j] = -a2dPrimal[2][j];
-    // a2dPrimal[IMAX + 2][j] = -a2dPrimal[IMAX + 1][j];
-    // a2dPrimal[IMAX + 3][j] = -a2dPrimal[IMAX][j];
+    // Fifth Order interpolation
+    a2dPrimal[0][j] = (1.0 / 12.0) * (-505.0 * a2dPrimal[2][j] + 335.0 * a2dPrimal[3][j] - 145.0 * a2dPrimal[4][j] + 27.0 * a2dPrimal[5][j]);
+    a2dPrimal[1][j] = (1.0 / 12.0) * (-77.0 * a2dPrimal[2][j] + 43.0 * a2dPrimal[3][j] - 17.0 * a2dPrimal[4][j] + 3.0 * a2dPrimal[5][j]);
+    a2dPrimal[IMAX + 2][j] = (1.0 / 12.0) * (-77.0 * a2dPrimal[IMAX + 1][j] + 43.0 * a2dPrimal[IMAX][j] - 17.0 * a2dPrimal[IMAX - 1][j] + 3.0 * a2dPrimal[IMAX - 2][j]);
+    a2dPrimal[IMAX + 3][j]  = (1.0 / 12.0) * (-505.0 * a2dPrimal[IMAX +  1][j] + 335.0 * a2dPrimal[IMAX][j] - 145.0 * a2dPrimal[IMAX - 1][j] + 27.0 * a2dPrimal[IMAX - 2][j]);
+ 
+    // 4th Order Interpolation 
+    // a2dPrimal[0][j] = (1.0 / 3.0) * (-70.0 * a2dPrimal[2][j] + 32.0 * a2dPrimal[3][j] - 7.0 * a2dPrimal[4][j]);
+    // a2dPrimal[1][j] = (1.0 / 3.0) * (-13.0 * a2dPrimal[2][j] + 5.0 * a2dPrimal[3][j] - a2dPrimal[4][j]);
+    // a2dPrimal[IMAX + 2][j] = (1.0 / 3.0) * (-13.0 * a2dPrimal[IMAX + 1][j] + 5.0 * a2dPrimal[IMAX][j] - a2dPrimal[IMAX - 1][j]);
+    // a2dPrimal[IMAX + 3][j]  = (1.0 / 3.0) * (-70.0 * a2dPrimal[IMAX +  1][j] + 32.0 * a2dPrimal[IMAX][j] - 7.0 * a2dPrimal[IMAX - 1][j]);
   }
 }
 
@@ -68,7 +69,7 @@ run the 4th order functions with everything the same as the 2nd order. This way,
 for the 4th order function to use the scheme from the 4th order. I can verify that it is indeed 4th order by using grid resolution of the L2Error,
 and ensuring a slope of 4. Once this works, I can solve the 2nd question and being the third :)
 */
-void run_Poisson_4thOrder(void (*vApplyBC)(double [IMAX+4][JMAX+4]), double (*dSource)(const double dX, const double dY), double (&a2dSoln)[IMAX + 4][JMAX + 4], double (&a2dSource)[IMAX+4][JMAX+4])
+void run_Poisson_4thOrder(void (*vApplyHomoBC_4thOrder)(double [IMAX+4][JMAX+4]), double (*dSource)(const double dX, const double dY), double (&a2dSoln)[IMAX + 4][JMAX + 4], double (&a2dSource)[IMAX+4][JMAX+4])
 {
   int i, j;
   // Loop through all cells
@@ -82,13 +83,13 @@ void run_Poisson_4thOrder(void (*vApplyBC)(double [IMAX+4][JMAX+4]), double (*dS
      double dY = (j - 1.5) * dDY; // We have a -1.5 here to account for the two ghost cells.
      a2dSoln[i][j] = 0; // Initialize solution to be 0
      /* Let's try a bit of integration here, four-point Gauss quadrature... */
-     a2dSource[i][j] = 0.25* (dSource(dX + dDX/sqrt(12), dY + dDY/sqrt(12)) +
+     a2dSource[i][j] = 0.25 * (dSource(dX + dDX/sqrt(12), dY + dDY/sqrt(12)) +
                             dSource(dX + dDX/sqrt(12), dY - dDY/sqrt(12)) +
                             dSource(dX - dDX/sqrt(12), dY + dDY/sqrt(12)) +
                             dSource(dX - dDX/sqrt(12), dY - dDY/sqrt(12)));
     }
   }
-  vApplyBC(a2dSoln); // Apply boundary conditions
+  vApplyHomoBC_4thOrder(a2dSoln); // Apply boundary conditions
   
   int iIter = 0;
   double dMaxChange; // Used to find maximum possible change in temperature, before solution is 
@@ -99,7 +100,7 @@ void run_Poisson_4thOrder(void (*vApplyBC)(double [IMAX+4][JMAX+4]), double (*dS
   // if the solution reaches steady state, then we will break from the loop.
   do 
   {
-    dMaxChange = dPointGSUpdate_4thOrder(a2dSoln, a2dSource, vApplyBC, 1.7);
+    dMaxChange = dPointGSUpdate_4thOrder(a2dSoln, a2dSource, vApplyHomoBC_4thOrder, 1.7);
    // vApplyBC, 1.7 /*1.4 + 0.4*sin(iIter*0.3)*/);
    /*      dMaxChange = dPointJacUpdate(a2dSoln, 1.);*/
     iIter ++;
@@ -118,8 +119,8 @@ void run_Poisson_4thOrder(void (*vApplyBC)(double [IMAX+4][JMAX+4]), double (*dS
     {
       double dExactCV = dExact((i - 1.5) * dDX, (j - 1.5) * dDY);
       double dErr = dExactCV - a2dSoln[i][j];
-        dL2 += dErr*dErr; // Used to compute the L2Norm of the vector
-        dAve += a2dSoln[i][j]; // Average solution temperature
+      dL2 += dErr*dErr; // Used to compute the L2Norm of the vector
+      dAve += a2dSoln[i][j]; // Average solution temperature
     }
   }
 
@@ -132,7 +133,7 @@ void run_Poisson_4thOrder(void (*vApplyBC)(double [IMAX+4][JMAX+4]), double (*dS
   //         a2dSoln[IMAX/2+2][JMAX/2] + a2dSoln[IMAX/2+2][JMAX/2+2])); 
 }
 
-double dPointGSUpdate_4thOrder(double a2dSoln[IMAX+4][JMAX+4], double a2dSource[IMAX+4][JMAX+4], void (*vApplyBC)(double [IMAX+4][JMAX+4]), const double dOmega)
+double dPointGSUpdate_4thOrder(double a2dSoln[IMAX+4][JMAX+4], double a2dSource[IMAX+4][JMAX+4], void (*vApplyHomoBC_4thOrder)(double [IMAX+4][JMAX+4]), const double dOmega)
 {
   double dMaxChange = 0;
   int i, j;
@@ -144,24 +145,27 @@ double dPointGSUpdate_4thOrder(double a2dSoln[IMAX+4][JMAX+4], double a2dSource[
     {
       // SECOND ORDER DISCRETIZATION
       // double dDeltaT = (dDY2 * (a2dSoln[i+1][j] + a2dSoln[i-1][j]) +
-			//                  dDX2 * (a2dSoln[i][j+1] + a2dSoln[i][j-1]) -
-		  //                  dDX2*dDY2 * a2dSource[i][j]) / 
-	    //                  (2 * (dDX2 + dDY2)) - a2dSoln[i][j];
+			   //               dDX2 * (a2dSoln[i][j+1] + a2dSoln[i][j-1]) -
+		    //                dDX2*dDY2 * a2dSource[i][j]) / 
+	     //                 (2 * (dDX2 + dDY2)) - a2dSoln[i][j];
 
-      // double dDeltaT = (4.0 * dDX2 / 3.0) * (a2dSoln[i + 1][j] - 2.0 * a2dSoln[i][j] + a2dSoln[i - 1][j]) +
-      //                  (4.0 * dDY2 / 3.0) * (a2dSoln[i][j + 1] - 2.0 * a2dSoln[i][j] + a2dSoln[i][j - 1]) -
-      //                  (dDX2 / 12.0) * (a2dSoln[i + 2][j] - 2.0 * a2dSoln[i][j] - a2dSoln[i - 2][j]) - 
-      //                  (dDY2 / 12.0) * (a2dSoln[i][j + 2] - 2.0 * a2dSoln[i][j] - a2dSoln[i][j - 2]);
+      // BUG IS HERE, NEED TO DISCRETIZE SOURCE TERM ACCURATELY 
+      double dDeltaT = (4.0 * dDX2 / 3.0) * (a2dSoln[i + 1][j] - 2.0 * a2dSoln[i][j] + a2dSoln[i - 1][j]) - (dDX2 / 12.0) * (a2dSoln[i + 2][j] - 2 * a2dSoln[i][j] - a2dSoln[i - 2][j]) + // X discretization
+                       (4.0 * dDY2 / 3.0) * (a2dSoln[i][j + 1] - 2.0 * a2dSoln[i][j] + a2dSoln[i][j - 1]) - (dDY2 / 12.0) * (a2dSoln[i][j + 2] - 2 * a2dSoln[i][j] - a2dSoln[i][j - 2]) - // Y discretization
+                       dDX2 * dDY2 * a2dSource[i][j] - // Source term
+                       a2dSoln[i][j]; // Subtract solution to find deltaT
 
-      double dDeltaT = (dDX2 / 12.0) *  (-a2dSoln[i + 2][j] - 16.0 * a2dSoln[i + 1][j] - 30.0 * a2dSoln[i][j] + 16.0 * a2dSoln[i - 1][j] - a2dSoln[i - 2][j]) +
-                       (dDY2 / 12.0) * (-a2dSoln[i][j + 2] - 16.0 * a2dSoln[i][j + 1] - 30.0 * a2dSoln[i][j] + 16.0 * a2dSoln[i][j - 1] - a2dSoln[i][j - 2]);
+      // printf("Cell (%d, %d) - Source %f - DDX2 %f - DDY2 %f\n", i, j, a2dSource[i][j], dDX2, dDY2);
+      // double dDeltaT = (dDX2 / 12.0) *  (-a2dSoln[i + 2][j] + 16.0 * a2dSoln[i + 1][j] - 30.0 * a2dSoln[i][j] + 16.0 * a2dSoln[i - 1][j] - a2dSoln[i - 2][j]) +
+      //                  (dDY2 / 12.0) * (-a2dSoln[i][j + 2] + 16.0 * a2dSoln[i][j + 1] - 30.0 * a2dSoln[i][j] + 16.0 * a2dSoln[i][j - 1] - a2dSoln[i][j - 2]) -
+      //                  dDX2 * dDY2 * a2dSource[i][j] - a2dSoln[i][j];
 
       a2dSoln[i][j] += dDeltaT * dOmega;
       // printf("%2d %2d %10f %10f\n", i, j, dDeltaT, dMaxChange);
       dMaxChange = MAX(dMaxChange, fabs(dDeltaT * dOmega));
     }
   }
-  vApplyBC(a2dSoln);
+  vApplyHomoBC_4thOrder(a2dSoln);
   return (dMaxChange);
 }
 

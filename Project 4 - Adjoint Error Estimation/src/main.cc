@@ -21,15 +21,18 @@ int main()
 
 	printf("\n************************************************\n               PRIMAL FUNCTIONS\n************************************************\n");
 	printf("Running Primal\n");
+
 	run_Poisson(vApplyHomoBC, Primal_Source, u, f);
 	printf("2nd Order L2 - %f\n", calc_L2Norm(u));
 	printf("Running 4th Order Primal\n");
+	
 	run_Poisson_4thOrder(vApplyHomoBC_4thOrder, Primal_Source, u_4thOrder, f_4thOrder);
-		printf("4th Order L2 - %f\n", calc_L2Norm_4thOrder(u_4thOrder));
+	printf("4th Order L2 - %f\n", calc_L2Norm_4thOrder(u_4thOrder));
 	printf("************************************************\n");
 
 	printf("\n************************************************\n               DUAL FUNCTIONS\n************************************************\n");
 	printf("Running Dual\n");
+
 	run_Poisson(vApplyHomoBC, Dual_Source, v, g);
 	printf("Running 4th Order Dual\n");
 	run_Poisson_4thOrder(vApplyHomoBC_4thOrder, Dual_Source, v_4thOrder, g_4thOrder);
@@ -44,8 +47,13 @@ int main()
 
 	std::string u_4 = "Results/u_4th.vtk";
 	std::string u_save = "Results/u.vtk";
+	std::string v_save = "Results/v.vtk";
+	std::string v_4 = "Results/v_4th.vtk";
 	storeVTKSolution(u, u_save);
 	storeVTKSolution_4thOrder(u_4thOrder, u_4);
+	storeVTKSolution(v, v_save);
+	storeVTKSolution_4thOrder(v_4thOrder, v_4);
+
 
 	// Print L2Norms
 	printf("Using %d points\nJ=(u,g) functional: %1.16e\nJ=(v,f) functional:%1.16e\n", IMAX, functional1, functional2);
