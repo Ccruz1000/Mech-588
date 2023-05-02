@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import math
 
-dx_dxi = [3.4721188905930951e-09, 2.7175539169664777e-10, 2.4106104865330898e-10]
+dx_dxi = [5.1174053873525582e-02, 5.0789066307113995e-02, 5.0692718228885325e-02]
 # dx_deta = [4.938263900313e-03, 1.246543322775e-03, 3.122956536154e-04]
 # dy_dxi = [3.224174737130e-02, 1.574351892013e-02, 7.826952764783e-03]
 # dy_deta = [4.938310503551e-03, 1.246541830174e-03, 3.122947972526e-04]
@@ -28,7 +28,7 @@ plt.loglog(grid, dx_dxi, label=legend_title)
 # plt.loglog(grid, L2Y, label='L2Y Norm Vs. Grid Size')
 plt.grid(which='both')
 plt.legend(loc='best')
-plt.title("Functional Error Vs. Grid Size")
+plt.title("Corrected Functional Error Vs. Grid Size")
 plt.xlabel('Grid Size')
 plt.ylabel("Functional Error")
 plt.show()

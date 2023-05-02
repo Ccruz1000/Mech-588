@@ -11,7 +11,7 @@
 // Define exact solution <- NOT FOR THE RIGHT PROBLEM
 double dExact(const double dX, const double dY)
 {
-  return (M_PI/8)*(sin(M_PI*dX) * sin(M_PI*dY)); // Would need to calculate this
+  return (M_PI/8)*(sin(M_PI*dX) * sin(M_PI*dY)); // Exact solution for u in Q1
 }
 
 // Define initial condition <- STEADY STATE SO IRRELEVANT
@@ -136,6 +136,16 @@ double Dual_Source(const double dX, const double dY)
 {
   static const double dVal = (M_PI*M_PI*M_PI*M_PI*M_PI / 2.0); // Dual
   return dVal * dX * (1 - dX) * dY * (1 - dY);
+}
+
+double compute_h(const double dX)
+{
+  return dX * (1.0 - dX);
+}
+
+double compute_e(const double dX)
+{
+  return sin(M_PI * dX);
 }
 
 // Used to run the poisson solver given the different test cases
@@ -306,4 +316,83 @@ void storeVTKSolution(double a2dSoln[IMAX + 2][JMAX + 2], std::string fileName)
       fprintf(vtkFile, "%1.16e\n", a2dSoln[i][j]);
     }
   fclose(vtkFile);
+}
+
+// This function will take the solution obtained from the 2nd order operator and the 4th order operator and compute the difference in them.
+// This can then be used to calculate the functional error estimate, to correct the functional
+void computeLu(double Soln2nd[IMAX + 2][JMAX + 2], double Soln4th[IMAX + 4][JMAX + 4], double (&Lu)[IMAX + 2][JMAX + 2])
+{
+  // Loop through interior cells
+  for(int i = 1; i <= IMAX; i++)
+    for(int j = 1; j <= JMAX; j++)
+    {
+      // Indices for 4th order solution
+      int ii = i + 1;
+      int jj = j + 1;
+      Lu[i][j] = (Soln4th[ii][jj] - Soln2nd[i][j]); // 
+    }
+}
+
+// This function will compute the boundary condition for the primal problem for question 3
+void vApplyBC_uQ3(double a2dPrimal[IMAX+2][JMAX+2])
+{
+  int i, j;
+  double dX;
+  double dY;
+  
+  // Fixed temperature at y = 0 and y = 1
+  // Top and bottom boundary
+  for (i = 1; i <= IMAX; i++) 
+  {
+    dX = (i - 0.5) * dDX;
+
+    // Below we will set the boundary conditions based on problem 1. Here we have 
+    // all boundary conditions set to be 0, as they are homogenous on all sides
+    a2dPrimal[i][0] = -a2dPrimal[i][1]; // Bottom 
+    a2dPrimal[i][JMAX + 1] = 2 * sin(M_PI * dX) -a2dPrimal[i][JMAX]; // Top
+  }
+   
+  // Fixed temperature at x = 0 and x = 1
+  // Left and right boundary
+  for (j = 1; j <= JMAX; j++) 
+  {
+    dY = (j - 0.5) * dDY;
+
+    // Below we will set the boundary conditions based on problem 1. Here we have 
+    // all boundary conditions set to be 0, as they are homogenous on all sides
+    a2dPrimal[0][j] = -a2dPrimal[1][j]; // Left
+    a2dPrimal[IMAX + 1][j] = -a2dPrimal[IMAX][j]; // Right
+  }
+}
+
+// This function will compute the boundary condition for the primal problem for question 3
+void vApplyBC_vQ3(double a2dPrimal[IMAX+2][JMAX+2])
+{
+  int i, j;
+  double dX;
+  double dY;
+  
+  // Fixed temperature at y = 0 and y = 1
+  // Top and bottom boundary
+  for (i = 1; i <= IMAX; i++) 
+  {
+    dX = (i - 0.5) * dDX;
+
+    // Below we will set the boundary conditions based on problem 1. Here we have 
+    // all boundary conditions set to be 0, as they are homogenous on all sides
+    a2dPrimal[i][0] = 2 * dX * (1 - dX) -a2dPrimal[i][1]; // Bottom 
+    a2dPrimal[i][JMAX + 1] = -a2dPrimal[i][JMAX]; // Top
+  }
+   
+  // Fixed temperature at x = 0 and x = 1
+  // Left and right boundary
+  for (j = 1; j <= JMAX; j++) 
+  {
+    dY = (j - 0.5) * dDY;
+
+    // Below we will set the boundary conditions based on problem 1. Here we have 
+    // all boundary conditions set to be 0, as they are homogenous on all sides
+    a2dPrimal[0][j] = -a2dPrimal[1][j]; // Left
+    a2dPrimal[IMAX + 1][j] = -a2dPrimal[IMAX][j]; // Right
+  }
 }

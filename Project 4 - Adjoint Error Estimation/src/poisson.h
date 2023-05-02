@@ -46,6 +46,11 @@ double calc_grad(double u_1, double u_2, double dDX);
 double calc_L2Norm(double a2dVec[IMAX + 2][JMAX + 2]);
 void calc_functional(double a2dSoln[IMAX+2][JMAX+2], double a2dSource[IMAX + 2][JMAX + 2], double (&a2dFunctional));
 void storeVTKSolution(double a2dSoln[IMAX + 2][JMAX + 2], std::string fileName);
+void computeLu(double Soln2nd[IMAX + 2][JMAX + 2], double Soln4th[IMAX + 4][JMAX + 4], double (&Lu)[IMAX + 2][JMAX + 2]);
+void vApplyBC_uQ3(double a2dPrimal[IMAX+2][JMAX+2]);
+void vApplyBC_vQ3(double a2dPrimal[IMAX+2][JMAX+2]);
+double compute_h(const double dX);
+double compute_e(const double dX);
 // Included classes and objects 
 
 #endif
