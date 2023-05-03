@@ -150,10 +150,17 @@ double dPointGSUpdate_4thOrder(double a2dSoln[IMAX+4][JMAX+4], double a2dSource[
 	     //                 (2 * (dDX2 + dDY2)) - a2dSoln[i][j];
 
       // BUG IS HERE, NEED TO DISCRETIZE SOURCE TERM ACCURATELY 
-      double dDeltaT = (4.0 * dDX2 / 3.0) * (a2dSoln[i + 1][j] - 2.0 * a2dSoln[i][j] + a2dSoln[i - 1][j]) - (dDX2 / 12.0) * (a2dSoln[i + 2][j] - 2 * a2dSoln[i][j] - a2dSoln[i - 2][j]) + // X discretization
-                       (4.0 * dDY2 / 3.0) * (a2dSoln[i][j + 1] - 2.0 * a2dSoln[i][j] + a2dSoln[i][j - 1]) - (dDY2 / 12.0) * (a2dSoln[i][j + 2] - 2 * a2dSoln[i][j] - a2dSoln[i][j - 2]) - // Y discretization
-                       dDX2 * dDY2 * a2dSource[i][j] - // Source term
-                       a2dSoln[i][j]; // Subtract solution to find deltaT
+      // double dDeltaT = (4.0 * dDX2 / 3.0) * (a2dSoln[i + 1][j] - 2.0 * a2dSoln[i][j] + a2dSoln[i - 1][j]) - (dDX2 / 12.0) * (a2dSoln[i + 2][j] - 2 * a2dSoln[i][j] - a2dSoln[i - 2][j]) + // X discretization
+      //                  (4.0 * dDY2 / 3.0) * (a2dSoln[i][j + 1] - 2.0 * a2dSoln[i][j] + a2dSoln[i][j - 1]) - (dDY2 / 12.0) * (a2dSoln[i][j + 2] - 2 * a2dSoln[i][j] - a2dSoln[i][j - 2]) - // Y discretization
+      //                  dDX2 * dDY2 * a2dSource[i][j] - // Source term
+      //                  a2dSoln[i][j]; // Subtract solution to find deltaT
+
+      double Ti1 = a2dSoln[i + 1][j] + a2dSoln[i - 1][j];
+      double Tj1 = a2dSoln[i][j + 1] + a2dSoln[i][j - 1];
+      double Ti2 = a2dSoln[i + 2][j] + a2dSoln[i - 2][j];
+      double Tj2 = a2dSoln[i][j + 2] + a2dSoln[i][j -2];
+
+       double dDeltaT = (-12.0 * a2dSource[i][j] * dDX2 * dDY2 + 16.0 * Ti1 * dDY2 - Ti2 * dDY2 + 16.0 * Tj1 * dDX2 - Tj2 * dDX2) / (30.0 * (dDX2 + dDY2));
 
       // printf("Cell (%d, %d) - Source %f - DDX2 %f - DDY2 %f\n", i, j, a2dSource[i][j], dDX2, dDY2);
       // double dDeltaT = (dDX2 / 12.0) *  (-a2dSoln[i + 2][j] + 16.0 * a2dSoln[i + 1][j] - 30.0 * a2dSoln[i][j] + 16.0 * a2dSoln[i - 1][j] - a2dSoln[i - 2][j]) +

@@ -396,3 +396,28 @@ void vApplyBC_vQ3(double a2dPrimal[IMAX+2][JMAX+2])
     a2dPrimal[IMAX + 1][j] = -a2dPrimal[IMAX][j]; // Right
   }
 }
+
+void compute_q3_primal_functional(double u[IMAX + 2][JMAX + 2], double g[IMAX + 2][JMAX + 2], double &J)
+{
+  // To begin, we should compute the area functional integral, J=(u, g)
+  double area_integral = 0.0;
+  calc_functional(u, g, area_integral);
+
+  // Now we need to compute the contour integral along the bottom boundary
+  double contour_integral = 0.0;
+  for(int i = 1; i <= IMAX; i++)
+  {
+    double dX = (i - 0.5) * dDX;
+    // We will compute the derivative w.r.t y along the bottom boundary using central differencing 
+    double du_dy = - 2 * dDY * (u[i][2] - u[i][0]);
+
+    // Now we need to compute h at this point 
+    double h = compute_h(dX);
+
+    // Finally we can compute (un, h) at the current cell. We will multiply it by cell length and add the total up 
+    contour_integral += du_dy * h * dDX;
+  }
+
+  // Finally add 2 integrals up to get the total functional
+  J = area_integral + contour_integral;
+}
