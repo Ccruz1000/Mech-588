@@ -21,7 +21,7 @@
 // Include user created header files here to avoid them being called multiple times 
 
 // Define number of points to be used
-#define IMAX 80
+#define IMAX 40
 #define JMAX IMAX
 #define MAX(a,b) ((a) > (b) ? (a) : (b)) // Return max of two numbers 
 
@@ -52,6 +52,7 @@ void vApplyBC_vQ3(double a2dPrimal[IMAX+2][JMAX+2]);
 double compute_h(const double dX);
 double compute_e(const double dX);
 void compute_q3_primal_functional(double u[IMAX + 2][JMAX + 2], double g[IMAX + 2][JMAX + 2], double &J);
+void compute_q3_dual_functional(double v[IMAX + 2][JMAX + 2], double f[IMAX + 2][JMAX + 2], double &J);
 // Included classes and objects 
 
 #endif

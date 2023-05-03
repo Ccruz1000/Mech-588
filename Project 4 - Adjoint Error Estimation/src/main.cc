@@ -7,8 +7,8 @@ int main()
 {
 	// Calculate runtime
 	clock_t tstart = clock();
-	Q1();
-	Q2();
+	// Q1();
+	// Q2();
 	Q3(); 
 
  	// Let user know runtime

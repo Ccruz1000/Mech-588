@@ -8,10 +8,10 @@
 // Christian Rowsell (40131393)
 ***************************************************************************************/
 
-// Define exact solution <- NOT FOR THE RIGHT PROBLEM
+// Define exact solution For Q1
 double dExact(const double dX, const double dY)
 {
-  return (M_PI/8)*(sin(M_PI*dX) * sin(M_PI*dY)); // Exact solution for u in Q1
+  return (M_PI/8)*sin(M_PI*dX) * sin(M_PI*dY) + (sinh(M_PI*dY)/sinh(M_PI))*sin(M_PI*dX); // Exact solution for u in Q1
 }
 
 // Define initial condition <- STEADY STATE SO IRRELEVANT
@@ -402,6 +402,7 @@ void compute_q3_primal_functional(double u[IMAX + 2][JMAX + 2], double g[IMAX + 
   // To begin, we should compute the area functional integral, J=(u, g)
   double area_integral = 0.0;
   calc_functional(u, g, area_integral);
+  printf("(u,g)=%1.16e\n", area_integral);
 
   // Now we need to compute the contour integral along the bottom boundary
   double contour_integral = 0.0;
@@ -415,7 +416,33 @@ void compute_q3_primal_functional(double u[IMAX + 2][JMAX + 2], double g[IMAX + 
     double h = compute_h(dX);
 
     // Finally we can compute (un, h) at the current cell. We will multiply it by cell length and add the total up 
-    contour_integral += du_dy * h * dDX;
+    contour_integral += du_dy * h * dDX * 0.0;
+  }
+
+  // Finally add 2 integrals up to get the total functional
+  J = area_integral + contour_integral;
+}
+
+void compute_q3_dual_functional(double v[IMAX + 2][JMAX + 2], double f[IMAX + 2][JMAX + 2], double &J)
+{
+  // To begin, we should compute the area functional integral, J=(u, g)
+  double area_integral = 0.0;
+  calc_functional(v, f, area_integral);
+  printf("(v,f)=%1.16e\n", area_integral);
+
+  // Now we need to compute the contour integral along the bottom boundary
+  double contour_integral = 0.0;
+  for(int i = 1; i <= IMAX; i++)
+  {
+    double dX = (i - 0.5) * dDX;
+    // We will compute the derivative w.r.t y along the bottom boundary using central differencing 
+    double dv_dy =  2 * dDY * (v[i][2] - v[i][0]);
+
+    // Now we need to compute h at this point 
+    double e = compute_e(dX);
+
+    // Finally we can compute (un, h) at the current cell. We will multiply it by cell length and add the total up 
+    contour_integral += dv_dy * e * dDX;
   }
 
   // Finally add 2 integrals up to get the total functional

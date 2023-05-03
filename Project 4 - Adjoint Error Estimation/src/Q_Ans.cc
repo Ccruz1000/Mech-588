@@ -115,12 +115,14 @@ void Q3()
 	storeVTKSolution(v_q3, v_q3_save);
 	
 	// Compute the functional from the primal function, J = (u,g)+(un,h)
-	double functional3 = 0.0; // J=(u,g)+(un,h) 
-	double functional4 = 0.0; // J=(v,f)+(vn,e)
+	double functional3 = 0.0; // J=(u,g)+(un,h)
+	double functional4 = 0.0; // J=(v,f)+(vn,e) 
 
 	compute_q3_primal_functional(u_q3, g_q3, functional3);
+	compute_q3_dual_functional(v_q3, g_q3, functional4);
 
-	printf("J=(u,g)+(un,h) functional: %1.16e\nJ=(v,f)+(vn,e) functional: %1.16e\n", functional3, functional4);
+	printf("J=(u,g)+(un,h) functional: %1.16e\n", functional3);
+	printf("J=(v,f)+(vn,e) functional: %1.16e\n", functional4);
 	printf("*****************************************************\n");
 	printf("*****************************************************\n\n");
 }
